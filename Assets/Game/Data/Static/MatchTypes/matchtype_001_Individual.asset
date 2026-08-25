@@ -1,0 +1,23 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8505a5ad1a155a94192c706da5590063, type: 3}
+  m_Name: matchtype_001_Individual
+  m_EditorClassIdentifier: PWMANAGER.Data::PWManager.Data.Definitions.MatchTypeDefinition
+  id: matchtype_001
+  displayName: Individual
+  MinimumParticipants: 2
+  MaximumParticipants: 6
+  MinimumTeamCount: 0
+  MaximumTeamCount: 0
+  MinimumMembersPerTeam: 0
+  MaximumMembersPerTeam: 0
+  ConditionCostMultiplier: 1

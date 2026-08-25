@@ -1,0 +1,6 @@
+{
+  "name": "PWMANAGER.Domain",
+  "rootNamespace": "PWManager",
+  "references": [],
+  "autoReferenced": true
+}
