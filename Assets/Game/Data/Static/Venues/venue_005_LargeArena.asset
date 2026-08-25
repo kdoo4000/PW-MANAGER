@@ -1,0 +1,23 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 83c08efc22700b84bbcdba5910bdba23, type: 3}
+  m_Name: venue_005_LargeArena
+  m_EditorClassIdentifier: PWMANAGER.Data::PWManager.Data.Definitions.VenueDefinition
+  id: venue_005
+  displayName: Large Arena
+  Scale: 4
+  Capacity: 20000
+  RequiredPrestige: 20000
+  UnlockCost: 6000000
+  ProductionCost: 1000000
+  BaseTicketPrice: 110
+  RegionId: region_001

@@ -1,0 +1,16 @@
+{
+  "name": "PWMANAGER.Domain.Tests",
+  "rootNamespace": "PWManager.Tests",
+  "references": [
+    "PWMANAGER.Domain",
+    "PWMANAGER.Infrastructure",
+    "PWMANAGER.Data"
+  ],
+  "optionalUnityReferences": [
+    "TestAssemblies"
+  ],
+  "includePlatforms": [
+    "Editor"
+  ],
+  "autoReferenced": false
+}

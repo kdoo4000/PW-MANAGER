@@ -1,0 +1,149 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: cd375d13fbb9eae4faccb66380ab2764, type: 3}
+  m_Name: NamePool
+  m_EditorClassIdentifier: PWMANAGER.Data::PWManager.Data.Definitions.NamePoolDefinition
+  MaleGivenNames:
+  - Adrian
+  - Blake
+  - Caleb
+  - Damon
+  - Elias
+  - Felix
+  - Grant
+  - Jace
+  - Logan
+  - Marcus
+  - Nolan
+  - Victor
+  - Aaron
+  - Brendan
+  - Cedric
+  - Desmond
+  - Evan
+  - Gavin
+  - Isaac
+  - Jonah
+  - Leon
+  - Miles
+  - Oscar
+  - Preston
+  - Roman
+  - Silas
+  - Tristan
+  - Wesley
+  - Xavier
+  - Zane
+  FemaleGivenNames:
+  - Aria
+  - Bianca
+  - Carmen
+  - Dahlia
+  - Elena
+  - Freya
+  - Iris
+  - Jade
+  - Maya
+  - Nina
+  - Sierra
+  - Talia
+  - Amara
+  - Brielle
+  - Celeste
+  - Delilah
+  - Eva
+  - Georgia
+  - Hazel
+  - Kiara
+  - Lana
+  - Marina
+  - Naomi
+  - Ophelia
+  - Phoebe
+  - Raina
+  - Selene
+  - Vera
+  - Willow
+  - Zara
+  FamilyNames:
+  - Archer
+  - Bennett
+  - Cole
+  - Cross
+  - Dalton
+  - Everett
+  - Frost
+  - Graves
+  - Hartley
+  - Hayes
+  - Knight
+  - Mercer
+  - Monroe
+  - Palmer
+  - Quinn
+  - Reed
+  - Sawyer
+  - Sterling
+  - Vale
+  - Wolfe
+  - Abbott
+  - Barrett
+  - Calloway
+  - Donovan
+  - Ellis
+  - Fairchild
+  - Gallagher
+  - Hawthorne
+  - Irving
+  - Jennings
+  - Kendrick
+  - Langley
+  - Maddox
+  - Nash
+  - Ortega
+  - Prescott
+  - Ramsey
+  - Shepherd
+  - Thornton
+  - Underwood
+  - Vaughn
+  - Walker
+  - York
+  - Zimmerman
+  - Blackwood
+  - Carver
+  - Drake
+  - Emerson
+  - Ford
+  - Holland
+  Nicknames:
+  - The Ace
+  - The Anvil
+  - The Comet
+  - The Outlaw
+  - The Phantom
+  - The Prodigy
+  - The Rebel
+  - The Sentinel
+  - The Storm
+  - The Titan
+  SingleWordRingNames:
+  - Blaze
+  - Cipher
+  - Fury
+  - Havoc
+  - Nova
+  - Onyx
+  - Riot
+  - Tempest
+  - Valkyrie
+  - Vortex

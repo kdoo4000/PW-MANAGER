@@ -1,0 +1,7 @@
+{
+  "name": "PWMANAGER.Editor",
+  "rootNamespace": "PWManager.Editor",
+  "references": ["PWMANAGER.Domain", "PWMANAGER.Data"],
+  "includePlatforms": ["Editor"],
+  "autoReferenced": false
+}
