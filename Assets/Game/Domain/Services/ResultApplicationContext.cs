@@ -38,10 +38,11 @@ namespace PWManager.Domain.Services
 
             EnsureUniqueIds(showResult.MatchResultIds, "match result");
             EnsureUniqueIds(showResult.PromoResultIds, "promo result");
+            EnsureUniqueIds(showResult.TimelineResultIds, "timeline result");
             var matchResults = ResolveResults(save.MatchResults, showResult.MatchResultIds, "Match result");
             var promoResults = ResolveResults(save.PromoResults, showResult.PromoResultIds, "Promo result");
             ValidateResultOwnership(showResult, matchResults, promoResults);
-            ValidateEventCoverage(save, show, matchResults, promoResults);
+            ValidateEventCoverage(save, show, showResult.TimelineResultIds, matchResults, promoResults);
             ValidateSettlement(showResult.FinancialSettlement);
 
             var context = new ResultApplicationContext(save, show, showResult, matchResults, promoResults);
@@ -94,13 +95,27 @@ namespace PWManager.Domain.Services
         }
 
         private static void ValidateEventCoverage(
-            GameSave save, ShowState show, IEnumerable<MatchResultState> matchResults, IEnumerable<PromoResultState> promoResults)
+            GameSave save, ShowState show, IReadOnlyList<string> timelineResultIds,
+            IEnumerable<MatchResultState> matchResults, IEnumerable<PromoResultState> promoResults)
         {
             var expected = show.TimelineEventIds ?? new List<string>();
+            var allResults = matchResults.Cast<object>().Concat(promoResults).ToList();
             var actual = matchResults.Select(x => x.ShowEventId).Concat(promoResults.Select(x => x.ShowEventId)).ToList();
             if (actual.Count != expected.Count || actual.Distinct(StringComparer.Ordinal).Count() != actual.Count ||
                 !new HashSet<string>(actual, StringComparer.Ordinal).SetEquals(expected))
                 throw new InvalidOperationException("Show result does not cover every timeline event exactly once.");
+
+            if (timelineResultIds != null && timelineResultIds.Count > 0)
+            {
+                if (timelineResultIds.Count != expected.Count)
+                    throw new InvalidOperationException("Show result timeline count does not match the show timeline.");
+                for (var index = 0; index < expected.Count; index++)
+                {
+                    var result = allResults.SingleOrDefault(x => GetIdFromObject(x) == timelineResultIds[index]);
+                    if (result == null || GetShowEventId(result) != expected[index])
+                        throw new InvalidOperationException("Show result timeline order does not match the show timeline.");
+                }
+            }
 
             var events = (save.ShowEvents ?? new List<ShowEventState>()).Where(x => x != null).ToDictionary(x => x.Id, StringComparer.Ordinal);
             foreach (var result in matchResults)
@@ -112,6 +127,20 @@ namespace PWManager.Domain.Services
                     showEvent.EventType != ShowEventType.Promo || showEvent.DetailId != result.PromoPlanId)
                     throw new InvalidOperationException("Promo result does not match its show event.");
         }
+
+        private static string GetIdFromObject(object value) => value switch
+        {
+            MatchResultState match => match.Id,
+            PromoResultState promo => promo.Id,
+            _ => null
+        };
+
+        private static string GetShowEventId(object value) => value switch
+        {
+            MatchResultState match => match.ShowEventId,
+            PromoResultState promo => promo.ShowEventId,
+            _ => null
+        };
 
         private static void ValidateSettlement(FinancialSettlementState settlement)
         {
