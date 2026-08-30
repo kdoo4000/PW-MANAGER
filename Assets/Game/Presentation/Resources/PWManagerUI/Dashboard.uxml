@@ -1,0 +1,103 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements">
+    <Style src="Dashboard.uss" />
+    <Style src="PWManagerTheme.uss" />
+    <ui:VisualElement name="dashboard" class="dashboard">
+        <ui:VisualElement class="sidebar">
+            <ui:VisualElement class="brand">
+                <ui:Label name="promotion-abbreviation" text="—" class="brand-title" />
+                <ui:Label text="PROMOTION OFFICE" class="brand-subtitle" />
+            </ui:VisualElement>
+            <ui:Button name="nav-home" class="nav active"><ui:VisualElement name="icon-home" class="nav-icon" /><ui:Label text="홈" class="nav-label" /><ui:Label name="home-badge" text="0" class="badge" /></ui:Button>
+            <ui:VisualElement class="divider" />
+            <ui:Button name="nav-roster" class="nav"><ui:VisualElement name="icon-roster" class="nav-icon" /><ui:Label text="로스터" class="nav-label" /></ui:Button>
+            <ui:Button name="nav-teams" class="nav"><ui:VisualElement name="icon-teams" class="nav-icon" /><ui:Label text="태그팀·스테이블" class="nav-label" /></ui:Button>
+            <ui:Button name="nav-locker" class="nav"><ui:VisualElement name="icon-locker" class="nav-icon" /><ui:Label text="라커룸" class="nav-label" /></ui:Button>
+            <ui:Button name="nav-scout" class="nav"><ui:VisualElement name="icon-scout" class="nav-icon" /><ui:Label text="스카우팅" class="nav-label" /></ui:Button>
+            <ui:VisualElement class="divider" />
+            <ui:Button name="nav-show" class="nav"><ui:VisualElement name="icon-show" class="nav-icon" /><ui:Label text="쇼" class="nav-label" /><ui:Label name="show-badge" text="0" class="badge" /></ui:Button>
+            <ui:Button name="nav-story" class="nav"><ui:VisualElement name="icon-story" class="nav-icon" /><ui:Label text="스토리라인" class="nav-label" /></ui:Button>
+            <ui:Button name="nav-title" class="nav"><ui:VisualElement name="icon-title" class="nav-icon" /><ui:Label text="챔피언십" class="nav-label" /></ui:Button>
+            <ui:Button name="nav-tournament" class="nav"><ui:VisualElement name="icon-tournament" class="nav-icon" /><ui:Label text="토너먼트" class="nav-label" /></ui:Button>
+            <ui:VisualElement class="divider" />
+            <ui:Button name="nav-schedule" class="nav"><ui:VisualElement name="icon-schedule" class="nav-icon" /><ui:Label text="일정" class="nav-label" /></ui:Button>
+            <ui:Button name="nav-staff" class="nav"><ui:VisualElement name="icon-staff" class="nav-icon" /><ui:Label text="시설·스태프" class="nav-label" /></ui:Button>
+            <ui:Button name="nav-company" class="nav"><ui:VisualElement name="icon-company" class="nav-icon" /><ui:Label text="단체 정보" class="nav-label" /></ui:Button>
+            <ui:Button name="nav-finance" class="nav"><ui:VisualElement name="icon-finance" class="nav-icon" /><ui:Label text="재정" class="nav-label" /></ui:Button>
+            <ui:VisualElement class="divider" />
+            <ui:Button name="nav-report" class="nav"><ui:VisualElement name="icon-report" class="nav-icon" /><ui:Label text="리포트" class="nav-label" /><ui:Label name="report-badge" text="0" class="badge" /></ui:Button>
+            <ui:Button name="nav-world" class="nav"><ui:VisualElement name="icon-world" class="nav-icon" /><ui:Label text="월드" class="nav-label" /></ui:Button>
+            <ui:Button name="nav-history" class="nav"><ui:VisualElement name="icon-history" class="nav-icon" /><ui:Label text="기록" class="nav-label" /></ui:Button>
+            <ui:VisualElement class="sidebar-spacer" />
+            <ui:Button name="nav-settings" class="nav"><ui:VisualElement name="icon-settings" class="nav-icon" /><ui:Label text="설정" class="nav-label" /></ui:Button>
+        </ui:VisualElement>
+
+        <ui:VisualElement class="workspace">
+            <ui:VisualElement class="topbar">
+                <ui:VisualElement class="topbar-spacer" />
+                <ui:VisualElement class="top-stat"><ui:Label text="현재 날짜" class="eyebrow" /><ui:Label name="current-date" text="—" class="top-value" /></ui:VisualElement>
+                <ui:VisualElement class="top-stat"><ui:Label text="현재 자금" class="eyebrow" /><ui:Label name="top-cash" text="—" class="top-value" /></ui:VisualElement>
+                <ui:VisualElement class="top-stat wide"><ui:Label name="next-show-caption" text="다음 쇼 일정" class="eyebrow" /><ui:Label name="top-next-show" text="—" class="top-value" /></ui:VisualElement>
+                <ui:Button name="notifications" text="알림  0" class="small-button" />
+                <ui:Button name="advance-time" text="시간 진행  ›" class="primary-button" />
+            </ui:VisualElement>
+
+            <ui:VisualElement class="content">
+                <ui:VisualElement class="tabs">
+                    <ui:Button name="tab-overview" text="개요" class="tab active-tab" />
+                    <ui:Button name="tab-profile" text="내 프로필" class="tab" />
+                    <ui:Button name="tab-sponsor" text="스폰서 업무" class="tab" />
+                </ui:VisualElement>
+
+                <ui:VisualElement class="row upper-row">
+                    <ui:VisualElement class="card schedule-card grow">
+                        <ui:VisualElement class="section-heading"><ui:Label text="다음 일정" class="card-title" /><ui:Label text="쇼 기획 열기 ›" class="link" /></ui:VisualElement>
+                        <ui:VisualElement class="event-strip">
+                            <ui:Label name="next-show-date" text="—" class="date-tile" />
+                            <ui:VisualElement class="event-copy"><ui:Label name="next-show-name" text="활성 저장 데이터가 없습니다" class="event-title" /><ui:Label name="next-show-detail" text="새 게임 또는 저장 데이터를 연결하세요" class="muted" /><ui:VisualElement class="chips"><ui:Label name="next-show-type" text="—" class="chip blue" /><ui:Label name="next-show-status" text="—" class="chip amber" /></ui:VisualElement></ui:VisualElement>
+                        </ui:VisualElement>
+                        <ui:VisualElement class="progress-heading"><ui:Label text="준비 상태" class="muted" /><ui:Label name="preparation-value" text="—" class="muted" /></ui:VisualElement>
+                        <ui:VisualElement class="progress"><ui:VisualElement class="progress-fill" /></ui:VisualElement>
+                        <ui:VisualElement class="chips"><ui:Label name="card-count" text="카드 —" class="chip amber" /><ui:Label name="participant-count" text="출연 —" class="chip" /><ui:Label name="estimated-cost" text="예상 비용 —" class="chip" /></ui:VisualElement>
+                    </ui:VisualElement>
+
+                    <ui:VisualElement class="card priority-card">
+                        <ui:Label text="우선 업무" class="card-title" />
+                        <ui:VisualElement name="task-0" class="task danger"><ui:Label name="task-0-type" text="—" class="task-type red" /><ui:Label name="task-0-text" text="활성 저장 데이터 없음" class="task-text" /><ui:Label name="task-0-link" text="" class="task-link" /></ui:VisualElement>
+                        <ui:VisualElement name="task-1" class="task"><ui:Label name="task-1-type" text="—" class="task-type amber-text" /><ui:Label name="task-1-text" text="—" class="task-text" /><ui:Label name="task-1-link" text="" class="task-link" /></ui:VisualElement>
+                        <ui:VisualElement name="task-2" class="task"><ui:Label name="task-2-type" text="—" class="task-type amber-text" /><ui:Label name="task-2-text" text="—" class="task-text" /><ui:Label name="task-2-link" text="" class="task-link" /></ui:VisualElement>
+                        <ui:VisualElement name="task-3" class="task"><ui:Label name="task-3-type" text="—" class="task-type amber-text" /><ui:Label name="task-3-text" text="—" class="task-text" /><ui:Label name="task-3-link" text="" class="task-link" /></ui:VisualElement>
+                    </ui:VisualElement>
+                </ui:VisualElement>
+
+                <ui:VisualElement class="row lower-row">
+                    <ui:VisualElement class="card operations-card grow">
+                        <ui:VisualElement class="section-heading"><ui:Label text="운영 현황" class="card-title" /><ui:Label text="전체 현황 보기 ›" class="link" /></ui:VisualElement>
+                        <ui:VisualElement class="metrics">
+                            <ui:VisualElement class="metric"><ui:Label text="현재 자금" class="eyebrow" /><ui:Label name="cash-value" text="—" class="metric-value green" /><ui:Label name="cash-detail" text="활성 저장 없음" class="micro" /></ui:VisualElement>
+                            <ui:VisualElement class="metric"><ui:Label text="단체 위상" class="eyebrow" /><ui:Label name="prestige-value" text="—" class="metric-value" /><ui:Label name="promotion-name" text="—" class="micro" /></ui:VisualElement>
+                            <ui:VisualElement class="metric"><ui:Label text="활성 선수" class="eyebrow" /><ui:Label name="roster-value" text="—" class="metric-value green" /><ui:Label name="roster-detail" text="전체 —" class="micro" /></ui:VisualElement>
+                            <ui:VisualElement class="metric"><ui:Label text="선수 위험" class="eyebrow" /><ui:Label name="risk-value" text="—" class="metric-value amber-text" /><ui:Label name="risk-detail" text="부상 — · 컨디션 —" class="micro" /></ui:VisualElement>
+                            <ui:VisualElement class="metric"><ui:Label text="스태프 수준" class="eyebrow" /><ui:Label name="staff-value" text="—" class="metric-value blue-text" /><ui:Label name="staff-detail" text="부서 데이터 없음" class="micro" /></ui:VisualElement>
+                        </ui:VisualElement>
+                        <ui:VisualElement class="operations-grid">
+                            <ui:VisualElement class="inner-card fan-card"><ui:VisualElement class="inner-heading"><ui:Label text="선수 팬 반응 평균" class="inner-title" /><ui:Label name="fan-caption" text="로스터 기준" class="inner-title" /></ui:VisualElement><ui:VisualElement class="fan-bar"><ui:VisualElement name="mania-bar" class="fan mania" /><ui:VisualElement name="light-bar" class="fan light" /><ui:VisualElement name="family-bar" class="fan family" /></ui:VisualElement><ui:VisualElement class="fan-row"><ui:Label text="●  매니아 팬" class="mania-text" /><ui:Label name="mania-value" text="—" class="fan-percent" /><ui:Label text="평균 반응" class="fan-note" /></ui:VisualElement><ui:VisualElement class="fan-row"><ui:Label text="●  라이트 팬" class="light-text" /><ui:Label name="light-value" text="—" class="fan-percent" /><ui:Label text="평균 반응" class="fan-note" /></ui:VisualElement><ui:VisualElement class="fan-row"><ui:Label text="●  패밀리 팬" class="family-text" /><ui:Label name="family-value" text="—" class="fan-percent" /><ui:Label text="평균 반응" class="fan-note" /></ui:VisualElement></ui:VisualElement>
+                            <ui:VisualElement class="inner-card stories"><ui:Label text="최근 스토리 변화" class="inner-title" /><ui:VisualElement name="story-0" class="story"><ui:Label name="story-0-title" text="데이터 없음" class="story-title" /><ui:Label name="story-0-detail" text="스토리 결과가 생성되면 표시됩니다" class="micro" /></ui:VisualElement><ui:VisualElement name="story-1" class="story"><ui:Label name="story-1-title" text="—" class="story-title" /><ui:Label name="story-1-detail" text="" class="micro" /></ui:VisualElement><ui:VisualElement name="story-2" class="story"><ui:Label name="story-2-title" text="—" class="story-title" /><ui:Label name="story-2-detail" text="" class="micro" /></ui:VisualElement></ui:VisualElement>
+                        </ui:VisualElement>
+                    </ui:VisualElement>
+
+                    <ui:VisualElement class="card result-card">
+                        <ui:Label text="최근 결과" class="card-title" />
+                        <ui:Label name="result-name" text="결과 데이터 없음" class="result-title" />
+                        <ui:Label name="result-finance" text="완료된 쇼 결과가 생성되면 표시됩니다" class="muted green" />
+                        <ui:VisualElement class="result-metrics"><ui:VisualElement class="inner-card result-metric"><ui:Label text="쇼 평가" class="eyebrow" /><ui:Label name="show-score" text="—" class="metric-value hot" /><ui:Label text="저장된 쇼 평가 점수" class="micro" /></ui:VisualElement><ui:VisualElement class="inner-card result-metric"><ui:Label text="경기 평균" class="eyebrow" /><ui:Label name="match-score" text="—" class="stars" /><ui:Label text="기술적 경기 품질" class="micro" /></ui:VisualElement></ui:VisualElement>
+                        <ui:Label text="팬층별 만족도" class="inner-title" />
+                        <ui:VisualElement class="rating"><ui:Label text="매니아" class="mania-text" /><ui:Label name="result-mania" text="—" class="mania-text" /></ui:VisualElement>
+                        <ui:VisualElement class="rating"><ui:Label text="라이트" class="light-text" /><ui:Label name="result-light" text="—" class="light-text" /></ui:VisualElement>
+                        <ui:VisualElement class="rating"><ui:Label text="패밀리" class="family-text" /><ui:Label name="result-family" text="—" class="family-text" /></ui:VisualElement>
+                        <ui:VisualElement class="change"><ui:Label text="핵심 변화" class="task-link" /><ui:Label name="result-change" text="데이터 없음" class="change-text" /></ui:VisualElement>
+                    </ui:VisualElement>
+                </ui:VisualElement>
+            </ui:VisualElement>
+        </ui:VisualElement>
+    </ui:VisualElement>
+</ui:UXML>

@@ -1,0 +1,41 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements" editor-extension-mode="False">
+    <Style src="project://database/Assets/Game/Presentation/Resources/PWManagerUI/TitleScreen.uss?fileID=7433441132597879392&amp;guid=2ba1cdd6e29de4b4b83119c0c647f2cc&amp;type=3#TitleScreen"/>
+    <Style src="PWManagerTheme.uss"/>
+    <ui:VisualElement name="title-screen" class="title-screen">
+        <ui:VisualElement name="title-background" class="title-background"/>
+        <ui:VisualElement class="title-vignette"/>
+        <ui:VisualElement class="title-content">
+            <ui:VisualElement name="title-logo" class="title-logo" style="height: 370px; width: 592px; top: 100px; left: 100px; align-items: center; align-self: center;"/>
+            <ui:VisualElement class="title-body" style="top: 440px; left: 125px; bottom: 132px;">
+                <ui:VisualElement name="title-menu" class="title-menu" style="align-self: center;">
+                    <ui:Label text="PROMOTION CONTROL" class="menu-kicker"/>
+                    <ui:Button name="new-game" class="title-button primary">
+                        <ui:Label text="새 게임" class="title-button-text"/>
+                        <ui:Label text="›" class="title-button-arrow"/>
+                    </ui:Button>
+                    <ui:Button name="continue-game" class="title-button">
+                        <ui:Label text="계속하기" class="title-button-text"/>
+                        <ui:Label text="›" class="title-button-arrow"/>
+                    </ui:Button>
+                    <ui:Button name="settings" class="title-button">
+                        <ui:Label text="설정" class="title-button-text"/>
+                        <ui:Label text="›" class="title-button-arrow"/>
+                    </ui:Button>
+                    <ui:Button name="credits" class="title-button">
+                        <ui:Label text="제작진" class="title-button-text"/>
+                        <ui:Label text="›" class="title-button-arrow"/>
+                    </ui:Button>
+                    <ui:Button name="exit-game" class="title-button quiet">
+                        <ui:Label text="게임 종료" class="title-button-text"/>
+                        <ui:Label text="›" class="title-button-arrow"/>
+                    </ui:Button>
+                </ui:VisualElement>
+            </ui:VisualElement>
+            <ui:Label name="title-status" text="" class="title-status"/>
+            <ui:VisualElement name="title-footer" class="title-footer">
+                <ui:Label text="ENTER  선택"/>
+                <ui:Label text="PW MANAGER  ·  DEVELOPMENT BUILD"/>
+            </ui:VisualElement>
+        </ui:VisualElement>
+    </ui:VisualElement>
+</ui:UXML>

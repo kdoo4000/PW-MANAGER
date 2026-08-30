@@ -99,6 +99,8 @@ namespace PWManager.Infrastructure.Save
 
         private static void NormalizeOptionalState(GameSave save)
         {
+            if (save.Promotion != null && string.IsNullOrWhiteSpace(save.Promotion.Abbreviation))
+                save.Promotion.Abbreviation = PromotionState.CreateAbbreviation(save.Promotion.Name);
             save.Shows ??= new List<ShowState>();
             save.TagTeams ??= new List<TagTeamState>();
             save.ShowEvents ??= new List<ShowEventState>();

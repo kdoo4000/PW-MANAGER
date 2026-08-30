@@ -1,0 +1,10 @@
+{
+  "name": "PWMANAGER.Presentation",
+  "rootNamespace": "PWManager",
+  "references": [
+    "PWMANAGER.Domain",
+    "PWMANAGER.Data",
+    "PWMANAGER.Infrastructure"
+  ],
+  "autoReferenced": true
+}

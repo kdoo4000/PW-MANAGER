@@ -21,6 +21,7 @@ namespace PWManager.Domain.Services
     public sealed class GameStartRequest
     {
         public string PromotionName;
+        public string PromotionAbbreviation;
         public long InitialCash;
         public long InitialPrestige;
         public int WorldSeed;
@@ -53,6 +54,9 @@ namespace PWManager.Domain.Services
             {
                 Id = createId(),
                 Name = request.PromotionName.Trim(),
+                Abbreviation = string.IsNullOrWhiteSpace(request.PromotionAbbreviation)
+                    ? PromotionState.CreateAbbreviation(request.PromotionName)
+                    : request.PromotionAbbreviation.Trim().ToUpperInvariant(),
                 InitialCash = request.InitialCash,
                 PromotionPrestige = request.InitialPrestige
             };
@@ -125,6 +129,9 @@ namespace PWManager.Domain.Services
         {
             if (request == null) throw new ArgumentNullException(nameof(request));
             if (string.IsNullOrWhiteSpace(request.PromotionName)) throw new ArgumentException("Promotion name is required.", nameof(request));
+            if (!string.IsNullOrWhiteSpace(request.PromotionAbbreviation) &&
+                (request.PromotionAbbreviation.Trim().Length < 2 || request.PromotionAbbreviation.Trim().Length > 8))
+                throw new ArgumentException("Promotion abbreviation must contain between 2 and 8 characters.", nameof(request));
             if (request.UtcNow.Kind != DateTimeKind.Utc) throw new ArgumentException("UtcNow must be UTC.", nameof(request));
             if (request.InitialCash < 0 || request.InitialPrestige < 0) throw new ArgumentException("Initial money and prestige cannot be negative.", nameof(request));
             if (!EntityId.IsValidStaticId(request.RegularVenueId) || !request.RegularVenueId.StartsWith("venue_", StringComparison.Ordinal))
@@ -207,7 +214,7 @@ namespace PWManager.Domain.Services
                 },
                 Presentation = new WrestlerPresentationState
                 {
-                    MatchArchetype = source.Presentation.MatchArchetype, PromoArchetype = source.Presentation.PromoArchetype,
+                    MatchArchetype = source.Presentation.MatchArchetype, PromoArchetype = source.Presentation.PromoArchetype, PromoDisposition = source.Presentation.PromoDisposition,
                     WrestlingStyleId = source.Presentation.WrestlingStyleId,
                     TraitIds = new List<string>(source.Presentation.TraitIds),
                     SignatureMoveIds = new List<string>(source.Presentation.SignatureMoveIds),

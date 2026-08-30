@@ -5,6 +5,7 @@ using PWManager.Data.Definitions;
 using PWManager.Data.Loading;
 using PWManager.Domain.Identifiers;
 using PWManager.Domain.Models;
+using PWManager.Domain.Services;
 
 namespace PWManager.Data.Generation
 {
@@ -70,6 +71,7 @@ namespace PWManager.Data.Generation
                 {
                     MatchArchetype = matchArchetype,
                     PromoArchetype = promoArchetype,
+                    PromoDisposition = promoArchetype == PromoArchetype.Comedy ? PromoDisposition.Comic : promoArchetype == PromoArchetype.Balanced ? PromoDisposition.Balanced : PromoDisposition.Serious,
                     WrestlingStyleId = DetermineStyle(gender, height, attributes, matchArchetype)
                 }
             };
@@ -111,17 +113,17 @@ namespace PWManager.Data.Generation
             for (var attempt = 0; attempt < 500; attempt++)
             {
                 var candidate = GenerateCandidate(gender, date);
-                if (candidate.Attributes.MatchOverall >= 7f) return candidate;
+                if (WrestlerOverallCalculator.Match(candidate) >= 7f) return candidate;
             }
             throw new InvalidOperationException($"Could not generate an initial {gender} candidate at D grade or higher.");
         }
 
         private static double GuaranteeScore(IReadOnlyCollection<WrestlerState> group)
         {
-            return Math.Min(3, group.Count(x => x.Attributes.MatchOverall >= 10f)) +
-                   Math.Min(1, group.Count(x => x.Attributes.MatchOverall >= 14f)) +
-                   Math.Min(10d, group.Average(x => x.Attributes.MatchOverall)) +
-                   Math.Min(2, group.Count(x => x.Attributes.PromoOverall >= 10f)) +
+            return Math.Min(3, group.Count(x => WrestlerOverallCalculator.Match(x) >= 10f)) +
+                   Math.Min(1, group.Count(x => WrestlerOverallCalculator.Match(x) >= 14f)) +
+                   Math.Min(10d, group.Average(x => WrestlerOverallCalculator.Match(x))) +
+                   Math.Min(2, group.Count(x => WrestlerOverallCalculator.Promo(x) >= 10f)) +
                    Math.Min(3, group.Count(x => x.Identity.Background == WrestlerBackground.Rookie)) +
                    Math.Min(2, group.Count(x => x.Identity.Background == WrestlerBackground.OtherPromotion)) +
                    Math.Min(2, group.Count(x => x.Growth.MatchPotentialCap >= 12f)) +
@@ -131,11 +133,11 @@ namespace PWManager.Data.Generation
 
         private static bool MeetsInitialGuarantees(IReadOnlyCollection<WrestlerState> group)
         {
-            return group.All(x => x.Attributes.MatchOverall >= 7f) &&
-                   group.Average(x => x.Attributes.MatchOverall) >= 10f &&
-                   group.Count(x => x.Attributes.MatchOverall >= 10f) >= 3 &&
-                   group.Count(x => x.Attributes.MatchOverall >= 14f) >= 1 &&
-                   group.Count(x => x.Attributes.PromoOverall >= 10f) >= 2 &&
+            return group.All(x => WrestlerOverallCalculator.Match(x) >= 7f) &&
+                   group.Average(x => WrestlerOverallCalculator.Match(x)) >= 10f &&
+                   group.Count(x => WrestlerOverallCalculator.Match(x) >= 10f) >= 3 &&
+                   group.Count(x => WrestlerOverallCalculator.Match(x) >= 14f) >= 1 &&
+                   group.Count(x => WrestlerOverallCalculator.Promo(x) >= 10f) >= 2 &&
                    group.Count(x => x.Identity.Background == WrestlerBackground.Rookie) >= 3 &&
                    group.Count(x => x.Identity.Background == WrestlerBackground.OtherPromotion) >= 2 &&
                    group.Count(x => x.Growth.MatchPotentialCap >= 12f) >= 2 &&
