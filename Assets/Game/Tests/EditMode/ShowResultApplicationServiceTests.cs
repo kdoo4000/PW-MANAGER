@@ -22,7 +22,8 @@ namespace PWManager.Tests
             Assert.That(restored.Wrestlers.Single(x => x.Id == "b").Roster.LastMatchDate.Value, Is.EqualTo(new GameDate(2026, 6, 7)));
             Assert.That(restored.Wrestlers.Single(x => x.Id == "a").Roster.LastAppearanceDate.HasValue, Is.True);
             Assert.That(restored.Schedules.Single().Status, Is.EqualTo(ScheduleStatus.Completed));
-            Assert.That(restored.Transactions.Select(x => x.Amount), Does.Contain(1000).And.Contain(-400));
+            Assert.That(restored.Transactions.Select(x => x.Amount), Does.Contain(1000L));
+            Assert.That(restored.Transactions.Select(x => x.Amount), Does.Contain(-400L));
             Assert.That(restored.Promotion.CalculateCurrentCash(restored.Transactions), Is.EqualTo(600));
             Assert.That(restored.ProcessedIds, Does.Contain("show-result:show:1"));
         }
