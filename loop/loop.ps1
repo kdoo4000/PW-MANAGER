@@ -52,18 +52,18 @@ if ($maxTurns -ne 1) {
     throw 'This Codex CLI has no max-turns option. Keep MAX_TURNS=1; each cycle is one fresh codex exec session.'
 }
 
-$codexCommand = Get-Command 'codex.cmd' -ErrorAction SilentlyContinue
-if (-not $codexCommand) { $codexCommand = Get-Command 'codex' -ErrorAction SilentlyContinue }
-if (-not $codexCommand) { throw 'Codex CLI was not found on PATH.' }
-
 $requiredPathEntries = @(
-    (Split-Path -Parent $codexCommand.Source),
-    (Split-Path -Parent (Get-Command 'node.exe' -ErrorAction Stop).Source),
-    (Split-Path -Parent (Get-Command 'git.exe' -ErrorAction Stop).Source),
+    (Join-Path $env:APPDATA 'npm'),
+    (Join-Path $env:ProgramFiles 'nodejs'),
+    (Join-Path $env:ProgramFiles 'Git\cmd'),
     "$env:SystemRoot\System32",
     "$env:SystemRoot\System32\WindowsPowerShell\v1.0"
-) | Select-Object -Unique
+) | Where-Object { Test-Path -LiteralPath $_ } | Select-Object -Unique
 $env:PATH = ($requiredPathEntries -join [IO.Path]::PathSeparator)
+
+$codexCommand = Get-Command 'codex.cmd' -ErrorAction SilentlyContinue
+if (-not $codexCommand) { $codexCommand = Get-Command 'codex' -ErrorAction SilentlyContinue }
+if (-not $codexCommand) { throw 'Codex CLI was not found on the explicit scheduled-task PATH.' }
 
 New-Item -ItemType Directory -Force -Path $logDir | Out-Null
 $cycle = 0
