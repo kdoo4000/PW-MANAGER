@@ -1,0 +1,142 @@
+:root {
+    --pw-bg: #090c12;
+    --pw-surface: #0c1018;
+    --pw-card: #0c111a;
+    --pw-card-raised: #111824;
+    --pw-border: #263143;
+    --pw-divider: #202a39;
+    --pw-text: #d7deea;
+    --pw-text-strong: #f2f5fa;
+    --pw-text-muted: #748197;
+    --pw-accent: #60a5fa;
+    --pw-accent-deep: #1769aa;
+}
+
+* {
+    -unity-font-definition: url("project://database/Assets/Game/Presentation/Resources/PWManagerUI/Fonts/NotoSansKR-Regular.ttf");
+}
+
+Button, TextField, DropdownField,
+.nav, .tab, .wp-nav, .wp-tab, .wp-choice,
+.small-button, .primary-button, .wp-small-button, .wp-primary-button,
+.setup-button, .title-button, .table-header-button {
+    -unity-font-definition: url("project://database/Assets/Game/Presentation/Resources/PWManagerUI/Fonts/NotoSansKR-Medium.ttf");
+    -unity-font-style: normal;
+}
+
+.brand-title, .card-title, .wp-brand-title, .wp-card-title,
+.title-button-text, .setup-title, .wizard-title, .cost-title,
+.venue-card-title, .roster-name, .roster-grade,
+.wp-name, .wp-record-value, .wp-ability-value {
+    -unity-font-definition: url("project://database/Assets/Game/Presentation/Resources/PWManagerUI/Fonts/NotoSansKR-Bold.ttf");
+    -unity-font-style: normal;
+}
+
+.dashboard, .wizard, .new-game-screen, .wp-screen {
+    background-color: var(--pw-bg);
+    color: var(--pw-text);
+}
+
+.sidebar, .topbar, .wp-sidebar, .wp-topbar,
+.wizard-header, .wizard-progress, .wizard-footer {
+    background-color: var(--pw-surface);
+    border-color: var(--pw-divider);
+}
+
+.card, .wp-card, .cost-panel, .info-card, .review-card, .venue-card {
+    background-color: var(--pw-card);
+    border-color: var(--pw-border);
+    border-radius: 8px;
+}
+
+.card, .wp-card {
+    padding: 16px;
+}
+
+.card-title, .wp-card-title, .setup-title, .wizard-title, .cost-title {
+    color: var(--pw-text-strong);
+}
+
+.muted, .wp-muted, .wp-card-help, .field-help, .setup-copy,
+.summary-label, .selection-detail, .venue-stat-label {
+    color: var(--pw-text-muted);
+}
+
+.link, .task-link, .wrestler-link, .wp-preview-state {
+    color: var(--pw-accent);
+}
+
+.small-button, .wp-small-button, .setup-button.secondary, .wp-choice {
+    color: #b8c4d9;
+    background-color: var(--pw-card-raised);
+    border-width: 1px;
+    border-color: var(--pw-border);
+    border-radius: 6px;
+}
+
+.primary-button, .wp-primary-button, .setup-button.start {
+    color: #ffffff;
+    background-color: var(--pw-accent-deep);
+    border-width: 0;
+    border-radius: 6px;
+}
+
+.title-background {
+    -unity-background-image-tint-color: #9bbfe5;
+}
+
+.title-vignette {
+    background-color: rgba(3, 12, 24, 0.42);
+}
+
+.title-menu, .new-game-setup {
+    border-left-color: var(--pw-accent);
+}
+
+.menu-kicker, .field-label, .wizard-kicker,
+.progress-item.done, .accent, .selection-cost, .money-value {
+    color: var(--pw-accent);
+}
+
+.title-button-arrow {
+    color: var(--pw-accent);
+}
+
+.title-button:hover, .title-button:focus {
+    border-color: var(--pw-accent);
+}
+
+.title-button.primary {
+    color: #ffffff;
+    background-color: #163150;
+    border-color: var(--pw-accent);
+}
+
+.progress-item.active {
+    border-bottom-color: var(--pw-accent);
+}
+
+.selection-row.selected {
+    background-color: #101f33;
+    border-color: var(--pw-accent);
+}
+
+.info-card, .review-card {
+    border-left-color: var(--pw-accent);
+}
+
+.venue-card.selected {
+    background-color: #101f33;
+    border-color: var(--pw-accent);
+}
+
+.venue-state.selected {
+    color: #ffffff;
+    background-color: var(--pw-accent-deep);
+}
+
+.nav, .wp-nav, .tab, .wp-tab, .wp-choice,
+.small-button, .primary-button, .wp-small-button, .wp-primary-button,
+.setup-button, .title-button, .venue-card {
+    transition-duration: 0.12s;
+}

@@ -8,6 +8,7 @@ namespace PWManager.Domain.Models
     {
         public MatchArchetype MatchArchetype;
         public PromoArchetype PromoArchetype;
+        public PromoDisposition PromoDisposition;
         public string WrestlingStyleId;
         public List<string> TraitIds = new();
         public List<string> SignatureMoveIds = new();

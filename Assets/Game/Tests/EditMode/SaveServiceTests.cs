@@ -34,6 +34,7 @@ namespace PWManager.Tests
             var restored = service.Load("slot_1");
 
             Assert.That(restored.Promotion.Name, Is.EqualTo("First"));
+            Assert.That(restored.Promotion.Abbreviation, Is.EqualTo("FIRST"));
             Assert.That(restored.SaveVersion, Is.EqualTo(GameSave.CurrentSaveVersion));
         }
 

@@ -30,6 +30,7 @@ namespace PWManager.Tests
             var save = new GameStartService().CreateInitialSave(new GameStartRequest
             {
                 PromotionName = "Test Wrestling",
+                PromotionAbbreviation = "TW",
                 InitialCash = 100000,
                 InitialPrestige = 0,
                 WorldSeed = 77,
@@ -48,6 +49,7 @@ namespace PWManager.Tests
 
             Assert.That(GameSaveValidator.Validate(save), Is.Empty);
             Assert.That(save.Wrestlers, Has.Count.EqualTo(8));
+            Assert.That(save.Promotion.Abbreviation, Is.EqualTo("TW"));
             Assert.That(save.Contracts, Has.Count.EqualTo(8));
             Assert.That(save.StaffDepartments, Has.Count.EqualTo(4));
             Assert.That(save.StaffDepartments.Single(x => x.DepartmentType == StaffDepartmentType.Commentary).CurrentLevel, Is.Zero);

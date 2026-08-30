@@ -1,0 +1,136 @@
+.title-screen { position: absolute; left: 0; right: 0; top: 0; bottom: 0; background-color: rgb(4, 8, 15); color: rgb(239, 241, 244); }
+.title-background { position: absolute; left: 0; right: 0; top: 0; bottom: 0; background-image: url("Title/arena-background-v5.png"); -unity-background-scale-mode: scale-and-crop; }
+.title-vignette { position: absolute; left: 0; right: 0; top: 0; bottom: 0; background-color: rgba(3, 6, 12, 0.12); }
+.title-content { position: absolute; left: 0; right: 0; top: 0; bottom: 0; padding: 24px 64px; }
+.title-logo { position: absolute; width: 1520px; height: 320px; left: -416px; top: -20px; background-image: url("Title/pw-manager-logo.png"); -unity-background-scale-mode: scale-to-fit; }
+.title-body { position: absolute; left: 64px; top: 172px; bottom: 70px; width: 560px; justify-content: center; align-items: stretch; }
+.title-menu, .new-game-setup { width: 560px; flex-shrink: 0; padding: 18px; background-color: rgba(5, 10, 18, 0.94); border-left-width: 3px; border-left-color: rgb(229, 169, 49); }
+.menu-kicker { font-size: 13px; letter-spacing: 4px; color: rgb(229, 169, 49); margin: 0 0 12px 8px; }
+.title-button { height: 64px; min-height: 64px; flex-shrink: 0; flex-direction: row; align-items: center; justify-content: space-between; margin-top: 7px; padding: 0 22px; font-size: 20px; -unity-font-style: bold; color: rgb(223, 228, 235); background-color: rgba(18, 24, 33, 0.96); border-width: 1px; border-color: rgb(68, 76, 88); border-radius: 2px; }
+.title-button-text { font-size: 20px; -unity-font-style: bold; }
+.title-button-arrow { font-size: 28px; color: rgb(229, 169, 49); }
+.title-button:hover, .title-button:focus { color: white; background-color: rgb(33, 40, 51); border-color: rgb(229, 169, 49); }
+.title-button.primary { color: white; background-color: rgb(96, 24, 25); border-color: rgb(239, 71, 65); }
+.title-button.quiet { color: rgb(162, 170, 180); }
+.title-button:disabled { color: rgb(84, 91, 101); background-color: rgba(12, 17, 24, 0.9); border-color: rgb(42, 48, 57); }
+.new-game-setup { display: none; padding: 26px; }
+.setup-title { font-size: 28px; -unity-font-style: bold; color: white; }
+.setup-copy { font-size: 14px; color: rgb(160, 169, 181); margin-top: 6px; margin-bottom: 22px; }
+.field-label { font-size: 14px; color: rgb(229, 169, 49); margin-bottom: 7px; }
+.abbreviation-label { margin-top: 14px; }
+.promotion-input { height: 46px; font-size: 18px; color: white; background-color: rgb(15, 21, 29); border-width: 1px; border-color: rgb(76, 85, 98); }
+.promotion-input .unity-text-field__input { padding-left: 12px; color: white; background-color: rgb(15, 21, 29); }
+.setup-summary { margin-top: 18px; padding: 14px; flex-direction: row; flex-wrap: wrap; background-color: rgba(255, 255, 255, 0.04); }
+.summary-label { width: 36%; margin: 5px 0; font-size: 14px; color: rgb(139, 149, 162); }
+.summary-value { width: 64%; margin: 5px 0; font-size: 15px; color: rgb(230, 233, 238); }
+.setup-actions { flex-direction: row; justify-content: flex-end; margin-top: 20px; }
+.setup-button { height: 44px; min-width: 110px; margin-left: 8px; font-size: 14px; -unity-font-style: bold; border-radius: 2px; }
+.setup-button.secondary { color: rgb(190, 197, 207); background-color: rgb(27, 33, 42); border-width: 1px; border-color: rgb(69, 78, 91); }
+.setup-button.start { color: rgb(13, 15, 18); background-color: rgb(229, 169, 49); border-width: 0; }
+.title-status { position: absolute; left: 82px; bottom: 58px; font-size: 15px; color: rgb(188, 196, 207); }
+.title-status.error { color: rgb(255, 105, 98); }
+.title-footer { position: absolute; left: 64px; right: 64px; bottom: 24px; flex-direction: row; justify-content: space-between; font-size: 13px; letter-spacing: 1px; color: rgb(126, 136, 150); }
+.wizard { display: none; position: absolute; left: 0; right: 0; top: 0; bottom: 0; background-color: rgb(8, 13, 21); border-width: 0; }
+.new-game-screen { display: flex; position: absolute; left: 0; right: 0; top: 0; bottom: 0; background-color: rgb(8, 13, 21); }
+.new-game-wizard-visible { display: flex; }
+.wizard-header { height: 88px; flex-shrink: 0; padding: 18px 28px; flex-direction: row; justify-content: space-between; align-items: center; border-bottom-width: 1px; border-bottom-color: rgb(48, 56, 68); }
+.wizard-kicker { font-size: 15px; letter-spacing: 3px; color: rgb(229, 169, 49); }
+.wizard-title { margin-top: 4px; font-size: 34px; -unity-font-style: bold; color: white; }
+.wizard-close { width: 44px; height: 44px; font-size: 28px; color: rgb(177, 185, 196); background-color: transparent; border-width: 0; }
+.wizard-progress { height: 48px; flex-shrink: 0; padding: 0 28px; flex-direction: row; align-items: center; background-color: rgb(11, 17, 26); }
+.progress-item { flex-grow: 1; height: 48px; justify-content: center; border-bottom-width: 3px; border-bottom-color: transparent; color: rgb(105, 115, 129); font-size: 16px; }
+.progress-item.active { color: white; border-bottom-color: rgb(229, 169, 49); }
+.progress-item.done { color: rgb(229, 169, 49); }
+.wizard-main { flex-grow: 1; min-height: 0; flex-direction: row; }
+.wizard-content { flex-grow: 1; min-width: 0; padding: 28px 34px; }
+.wizard-step { flex-grow: 1; }
+.hidden { display: none; }
+.step-copy { margin-bottom: 24px; font-size: 20px; color: rgb(166, 176, 189); }
+.spaced { margin-top: 20px; }
+.short-input { width: 220px; }
+.field-help { margin-top: 9px; font-size: 13px; color: rgb(111, 122, 137); }
+.wizard-dropdown { height: 48px; max-width: 520px; font-size: 17px; color: white; background-color: rgb(15, 21, 29); border-width: 1px; border-color: rgb(76, 85, 98); }
+.wizard-dropdown .unity-base-field__input { background-color: rgb(15, 21, 29); color: white; }
+.roster-heading { height: 36px; flex-direction: row; justify-content: space-between; color: rgb(214, 219, 226); font-size: 14px; }
+.accent { color: rgb(229, 169, 49); }
+.roster-list, .venue-list { flex-grow: 1; min-height: 260px; border-top-width: 1px; border-top-color: rgb(49, 57, 68); }
+.roster-table-header { height: 44px; min-height: 44px; flex-shrink: 0; flex-direction: row; align-items: center; padding: 0 10px; background-color: rgb(16, 21, 30); color: rgb(128, 143, 168); font-size: 14px; -unity-font-style: bold; }
+.roster-table-header .unity-label { -unity-text-align: middle-center; }
+.table-header-button { height: 44px; min-height: 44px; margin: 0; padding: 0 3px; color: rgb(128, 143, 168); background-color: transparent; border-width: 0; border-radius: 0; font-size: 14px; -unity-font-style: bold; -unity-text-align: middle-center; }
+.table-header-button:hover { color: rgb(214, 222, 236); background-color: rgb(20, 29, 42); }
+.table-header-button.active { color: rgb(77, 171, 255); }
+.col-check { width: 28px; flex-shrink: 0; }
+.col-name { width: 16%; min-width: 105px; -unity-text-align: middle-left; }
+.col-gender { width: 6%; min-width: 42px; }
+.col-age { width: 5%; min-width: 34px; }
+.col-height { width: 6.5%; min-width: 48px; }
+.col-weight { width: 6.5%; min-width: 48px; }
+.col-style { width: 15%; min-width: 92px; }
+.col-rating { width: 7%; min-width: 46px; }
+.col-money { width: 11%; min-width: 70px; -unity-text-align: middle-right; }
+.venue-name { width: 20%; min-width: 120px; }
+.venue-scale { width: 13%; min-width: 82px; }
+.venue-capacity { width: 13%; min-width: 80px; }
+.venue-prestige { width: 12%; min-width: 74px; }
+.venue-money { width: 14%; min-width: 88px; -unity-text-align: middle-right; }
+.venue-ticket { width: 12%; min-width: 76px; -unity-text-align: middle-right; }
+.selection-row { min-height: 58px; flex-shrink: 0; flex-direction: row; align-items: center; padding: 8px 12px; margin-top: 5px; background-color: rgb(15, 21, 29); border-width: 1px; border-color: rgb(43, 51, 62); }
+.selection-row.selected { background-color: rgb(45, 35, 22); border-color: rgb(229, 169, 49); }
+.selection-check { width: 32px; margin-right: 10px; }
+.selection-name { width: 30%; font-size: 14px; -unity-font-style: bold; color: white; }
+.selection-detail { flex-grow: 1; font-size: 12px; color: rgb(144, 154, 168); }
+.selection-cost { width: 105px; font-size: 12px; color: rgb(229, 169, 49); -unity-text-align: middle-right; }
+.roster-row { min-height: 52px; height: 52px; margin-top: 0; padding: 0 10px; border-width: 0; border-bottom-width: 1px; border-bottom-color: rgb(26, 31, 42); background-color: rgb(12, 16, 23); }
+.roster-row:hover { background-color: rgb(18, 25, 36); }
+.roster-row.selected { background-color: rgb(20, 31, 45); border-left-width: 2px; border-left-color: rgb(77, 171, 255); }
+.roster-row.locked { opacity: 0.48; }
+.roster-cell { color: rgb(184, 196, 217); font-size: 15px; -unity-text-align: middle-center; }
+.roster-name { color: rgb(214, 222, 236); font-size: 16px; -unity-font-style: bold; -unity-text-align: middle-left; }
+.wrestler-link { padding: 0 4px; color: rgb(96, 165, 250); background-color: transparent; border-width: 0; -unity-font-style: bold; -unity-text-align: middle-left; }
+.wrestler-link:hover { color: rgb(147, 197, 253); text-decoration-line: underline; }
+.roster-grade { -unity-font-style: bold; }
+.grade-ss { color: rgb(255, 209, 102); }
+.grade-splus { color: rgb(255, 138, 101); }
+.grade-s { color: rgb(255, 92, 122); }
+.grade-aplus { color: rgb(192, 132, 252); }
+.grade-a { color: rgb(96, 165, 250); }
+.grade-bplus { color: rgb(34, 211, 238); }
+.grade-b { color: rgb(45, 212, 191); }
+.grade-c { color: rgb(132, 204, 22); }
+.grade-d { color: rgb(245, 158, 11); }
+.grade-e { color: rgb(148, 163, 184); }
+.roster-money { color: rgb(97, 209, 163); -unity-text-align: middle-right; }
+.cost-panel { width: 310px; flex-shrink: 0; padding: 24px 22px; background-color: rgb(17, 24, 36); border-left-width: 1px; border-left-color: rgb(38, 49, 67); }
+.cost-title { margin-top: 10px; font-size: 21px; -unity-font-style: bold; color: white; white-space: normal; }
+.divider { height: 1px; margin: 16px 0 10px 0; background-color: rgb(54, 62, 73); }
+.summary-line { min-height: 38px; flex-shrink: 0; flex-direction: row; align-items: center; justify-content: space-between; border-bottom-width: 1px; border-bottom-color: rgb(38, 47, 60); }
+.cost-panel .summary-label { width: 58%; margin: 0; font-size: 13px; color: rgb(120, 131, 145); }
+.cost-panel .summary-value { width: 42%; margin: 0; font-size: 16px; color: white; -unity-font-style: bold; -unity-text-align: middle-right; }
+.remaining-line { min-height: 46px; margin-top: 4px; border-bottom-width: 0; }
+.money-value { width: 42%; margin: 0; font-size: 19px; -unity-font-style: bold; color: rgb(229, 169, 49); -unity-text-align: middle-right; }
+.info-card, .review-card { margin-top: 24px; padding: 20px; background-color: rgb(15, 21, 29); border-left-width: 3px; border-left-color: rgb(229, 169, 49); }
+.review-row { min-height: 46px; flex-direction: row; align-items: center; border-bottom-width: 1px; border-bottom-color: rgb(42, 49, 59); }
+.review-label { width: 34%; color: rgb(130, 141, 155); }
+.review-value { flex-grow: 1; color: white; -unity-font-style: bold; }
+.wizard-footer { height: 72px; flex-shrink: 0; padding: 12px 28px; flex-direction: row; justify-content: space-between; align-items: center; border-top-width: 1px; border-top-color: rgb(48, 56, 68); }
+.wizard-message { color: rgb(255, 105, 98); font-size: 14px; }
+.wizard-actions { flex-direction: row; }
+
+.venue-list { border-top-width: 0; }
+.venue-list .unity-scroll-view__content-container { align-items: stretch; }
+.venue-grid { width: 100%; align-self: stretch; flex-direction: row; flex-wrap: wrap; justify-content: space-between; padding-right: 8px; }
+.venue-card { width: 49%; min-width: 300px; height: 180px; flex-shrink: 0; margin: 0 0 12px 0; padding: 16px 18px; align-items: stretch; background-color: rgb(14, 20, 29); border-width: 1px; border-color: rgb(52, 61, 74); border-radius: 3px; }
+.venue-card:hover { background-color: rgb(20, 28, 40); border-color: rgb(103, 116, 136); }
+.venue-card.selected { background-color: rgb(25, 35, 49); border-width: 2px; border-color: rgb(229, 169, 49); }
+.venue-card.locked { background-color: rgb(10, 14, 20); border-color: rgb(42, 48, 57); opacity: 0.68; }
+.venue-card-heading { height: 30px; flex-direction: row; justify-content: space-between; align-items: center; }
+.venue-card-title { flex-grow: 1; font-size: 20px; -unity-font-style: bold; color: rgb(235, 239, 245); -unity-text-align: middle-left; }
+.venue-state { min-width: 78px; padding: 4px 8px; font-size: 14px; -unity-font-style: bold; color: rgb(160, 171, 185); background-color: rgb(30, 37, 47); border-radius: 2px; -unity-text-align: middle-center; }
+.venue-state.available { color: rgb(105, 210, 165); background-color: rgb(18, 49, 40); }
+.venue-state.selected { color: rgb(20, 22, 25); background-color: rgb(229, 169, 49); }
+.venue-state.locked { color: rgb(184, 190, 201); background-color: rgb(48, 52, 60); }
+.venue-card-meta { margin-top: 5px; font-size: 16px; color: rgb(148, 159, 174); -unity-text-align: middle-left; }
+.venue-card-stats { margin-top: 12px; flex-direction: row; flex-wrap: wrap; }
+.venue-stat { width: 50%; margin-bottom: 8px; flex-direction: row; justify-content: space-between; padding-right: 14px; }
+.venue-stat-label { font-size: 14px; color: rgb(112, 124, 140); }
+.venue-stat-value { font-size: 16px; -unity-font-style: bold; color: rgb(206, 214, 225); }
