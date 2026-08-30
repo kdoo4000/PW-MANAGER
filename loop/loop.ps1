@@ -81,7 +81,7 @@ while ($true) {
         Set-Content -LiteralPath $logFile -Encoding utf8
 
     Get-Content -Raw -LiteralPath $promptFile -Encoding utf8 |
-        & $codexCommand.Source exec --ephemeral --approve-for-me --sandbox workspace-write --model $settings.MODEL --cd $repoDir --color never - 2>&1 |
+        & $codexCommand.Source exec --ephemeral --approve-for-me --model $settings.MODEL --cd $repoDir --color never - 2>&1 |
         Tee-Object -FilePath $logFile -Append
     $exitCode = $LASTEXITCODE
     "[$(Get-Date -Format o)] cycle=$cycle exit_code=$exitCode" |
@@ -95,4 +95,3 @@ while ($true) {
     if ($maxCycles -gt 0 -and $cycle -ge $maxCycles) { break }
     if ($waitSeconds -gt 0) { Start-Sleep -Seconds $waitSeconds }
 }
-
