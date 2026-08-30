@@ -24,6 +24,7 @@ namespace PWManager.Domain.Models
         public string Id;
         public string ShowId;
         public int ShowVersion;
+        public List<string> TimelineResultIds = new();
         public List<string> MatchResultIds = new();
         public List<string> PromoResultIds = new();
         public ShowEvaluationState ShowEvaluation = new();
