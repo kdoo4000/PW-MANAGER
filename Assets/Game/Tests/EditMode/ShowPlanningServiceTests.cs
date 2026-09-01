@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using NUnit.Framework;
 using PWManager.Data.Catalogs;
@@ -46,6 +47,29 @@ namespace PWManager.Tests
             service.AddMatch(save, show.Id, match, 60);
 
             Assert.That(match.MatchGimmickId, Is.EqualTo("gimmick_000"));
+        }
+
+        [Test]
+        public void AddMatch_EmptyDraft_IsAllowedButCannotBeConfirmed()
+        {
+            var save = CreateInitialSave();
+            var service = Service();
+            var show = service.CreateDraft(save, save.Schedules[0].Id, "Empty Match", save.VenueContracts[0].Id, 60);
+
+            var showEvent = service.AddMatch(save, show.Id, new MatchPlanState
+            {
+                MatchTypeId = "matchtype_001",
+                Sides = new List<MatchSideState>
+                {
+                    new() { Id = "side-a", MemberIds = { null } },
+                    new() { Id = "side-b", MemberIds = { null } }
+                },
+                FinishType = MatchFinishType.Draw
+            }, 60);
+
+            Assert.That(showEvent, Is.Not.Null);
+            Assert.That(save.MatchPlans.Single().Sides, Has.Count.EqualTo(2));
+            Assert.Throws<InvalidOperationException>(() => service.Confirm(save, show.Id));
         }
 
         [Test]
@@ -370,7 +394,7 @@ namespace PWManager.Tests
             var catalog = AssetDatabase.LoadAssetAtPath<StaticContentCatalog>(CatalogPath);
             var candidates = new WrestlerGenerator(new StaticContentRegistry(catalog), 4567)
                 .GenerateInitialCandidates(new GameDate(2026, 6, 1));
-            return new GameStartService().CreateInitialSave(new GameStartRequest
+            var save = new GameStartService().CreateInitialSave(new GameStartRequest
             {
                 PromotionName = "Show Test", InitialCash = 100000, WorldSeed = 4567,
                 UtcNow = new DateTime(2026, 8, 20, 1, 0, 0, DateTimeKind.Utc),
@@ -382,6 +406,8 @@ namespace PWManager.Tests
                 RegularShowFrequency = RegularShowFrequency.Monthly,
                 PpvFrequency = PpvFrequency.EveryFourMonths
             });
+            save.Shows.Clear();
+            return save;
         }
 
         private static ShowPlanningService Service(int? seed = null)

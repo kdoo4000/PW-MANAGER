@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Text.RegularExpressions;
 using PWManager.Domain.Models;
 using PWManager.Domain.Services;
@@ -12,7 +13,7 @@ namespace PWManager.Infrastructure.Save
     public sealed class SaveService
     {
         private static readonly Regex SlotNamePattern = new(
-            "^[A-Za-z0-9_-]+$",
+            "^[\\p{L}\\p{N}_-]+$",
             RegexOptions.Compiled | RegexOptions.CultureInvariant);
 
         private readonly string saveDirectory;
@@ -72,6 +73,22 @@ namespace PWManager.Infrastructure.Save
         {
             ValidateSlotName(slotName);
             return LoadFile(GetPaths(slotName).Backup);
+        }
+
+        public IReadOnlyList<string> ListSlots()
+        {
+            if (!Directory.Exists(saveDirectory)) return Array.Empty<string>();
+            return Directory.EnumerateFiles(saveDirectory, "*.json", SearchOption.TopDirectoryOnly)
+                .OrderByDescending(File.GetLastWriteTimeUtc)
+                .Select(Path.GetFileNameWithoutExtension)
+                .Where(x => !string.IsNullOrWhiteSpace(x) && SlotNamePattern.IsMatch(x))
+                .ToList();
+        }
+
+        public DateTime GetLastWriteTime(string slotName)
+        {
+            ValidateSlotName(slotName);
+            return File.GetLastWriteTime(GetPaths(slotName).Save);
         }
 
         private GameSave LoadFile(string path)

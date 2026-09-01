@@ -118,11 +118,49 @@ namespace PWManager.Domain.Services
             save.SeasonPolicy = scheduleResult.Policy;
             save.Schedules.AddRange(scheduleResult.Schedules);
             save.Promotion.SeasonPolicyId = save.SeasonPolicy.Id;
+            AddInitialShowDrafts(save, venueContract.Id);
 
             var errors = GameSaveValidator.Validate(save);
             if (errors.Count > 0)
                 throw new InvalidOperationException("Initial save validation failed: " + string.Join(" | ", errors));
             return save;
+        }
+
+        private void AddInitialShowDrafts(GameSave save, string venueContractId)
+        {
+            var typeCounts = new Dictionary<ScheduledShowType, int>();
+            foreach (var schedule in save.Schedules.OrderBy(x => x.Date))
+            {
+                typeCounts.TryGetValue(schedule.ShowType, out var count);
+                count++;
+                typeCounts[schedule.ShowType] = count;
+
+                save.Shows.Add(new ShowState
+                {
+                    Id = createId(),
+                    ScheduleId = schedule.Id,
+                    Name = CreateInitialShowName(save.Promotion.Abbreviation, schedule.ShowType, count),
+                    ShowType = schedule.ShowType,
+                    Date = schedule.Date,
+                    VenueContractId = venueContractId,
+                    DurationLimit = 120,
+                    EstimatedCost = save.VenueContracts.Single(x => x.Id == venueContractId).ProductionCost,
+                    Status = ShowStatus.Draft
+                });
+            }
+        }
+
+        private static string CreateInitialShowName(string abbreviation, ScheduledShowType showType, int sequence)
+        {
+            var category = showType switch
+            {
+                ScheduledShowType.Regular => "정규 쇼",
+                ScheduledShowType.PpvRegular => "PPV",
+                ScheduledShowType.PpvMajor => "메이저 PPV",
+                ScheduledShowType.PpvSignature => "시그니처 PPV",
+                _ => "쇼"
+            };
+            return $"{abbreviation} {category} {sequence}";
         }
 
         private static void ValidateRequest(GameStartRequest request)
