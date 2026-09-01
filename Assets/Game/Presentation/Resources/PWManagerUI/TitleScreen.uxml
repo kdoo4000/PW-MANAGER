@@ -17,6 +17,10 @@
                         <ui:Label text="계속하기" class="title-button-text"/>
                         <ui:Label text="›" class="title-button-arrow"/>
                     </ui:Button>
+                    <ui:Button name="load-game" class="title-button">
+                        <ui:Label text="불러오기" class="title-button-text"/>
+                        <ui:Label text="›" class="title-button-arrow"/>
+                    </ui:Button>
                     <ui:Button name="settings" class="title-button">
                         <ui:Label text="설정" class="title-button-text"/>
                         <ui:Label text="›" class="title-button-arrow"/>
@@ -35,6 +39,20 @@
             <ui:VisualElement name="title-footer" class="title-footer">
                 <ui:Label text="ENTER  선택"/>
                 <ui:Label text="PW MANAGER  ·  DEVELOPMENT BUILD"/>
+            </ui:VisualElement>
+        </ui:VisualElement>
+        <ui:VisualElement name="title-load-overlay" class="save-load-overlay hidden">
+            <ui:VisualElement class="save-load-dialog">
+                <ui:VisualElement class="save-load-heading">
+                    <ui:VisualElement>
+                        <ui:Label text="게임 불러오기" class="save-load-title"/>
+                        <ui:Label text="저장 파일을 선택하세요" class="save-load-copy"/>
+                    </ui:VisualElement>
+                    <ui:Button name="title-load-close" text="×" class="save-load-close"/>
+                </ui:VisualElement>
+                <ui:ScrollView mode="Vertical" class="save-load-scroll">
+                    <ui:VisualElement name="title-load-rows" class="save-load-rows"/>
+                </ui:ScrollView>
             </ui:VisualElement>
         </ui:VisualElement>
     </ui:VisualElement>

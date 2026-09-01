@@ -13,14 +13,14 @@
 }
 
 * {
-    -unity-font-definition: url("project://database/Assets/Game/Presentation/Resources/PWManagerUI/Fonts/NotoSansKR-Regular.ttf");
+    -unity-font-definition: url("project://database/Assets/Game/Presentation/Resources/PWManagerUI/Fonts/SEBANGGothic-Regular.ttf");
 }
 
 Button, TextField, DropdownField,
 .nav, .tab, .wp-nav, .wp-tab, .wp-choice,
 .small-button, .primary-button, .wp-small-button, .wp-primary-button,
 .setup-button, .title-button, .table-header-button {
-    -unity-font-definition: url("project://database/Assets/Game/Presentation/Resources/PWManagerUI/Fonts/NotoSansKR-Medium.ttf");
+    -unity-font-definition: url("project://database/Assets/Game/Presentation/Resources/PWManagerUI/Fonts/SEBANGGothic-Regular.ttf");
     -unity-font-style: normal;
 }
 
@@ -28,7 +28,7 @@ Button, TextField, DropdownField,
 .title-button-text, .setup-title, .wizard-title, .cost-title,
 .venue-card-title, .roster-name, .roster-grade,
 .wp-name, .wp-record-value, .wp-ability-value {
-    -unity-font-definition: url("project://database/Assets/Game/Presentation/Resources/PWManagerUI/Fonts/NotoSansKR-Bold.ttf");
+    -unity-font-definition: url("project://database/Assets/Game/Presentation/Resources/PWManagerUI/Fonts/SEBANGGothic-Bold.ttf");
     -unity-font-style: normal;
 }
 
@@ -139,4 +139,51 @@ Button, TextField, DropdownField,
 .small-button, .primary-button, .wp-small-button, .wp-primary-button,
 .setup-button, .title-button, .venue-card {
     transition-duration: 0.12s;
+}
+
+.unity-scroll-view__vertical-scroller {
+    width: 10px;
+    margin: 4px 2px 4px 0;
+    background-color: transparent;
+}
+
+.unity-scroll-view__horizontal-scroller {
+    height: 10px;
+    margin: 0 4px 2px 4px;
+    background-color: transparent;
+}
+
+.unity-scroller__low-button, .unity-scroller__high-button {
+    display: none;
+}
+
+.unity-scroller__slider {
+    flex-grow: 1;
+    margin: 0;
+}
+
+.unity-base-slider__tracker {
+    width: 4px;
+    height: 4px;
+    border-radius: 2px;
+    background-color: #121b28;
+}
+
+.unity-base-slider__dragger {
+    width: 7px;
+    height: 7px;
+    min-width: 34px;
+    min-height: 34px;
+    border-width: 0;
+    border-radius: 4px;
+    background-color: #365879;
+}
+
+.unity-base-slider__dragger-border {
+    border-width: 0;
+    background-color: transparent;
+}
+
+.unity-base-slider__dragger:hover {
+    background-color: #4d7aa3;
 }

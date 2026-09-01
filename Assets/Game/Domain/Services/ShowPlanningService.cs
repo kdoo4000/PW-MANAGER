@@ -62,8 +62,8 @@ namespace PWManager.Domain.Services
             if (string.IsNullOrEmpty(match.MatchGimmickId)) match.MatchGimmickId = "gimmick_000";
             ExpandLegacyMatchPlan(match);
             var participantIds = MatchParticipants(match);
-            if (participantIds.Count == 0 || participantIds.Distinct(StringComparer.Ordinal).Count() != participantIds.Count)
-                throw new ArgumentException("A match requires unique participants.", nameof(match));
+            if (participantIds.Count > 0 && participantIds.Distinct(StringComparer.Ordinal).Count() != participantIds.Count)
+                throw new ArgumentException("Match participants must be unique.", nameof(match));
             if (save.MatchPlans.Any(x => x?.Id == match.Id)) throw new ArgumentException("Match ID is duplicated.", nameof(match));
             save.MatchPlans.Add(match);
             return AddEvent(save, showId, ShowEventType.Match, match.Id, plannedDuration);
@@ -326,7 +326,7 @@ namespace PWManager.Domain.Services
         }
 
         private static List<string> MatchParticipants(MatchPlanState match) =>
-            match?.Sides?.Where(x => x != null).SelectMany(x => x.MemberIds ?? new List<string>()).ToList()
+            match?.Sides?.Where(x => x != null).SelectMany(x => x.MemberIds ?? new List<string>()).Where(x => !string.IsNullOrWhiteSpace(x)).ToList()
             ?? new List<string>();
 
         private static ShowState GetShow(GameSave save, string showId)

@@ -53,6 +53,8 @@ namespace PWManager.Presentation
         private DropdownField ppvFrequency;
         private Button backButton;
         private Button nextButton;
+        private VisualElement loadOverlay;
+        private VisualElement loadRows;
         private SaveService saveService;
         private StaticContentCatalog catalog;
         private List<WrestlerState> candidates = new();
@@ -88,11 +90,15 @@ namespace PWManager.Presentation
             ppvFrequency = Ui<DropdownField>("ppv-frequency");
             backButton = Ui<Button>("wizard-back");
             nextButton = Ui<Button>("wizard-next");
+            loadOverlay = root.Q<VisualElement>("title-load-overlay");
+            loadRows = root.Q<VisualElement>("title-load-rows");
             saveService = new SaveService(SaveDirectory);
             catalog = Resources.Load<StaticContentCatalog>("PWManagerRuntime/GameStaticContentCatalog");
 
             BindButton("new-game", OpenWizard);
             BindButton("continue-game", ContinueGame);
+            BindButton("load-game", OpenLoadMenu);
+            BindButton("title-load-close", CloseLoadMenu);
             BindButton("cancel-new-game", CloseWizard);
             BindButton("wizard-back", PreviousStep);
             BindButton("wizard-next", NextStep);
@@ -128,7 +134,6 @@ namespace PWManager.Presentation
                     .GenerateInitialCandidates(new GameDate(2026, 6, 1)).Take(20).ToList();
                 selectedWrestlerIds ??= new HashSet<string>(StringComparer.Ordinal);
                 selectedWrestlerIds.Clear();
-                foreach (var wrestler in candidates.Take(12)) selectedWrestlerIds.Add(wrestler.Id);
                 selectedVenue = catalog.Venues.FirstOrDefault(x => x.RequiredPrestige <= 0);
                 regularFrequency.choices = RegularChoices.ToList();
                 regularFrequency.index = 0;
@@ -491,7 +496,41 @@ namespace PWManager.Presentation
 
         private void ContinueGame()
         {
-            try { EnterDashboard(saveService.Load(SaveSlot)); }
+            try
+            {
+                var slot = saveService.ListSlots().FirstOrDefault();
+                if (slot == null) throw new FileNotFoundException("저장 파일이 없습니다.");
+                EnterDashboard(saveService.Load(slot));
+            }
+            catch (Exception exception) { ShowStatus($"저장 파일을 불러오지 못했습니다: {exception.Message}", true); }
+        }
+
+        private void OpenLoadMenu()
+        {
+            loadRows.Clear();
+            var slots = saveService.ListSlots();
+            foreach (var slot in slots)
+            {
+                var row = new Button();
+                row.AddToClassList("save-load-row");
+                var copy = new VisualElement(); copy.AddToClassList("save-load-row-copy");
+                var name = new Label(slot); name.AddToClassList("save-load-row-name"); copy.Add(name);
+                var date = new Label(saveService.GetLastWriteTime(slot).ToString("yyyy.MM.dd  HH:mm")); date.AddToClassList("save-load-row-date"); copy.Add(date);
+                row.Add(copy);
+                var action = new Label("불러오기"); action.AddToClassList("save-load-row-action"); row.Add(action);
+                var captured = slot;
+                row.clicked += () => LoadSlot(captured);
+                loadRows.Add(row);
+            }
+            if (slots.Count == 0) { var empty = new Label("저장된 게임이 없습니다"); empty.AddToClassList("save-load-empty"); loadRows.Add(empty); }
+            loadOverlay.RemoveFromClassList("hidden");
+        }
+
+        private void CloseLoadMenu() => loadOverlay.AddToClassList("hidden");
+
+        private void LoadSlot(string slotName)
+        {
+            try { CloseLoadMenu(); EnterDashboard(saveService.Load(slotName)); }
             catch (Exception exception) { ShowStatus($"저장 파일을 불러오지 못했습니다: {exception.Message}", true); }
         }
 
@@ -505,7 +544,9 @@ namespace PWManager.Presentation
 
         private void RefreshContinueButton()
         {
-            Ui<Button>("continue-game")?.SetEnabled(File.Exists(Path.Combine(SaveDirectory, SaveSlot + ".json")));
+            var hasSave = saveService.ListSlots().Count > 0;
+            Ui<Button>("continue-game")?.SetEnabled(hasSave);
+            Ui<Button>("load-game")?.SetEnabled(hasSave);
         }
 
         private void ShowStatus(string message, bool isError = false)
@@ -528,9 +569,7 @@ namespace PWManager.Presentation
             1 => 26, 2 => 52, 3 => 104, 4 => 156, _ => 12
         };
 
-        private static string RatingGrade(float value) => value >= 19 ? "SS" : value >= 18 ? "S+" : value >= 17 ? "S" :
-            value >= 16 ? "A+" : value >= 15 ? "A" : value >= 14 ? "B+" : value >= 13 ? "B" :
-            value >= 10 ? "C" : value >= 7 ? "D" : "E";
+        private static string RatingGrade(float value) => WrestlerOverallCalculator.Grade(value);
 
         private static string StyleText(string id) => id switch
         {

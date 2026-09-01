@@ -33,6 +33,10 @@ namespace PWManager.Domain.Services
             return (fixedTotal + a.FaceWork * roleWeight * faceRatio + a.HeelWork * roleWeight * (1f - faceRatio) + a.Comedy * comedyWeight) / 7f;
         }
 
+        public static string Grade(float value) => value >= 19f ? "SS" : value >= 18f ? "S+" : value >= 17f ? "S" :
+            value >= 16f ? "A+" : value >= 15f ? "A" : value >= 14f ? "B+" : value >= 13f ? "B" :
+            value >= 10f ? "C" : value >= 7f ? "D" : "E";
+
         private static (float Brawling, float Power, float HighFlying, float Technical) StyleWeights(string id) => id switch
         {
             "style_001" => (.55f, .20f, .10f, .15f),

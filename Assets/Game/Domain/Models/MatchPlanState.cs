@@ -27,6 +27,9 @@ namespace PWManager.Domain.Models
         public string WinningSideId;
         public string FinishPerformerId;
         public string LoserTargetId;
+        public string OpeningSpot;
+        public string MiddleSpot;
+        public string ClosingSpot;
 
         // Legacy save compatibility. New match plans use Sides and the fields above.
         public List<string> ParticipantIds = new();

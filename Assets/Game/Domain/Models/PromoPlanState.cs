@@ -24,5 +24,8 @@ namespace PWManager.Domain.Models
         public List<string> ParticipantIds = new();
         public List<string> TargetIds = new();
         public string SponsorRequirementId;
+        public string OpeningSpot;
+        public string MiddleSpot;
+        public string ClosingSpot;
     }
 }

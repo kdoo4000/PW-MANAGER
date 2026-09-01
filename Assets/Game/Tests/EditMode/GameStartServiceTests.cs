@@ -57,6 +57,12 @@ namespace PWManager.Tests
             Assert.That(save.SeasonPolicy.RegularVenueContractId, Is.EqualTo(save.VenueContracts[0].Id));
             Assert.That(save.Schedules.Count(x => x.ShowType != ScheduledShowType.Regular), Is.EqualTo(4));
             Assert.That(save.Schedules, Has.All.Matches<ScheduleState>(x => x.Status == ScheduleStatus.Confirmed));
+            Assert.That(save.Shows, Has.Count.EqualTo(save.Schedules.Count));
+            Assert.That(save.Shows.Select(x => x.ScheduleId), Is.EquivalentTo(save.Schedules.Select(x => x.Id)));
+            Assert.That(save.Shows, Has.All.Matches<ShowState>(x =>
+                x.Status == ShowStatus.Draft && x.DurationLimit == 120 &&
+                x.VenueContractId == save.VenueContracts[0].Id && x.EstimatedCost == 10000));
+            Assert.That(save.Shows, Has.All.Matches<ShowState>(x => x.Name.StartsWith("TW ", StringComparison.Ordinal)));
             Assert.That(save.Promotion.CalculateCurrentCash(save.Transactions), Is.EqualTo(92000));
             Assert.That(save.Wrestlers, Has.All.Property(nameof(WrestlerState.PromotionId)).EqualTo(save.Promotion.Id));
             Assert.That(save.Wrestlers, Has.All.Matches<WrestlerState>(x => x.Roster.ActivityState == RosterActivityState.Active));
