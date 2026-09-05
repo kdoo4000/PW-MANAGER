@@ -4,6 +4,12 @@ namespace PWManager.Domain.Services
 {
     public static class WrestlerOverallCalculator
     {
+        public static float MatchTotal(WrestlerAttributesState a) => a.RingPsychology + a.RingImprovisation
+            + a.Technical + a.Brawling + a.Power + a.HighFlying + a.SpotWork + a.SpecialtyMatches + a.Selling + a.Stamina;
+
+        public static float PromoTotal(WrestlerAttributesState a) => a.Charisma + a.MicWork + a.Improvisation
+            + a.Acting + a.FaceWork + a.HeelWork + a.Comedy;
+
         public static float Match(WrestlerState wrestler, string styleId = null)
         {
             if (wrestler?.Attributes == null) return 0f;

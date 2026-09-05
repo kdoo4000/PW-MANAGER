@@ -182,7 +182,7 @@ namespace PWManager.Editor
             using (new EditorGUI.DisabledScope(!canEvaluate))
                 if (GUILayout.Button("Evaluate Technical Quality")) Execute(() =>
                 {
-                    technicalResult = new MatchEvaluator(content, content)
+                    technicalResult = new MatchEvaluator(content, content, findMove: content.GetMoveRules)
                         .EvaluateTechnical(save, showEvent.Id, evaluationSpotScore, evaluationSeed);
                 });
             if (show.ShowVersion < 1)
@@ -428,7 +428,7 @@ namespace PWManager.Editor
             var teamMatch = type.MinimumTeamCount > 0;
             var sideCount = teamMatch ? matchTeamCount : matchParticipants;
             var membersPerSide = teamMatch ? matchMembersPerTeam : 1;
-            var wrestlerNames = save.Wrestlers.Select(x => $"{x.Identity.RingName}  (Match {x.Attributes.MatchOverall:F1})").ToArray();
+            var wrestlerNames = save.Wrestlers.Select(x => $"{x.Identity.RingName}  (Match {WrestlerOverallCalculator.Match(x):F1})").ToArray();
             EditorGUILayout.LabelField("Side Assignments", EditorStyles.boldLabel);
             for (var side = 0; side < sideCount; side++)
             {

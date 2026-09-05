@@ -4,6 +4,29 @@ using PWManager.Domain.Identifiers;
 
 namespace PWManager.Domain.Models
 {
+    public enum InboxMessageType { Information, Navigation, Decision }
+    public enum InboxPriority { Normal, Important, Required }
+    public enum InboxMessageStatus { Unread, Read, Resolved, Expired }
+    public enum InboxTargetType { None, Wrestler, Show, Contract, Finance, Promotion }
+
+    [Serializable]
+    public sealed class InboxMessageState
+    {
+        public string Id;
+        public string SourceEventId;
+        public GameDate CreatedDate;
+        public GameDate DueDate;
+        public bool HasDueDate;
+        public InboxMessageType Type;
+        public InboxPriority Priority;
+        public InboxMessageStatus Status;
+        public string Sender;
+        public string Subject;
+        public string Body;
+        public InboxTargetType TargetType;
+        public string TargetId;
+    }
+
     [Serializable]
     public sealed class GameSave
     {
@@ -32,6 +55,7 @@ namespace PWManager.Domain.Models
         public List<MatchResultState> MatchResults;
         public List<PromoResultState> PromoResults;
         public List<TransactionRecord> Transactions;
+        public List<InboxMessageState> InboxMessages;
         public List<string> ProcessedIds;
 
         public GameSave()
@@ -51,6 +75,7 @@ namespace PWManager.Domain.Models
             MatchResults = new List<MatchResultState>();
             PromoResults = new List<PromoResultState>();
             Transactions = new List<TransactionRecord>();
+            InboxMessages = new List<InboxMessageState>();
             ProcessedIds = new List<string>();
         }
 

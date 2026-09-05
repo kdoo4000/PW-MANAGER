@@ -99,6 +99,14 @@ namespace PWManager.Data.Loading
             return false;
         }
 
+        public PWManager.Domain.Services.MatchMoveRules GetMoveRules(string id) => Moves.TryGetValue(id, out var move)
+            ? new PWManager.Domain.Services.MatchMoveRules
+            {
+                Name = move.DisplayName, BrawlingWeight = move.BrawlingWeight, PowerWeight = move.PowerWeight,
+                TechnicalWeight = move.TechnicalWeight, HighFlyingWeight = move.HighFlyingWeight,
+                ExecutionDifficulty = move.ExecutionDifficulty, SellingDifficulty = (float)move.SellingDifficulty
+            } : null;
+
         private static IReadOnlyDictionary<string, T> Index<T>(IEnumerable<T> values) where T : StaticDefinition
         {
             var result = new Dictionary<string, T>(StringComparer.Ordinal);

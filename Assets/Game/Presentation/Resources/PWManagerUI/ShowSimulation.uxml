@@ -1,0 +1,40 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements">
+    <ui:Style src="PWManagerTheme.uss" />
+    <ui:Style src="ShowSimulation.uss" />
+    <ui:VisualElement name="simulation-screen" class="sim-screen" tabindex="0">
+        <ui:Image name="simulation-sheet" image="project://database/Assets/Game/Art/Wrestlers/SpriteGenDummy/sprite-sheet-alpha.png" class="sim-hidden" />
+        <ui:VisualElement class="sim-header">
+            <ui:Label name="simulation-title" class="sim-title" />
+            <ui:Label name="simulation-position" class="sim-position" />
+            <ui:Button name="simulation-pause" text="일시정지" class="sim-button" />
+            <ui:Button name="simulation-speed" text="1배속" class="sim-button" />
+            <ui:Button name="simulation-next" text="다음 세그먼트" class="sim-button" />
+            <ui:Button name="simulation-end" text="결과까지 진행" class="sim-button" />
+        </ui:VisualElement>
+        <ui:VisualElement class="sim-body">
+            <ui:VisualElement class="sim-main">
+                <ui:VisualElement class="sim-match-heading">
+                    <ui:Label name="simulation-match" class="sim-match-title" />
+                    <ui:Label name="simulation-clock" class="sim-clock" />
+                </ui:VisualElement>
+                <ui:VisualElement name="simulation-stage" class="sim-stage">
+                    <ui:VisualElement class="sim-ring" picking-mode="Ignore" />
+                    <ui:VisualElement class="sim-rope sim-rope-top" picking-mode="Ignore" />
+                    <ui:VisualElement class="sim-rope sim-rope-middle" picking-mode="Ignore" />
+                    <ui:VisualElement name="simulation-cast" class="sim-cast" picking-mode="Ignore" />
+                    <ui:VisualElement class="sim-rope sim-rope-bottom" picking-mode="Ignore" />
+                </ui:VisualElement>
+                <ui:VisualElement class="sim-commentary-panel">
+                    <ui:Label name="simulation-speaker" class="sim-speaker" text="해설" />
+                    <ui:Label name="simulation-commentary" class="sim-commentary" />
+                </ui:VisualElement>
+                <ui:ScrollView name="simulation-log" mode="Vertical" class="sim-log" />
+            </ui:VisualElement>
+            <ui:VisualElement class="sim-card-panel">
+                <ui:Label text="쇼 카드" class="sim-card-title" />
+                <ui:ScrollView name="simulation-card" mode="Vertical" class="sim-card" />
+                <ui:Button name="simulation-return" text="쇼 요약 확인" class="sim-button sim-return sim-hidden" />
+            </ui:VisualElement>
+        </ui:VisualElement>
+    </ui:VisualElement>
+</ui:UXML>

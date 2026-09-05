@@ -23,13 +23,6 @@ namespace PWManager.Domain.Models
         public float HeelWork;
         public float Comedy;
 
-        public float MatchTotal => RingPsychology + RingImprovisation + Technical + Brawling + Power
-            + HighFlying + SpotWork + SpecialtyMatches + Selling + Stamina;
-
-        public float PromoTotal => Charisma + MicWork + Improvisation + Acting + FaceWork + HeelWork + Comedy;
-
-        public float MatchOverall => MatchTotal / 10f;
-        public float PromoOverall => PromoTotal / 7f;
     }
 
     [Serializable]

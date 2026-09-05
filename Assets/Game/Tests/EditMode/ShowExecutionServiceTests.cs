@@ -9,18 +9,28 @@ namespace PWManager.Tests
     public sealed class ShowExecutionServiceTests
     {
         [Test]
-        public void Execute_ConfirmedMixedTimeline_CreatesOrderedResultAndCompletesShow()
+        public void Execute_InProgressMixedTimeline_CreatesOrderedResultForReview()
         {
             var save = CreateSave();
 
-            var result = Service().Execute(save, "show", 73);
+            var result = Service().Execute(save, "show", 73, 1000, 100);
 
-            Assert.That(save.Shows[0].Status, Is.EqualTo(ShowStatus.Completed));
+            Assert.That(save.Shows[0].Status, Is.EqualTo(ShowStatus.ResultReview));
             Assert.That(result.TimelineResultIds, Is.EqualTo(new[] { save.PromoResults[0].Id, save.MatchResults[0].Id }));
             Assert.That(result.PromoResultIds, Is.EqualTo(new[] { save.PromoResults[0].Id }));
             Assert.That(result.MatchResultIds, Is.EqualTo(new[] { save.MatchResults[0].Id }));
             Assert.That(save.PromoResults[0].ShowEventId, Is.EqualTo("promo-event"));
             Assert.That(save.MatchResults[0].ShowEventId, Is.EqualTo("match-event"));
+            Assert.That(save.MatchResults[0].SimulationBeats, Is.Not.Empty);
+            Assert.That(save.MatchResults[0].NarrativeLines, Is.Not.Empty);
+            var expectedScore = (save.PromoResults[0].PromoScore + save.MatchResults[0].FinalMatchQuality * 5f) / 2f;
+            Assert.That(result.ShowEvaluation.Score, Is.EqualTo(expectedScore).Within(0.001f));
+            Assert.That(result.ShowEvaluation.EvaluationReasons[0].Code, Is.EqualTo("show.event-quality"));
+            Assert.That(result.ShowEvaluation.CriticReview, Is.Not.Null);
+            Assert.That(result.ShowEvaluation.CriticReview.DisplayedStars, Is.GreaterThanOrEqualTo(.25f));
+            Assert.That(result.FinancialSettlement.Cost, Is.EqualTo(save.Shows[0].EstimatedCost));
+            Assert.That(result.FinancialSettlement.Revenue, Is.EqualTo(100000));
+            Assert.That(result.FinancialSettlement.NetIncome, Is.EqualTo(99600));
             Assert.That(ResultApplicationContext.Create(save, result.Id).ShowResult, Is.SameAs(result));
         }
 
@@ -30,13 +40,15 @@ namespace PWManager.Tests
             var first = CreateSave();
             var second = CreateSave();
 
-            var firstResult = Service().Execute(first, "show", 73);
-            var secondResult = Service().Execute(second, "show", 73);
+            var firstResult = Service().Execute(first, "show", 73, 1000, 100);
+            var secondResult = Service().Execute(second, "show", 73, 1000, 100);
 
             Assert.That(second.MatchResults[0].ResultSeed, Is.EqualTo(first.MatchResults[0].ResultSeed));
             Assert.That(second.MatchResults[0].FinalMatchQuality, Is.EqualTo(first.MatchResults[0].FinalMatchQuality));
             Assert.That(second.PromoResults[0].ResultSeed, Is.EqualTo(first.PromoResults[0].ResultSeed));
             Assert.That(second.PromoResults[0].PromoScore, Is.EqualTo(first.PromoResults[0].PromoScore));
+            Assert.That(secondResult.ShowEvaluation.CriticReview.FinalScore,
+                Is.EqualTo(firstResult.ShowEvaluation.CriticReview.FinalScore));
             Assert.That(secondResult.TimelineResultIds.Count, Is.EqualTo(firstResult.TimelineResultIds.Count));
         }
 
@@ -46,7 +58,7 @@ namespace PWManager.Tests
             var save = CreateSave();
             save.Shows[0].Status = ShowStatus.Preparing;
 
-            Assert.Throws<InvalidOperationException>(() => Service().Execute(save, "show", 73));
+            Assert.Throws<InvalidOperationException>(() => Service().Execute(save, "show", 73, 1000, 100));
 
             Assert.That(save.ShowResults, Is.Empty);
             Assert.That(save.MatchResults, Is.Empty);
@@ -59,10 +71,10 @@ namespace PWManager.Tests
             var save = CreateSave();
             save.PromoPlans[0].ParticipantIds[0] = "missing";
 
-            Assert.Throws<InvalidOperationException>(() => Service().Execute(save, "show", 73));
+            Assert.Throws<InvalidOperationException>(() => Service().Execute(save, "show", 73, 1000, 100));
 
             Assert.That(save.ShowResults, Is.Empty);
-            Assert.That(save.Shows[0].Status, Is.EqualTo(ShowStatus.Confirmed));
+            Assert.That(save.Shows[0].Status, Is.EqualTo(ShowStatus.InProgress));
         }
 
         [Test]
@@ -70,10 +82,27 @@ namespace PWManager.Tests
         {
             var save = CreateSave();
             var service = Service();
-            service.Execute(save, "show", 73);
+            service.Execute(save, "show", 73, 1000, 100);
 
-            Assert.Throws<InvalidOperationException>(() => service.Execute(save, "show", 73));
+            Assert.Throws<InvalidOperationException>(() => service.Execute(save, "show", 73, 1000, 100));
             Assert.That(save.ShowResults, Has.Count.EqualTo(1));
+        }
+
+        [Test]
+        public void ShowDay_ExecutesReviewsAppliesAndAdvancesOneDay()
+        {
+            var save = CreateSave();
+            var show = save.Shows[0];
+
+            var result = Service().Execute(save, show.Id, 73, 1000, 100);
+            show.Status = ShowStatus.ResultsReviewed;
+            new ShowResultApplicationService().Apply(save, result.Id);
+            new TimeFlowService().AdvanceTo(save, save.CurrentDate.AddDays(1));
+
+            Assert.That(show.Status, Is.EqualTo(ShowStatus.Completed));
+            Assert.That(save.Schedules[0].Status, Is.EqualTo(ScheduleStatus.Completed));
+            Assert.That(save.CurrentDate, Is.EqualTo(new GameDate(2026, 6, 2)));
+            Assert.That(save.ProcessedIds, Does.Contain("show-result:show:1"));
         }
 
         private static ShowExecutionService Service()
@@ -90,13 +119,23 @@ namespace PWManager.Tests
 
         private static GameSave CreateSave()
         {
-            var save = new GameSave();
+            var save = new GameSave
+            {
+                CurrentDate = new GameDate(2026, 6, 1),
+                Promotion = new PromotionState { Id = "promotion", InitialCash = 1000 }
+            };
+            save.Schedules.Add(new ScheduleState
+            {
+                Id = "schedule", Date = save.CurrentDate, BookingDeadline = save.CurrentDate,
+                Status = ScheduleStatus.Confirmed
+            });
             save.Wrestlers.Add(Wrestler("a", 16f, 15f));
             save.Wrestlers.Add(Wrestler("b", 12f, 10f));
             save.Shows.Add(new ShowState
             {
-                Id = "show", Name = "Opening Night", ShowVersion = 1, Status = ShowStatus.Confirmed,
-                Date = new GameDate(2026, 6, 1), DurationLimit = 20, TimelineEventIds = { "promo-event", "match-event" }
+                Id = "show", ScheduleId = "schedule", Name = "Opening Night", ShowVersion = 1, Status = ShowStatus.InProgress,
+                Date = new GameDate(2026, 6, 1), DurationLimit = 20, EstimatedCost = 400,
+                TimelineEventIds = { "promo-event", "match-event" }
             });
             save.Contracts.Add(ActiveContract("contract-a", "a"));
             save.Contracts.Add(ActiveContract("contract-b", "b"));

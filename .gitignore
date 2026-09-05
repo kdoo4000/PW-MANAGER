@@ -105,3 +105,23 @@ InitTestScene*.unity*
 
 # Auto-generated scenes by play mode tests
 /[Aa]ssets/[Ii]nit[Tt]est[Ss]cene*.unity*
+
+/.codex-temp
+/graphify-out
+/.codex
+/.serena
+
+# Local screenshots and runtime captures
+/Assets/Game/Presentation/RuntimeCaptures/
+/**/Screenshots/
+/**/screenshots/
+/**/Captures/
+/**/captures/
+
+# Local AI agent instructions and working directories
+AGENTS.md
+CLAUDE.md
+.cursorrules
+**/.cursor/
+**/.codex/
+**/.serena/

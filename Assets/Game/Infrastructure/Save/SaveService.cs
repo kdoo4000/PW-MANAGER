@@ -75,6 +75,12 @@ namespace PWManager.Infrastructure.Save
             return LoadFile(GetPaths(slotName).Backup);
         }
 
+        public bool HasBackup(string slotName)
+        {
+            ValidateSlotName(slotName);
+            return File.Exists(GetPaths(slotName).Backup);
+        }
+
         public IReadOnlyList<string> ListSlots()
         {
             if (!Directory.Exists(saveDirectory)) return Array.Empty<string>();
@@ -128,7 +134,13 @@ namespace PWManager.Infrastructure.Save
             save.PromoPlans ??= new List<PromoPlanState>();
             save.ShowResults ??= new List<ShowResultState>();
             save.MatchResults ??= new List<MatchResultState>();
+            foreach (var result in save.MatchResults.Where(x => x != null))
+            {
+                result.SimulationBeats ??= new List<MatchSimulationBeatState>();
+                result.NarrativeLines ??= new List<NarrativeLineState>();
+            }
             save.PromoResults ??= new List<PromoResultState>();
+            save.InboxMessages ??= new List<InboxMessageState>();
             if (save.SeasonPolicy != null && string.IsNullOrEmpty(save.SeasonPolicy.Id))
                 save.SeasonPolicy = null;
         }

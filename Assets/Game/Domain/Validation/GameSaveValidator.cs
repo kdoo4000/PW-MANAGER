@@ -51,6 +51,9 @@ namespace PWManager.Domain.Validation
                 if (match == null) { errors.Add("Match plan cannot be null."); continue; }
                 ValidateUniqueRuntimeId(match.Id, "MatchPlan", matchIds, errors);
                 ValidateStaticId(match.MatchTypeId, "matchtype_", "MatchTypeId", errors);
+                foreach (var spot in match.Spots ?? new List<PlannedSpotState>())
+                    if (spot == null || SpecialMatchSpotCatalog.Find(spot.SpotId) == null || !Enum.IsDefined(typeof(MatchSpotPhase), spot.Phase))
+                        errors.Add($"Match {match.Id} has an invalid spot definition or phase.");
                 if (!string.IsNullOrEmpty(match.MatchGimmickId))
                     ValidateStaticId(match.MatchGimmickId, "gimmick_", "MatchGimmickId", errors);
             }
@@ -282,9 +285,9 @@ namespace PWManager.Domain.Validation
             foreach (var value in values) ValidateRange(value, 1, 20, "Wrestler attribute", errors);
             ValidateRange(wrestler.Growth.MatchPotentialCap, 1, 20, "MatchPotentialCap", errors);
             ValidateRange(wrestler.Growth.PromoPotentialCap, 1, 20, "PromoPotentialCap", errors);
-            if (wrestler.Attributes.MatchTotal > wrestler.Growth.MatchPotentialCap * 10f + AttributeTotalTolerance)
+            if (WrestlerOverallCalculator.MatchTotal(wrestler.Attributes) > wrestler.Growth.MatchPotentialCap * 10f + AttributeTotalTolerance)
                 errors.Add("Match attributes exceed the match potential cap.");
-            if (wrestler.Attributes.PromoTotal > wrestler.Growth.PromoPotentialCap * 7f + AttributeTotalTolerance)
+            if (WrestlerOverallCalculator.PromoTotal(wrestler.Attributes) > wrestler.Growth.PromoPotentialCap * 7f + AttributeTotalTolerance)
                 errors.Add("Promo attributes exceed the promo potential cap.");
         }
 
@@ -340,7 +343,8 @@ namespace PWManager.Domain.Validation
 
         private static void ValidateRange(float value, float min, float max, string name, List<string> errors)
         {
-            if (value < min || value > max) errors.Add($"{name} must be between {min} and {max}.");
+            if (float.IsNaN(value) || float.IsInfinity(value) || value < min || value > max)
+                errors.Add($"{name} must be finite and between {min} and {max}.");
         }
     }
 }

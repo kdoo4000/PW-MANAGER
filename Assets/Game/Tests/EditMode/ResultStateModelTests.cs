@@ -29,6 +29,8 @@ namespace PWManager.Tests
                 PlannedDuration = 20,
                 ActualMatchDuration = 17,
                 FinalMatchQuality = 14.5f,
+                NarrativeLines = { new NarrativeLineState { Type = NarrativeLineType.Commentary, Text = "경기 해설" } },
+                CriticReview = new CriticReviewState { FinalScore = 72.5f, DisplayedStars = 3.5f },
                 TechnicalEvaluation = new TechnicalEvaluationBreakdownState { Performance = 8f, Structure = 3f },
                 ParticipantProfiles =
                 {
@@ -46,6 +48,10 @@ namespace PWManager.Tests
                 ShowId = showId,
                 ShowVersion = 2,
                 PromoScore = 81f,
+                Narrative = new PromoScriptState
+                {
+                    Summary = "저장된 프로모", Lines = { new NarrativeLineState { Type = NarrativeLineType.Dialogue, SpeakerId = "wrestler_a", Text = "대사" } }
+                },
                 ResultSeed = 456
             });
             save.ShowResults.Add(new ShowResultState
@@ -63,8 +69,12 @@ namespace PWManager.Tests
             Assert.That(restored.MatchResults[0].ActualMatchDuration, Is.EqualTo(17));
             Assert.That(restored.MatchResults[0].TechnicalEvaluation.Performance, Is.EqualTo(8f));
             Assert.That(restored.MatchResults[0].ParticipantProfiles[0].AppliedChemistry, Is.EqualTo(70f));
+            Assert.That(restored.MatchResults[0].CriticReview.FinalScore, Is.EqualTo(72.5f));
+            Assert.That(restored.MatchResults[0].CriticReview.DisplayedStars, Is.EqualTo(3.5f));
             Assert.That(restored.TagTeams[0].MemberIds, Is.EqualTo(new[] { "wrestler_a", "wrestler_b" }));
             Assert.That(restored.PromoResults[0].PromoScore, Is.EqualTo(81f));
+            Assert.That(restored.MatchResults[0].NarrativeLines[0].Text, Is.EqualTo("경기 해설"));
+            Assert.That(restored.PromoResults[0].Narrative.Lines[0].Text, Is.EqualTo("대사"));
         }
     }
 }

@@ -66,6 +66,28 @@ namespace PWManager.Tests
             Assert.That(save.Schedules.Single().Status, Is.EqualTo(ScheduleStatus.Confirmed));
         }
 
+        [Test]
+        public void Apply_TwoMatches_CountsEachMatchEvenWithoutConditionChanges()
+        {
+            var save = CreateSave();
+            save.Shows[0].TimelineEventIds.Add("second_event");
+            save.ShowEvents.Add(new ShowEventState { Id = "second_event", ShowId = "show", EventType = ShowEventType.Match, DetailId = "second_plan" });
+            save.MatchPlans.Add(new MatchPlanState { Id = "second_plan" });
+            save.MatchResults.Add(new MatchResultState
+            {
+                Id = "second_result", ShowId = "show", ShowVersion = 1, ShowEventId = "second_event", MatchPlanId = "second_plan",
+                ParticipantProfiles = { new MatchParticipantProfileState { MemberIds = { "a", "b" } } }
+            });
+            save.ShowResults[0].MatchResultIds.Add("second_result");
+
+            new ShowResultApplicationService(Ids()).Apply(save, "show_result");
+
+            Assert.That(save.Wrestlers.Select(x => x.Status.OfficialMatchCount), Is.EqualTo(new[] { 2, 2 }));
+            Assert.That(save.Wrestlers[0].Condition.Condition, Is.EqualTo(87f));
+            Assert.Throws<InvalidOperationException>(() => new ShowResultApplicationService(Ids()).Apply(save, "show_result"));
+            Assert.That(save.Wrestlers[0].Status.OfficialMatchCount, Is.EqualTo(2));
+        }
+
         private static Func<string> Ids()
         {
             var value = 0;
@@ -84,7 +106,7 @@ namespace PWManager.Tests
             save.Shows.Add(new ShowState
             {
                 Id = "show", ScheduleId = "schedule", Date = new GameDate(2026, 6, 7), ShowVersion = 1,
-                Status = ShowStatus.Completed, TimelineEventIds = { "match_event", "promo_event" }
+                Status = ShowStatus.ResultsReviewed, TimelineEventIds = { "match_event", "promo_event" }
             });
             save.ShowEvents.Add(new ShowEventState { Id = "match_event", ShowId = "show", EventType = ShowEventType.Match, DetailId = "match_plan" });
             save.ShowEvents.Add(new ShowEventState { Id = "promo_event", ShowId = "show", EventType = ShowEventType.Promo, DetailId = "promo_plan" });

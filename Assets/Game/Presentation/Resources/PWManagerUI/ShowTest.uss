@@ -1,0 +1,9 @@
+.show-test > .sidebar, .show-test .top-stat, .show-test #notifications,
+.show-test #dashboard-back, .show-test #dashboard-forward,
+.show-test .tabs, .show-test .upper-row, .show-test .operations-card,
+.show-test #show-save-draft { display: none; }
+.show-test .lower-row { flex-grow: 1; height: auto; margin: 0; }
+.show-test .result-card { flex-grow: 1; width: auto; min-width: 0; max-width: none; justify-content: center; }
+.show-test .result-metrics { height: auto; min-height: 110px; }
+.show-test .result-title { font-size: 26px; }
+.show-test .show-header-stats { margin-right: 16px; }

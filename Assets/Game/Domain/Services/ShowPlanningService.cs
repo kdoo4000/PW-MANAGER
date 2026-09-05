@@ -238,6 +238,7 @@ namespace PWManager.Domain.Services
             if (!string.IsNullOrEmpty(match.LoserTargetId) && winningSide?.MemberIds?.Contains(match.LoserTargetId) == true)
                 Error(issues, "match.loser-side", "Loser target cannot belong to the winning side.", match.Id);
             foreach (var participantId in participants) ValidateParticipant(save, show, participantId, true, issues, match.Id);
+            foreach (var message in MatchSpotEvaluator.Validate(save, match)) Error(issues, "match.spot", message, match.Id);
         }
 
         private static void ValidatePromo(GameSave save, ShowState show, ShowEventState showEvent, List<ShowValidationIssue> issues)

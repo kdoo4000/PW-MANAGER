@@ -1,0 +1,18 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements">
+    <Style src="Dashboard.uss"/>
+<ui:VisualElement name="show-schedule-content" class="show-schedule-content hidden" style="display: none;">
+    <ui:VisualElement class="show-schedule-heading">
+        <ui:VisualElement>
+            <ui:Label text="전체 쇼 일정" class="show-schedule-title"/>
+            <ui:Label name="show-schedule-caption" text="예정된 쇼와 지난 쇼를 확인합니다" class="show-schedule-caption"/>
+        </ui:VisualElement>
+        <ui:VisualElement class="show-schedule-totals">
+            <ui:Label name="show-schedule-upcoming" text="예정 0" class="show-schedule-total upcoming"/>
+            <ui:Label name="show-schedule-completed" text="완료 0" class="show-schedule-total"/>
+        </ui:VisualElement>
+    </ui:VisualElement>
+    <ui:ScrollView name="show-schedule-scroll" mode="Vertical" class="show-schedule-scroll">
+        <ui:VisualElement name="show-schedule-rows" class="show-schedule-rows"/>
+    </ui:ScrollView>
+</ui:VisualElement>
+</ui:UXML>

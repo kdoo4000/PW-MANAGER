@@ -30,6 +30,7 @@ namespace PWManager.Domain.Models
         public string OpeningSpot;
         public string MiddleSpot;
         public string ClosingSpot;
+        public List<PlannedSpotState> Spots = new();
 
         // Legacy save compatibility. New match plans use Sides and the fields above.
         public List<string> ParticipantIds = new();

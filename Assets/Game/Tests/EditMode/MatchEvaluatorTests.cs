@@ -24,6 +24,8 @@ namespace PWManager.Tests
             Assert.That(result.TechnicalEvaluation.Structure, Is.EqualTo(20f).Within(0.001f));
             Assert.That(result.TechnicalEvaluation.Duration, Is.Zero.Within(0.001f));
             Assert.That(result.FinalMatchQuality, Is.EqualTo(20f).Within(0.001f));
+            Assert.That(result.CriticReview.FinalScore, Is.EqualTo(100f).Within(0.001f));
+            Assert.That(result.CriticReview.DisplayedStars, Is.EqualTo(5f));
             Assert.That(result.ResultSeed, Is.EqualTo(77));
             Assert.That(result.WrestlerConditionChanges, Has.Count.EqualTo(2));
             Assert.That(result.WrestlerConditionChanges[0].SourceResultId, Is.EqualTo(result.Id));
@@ -72,6 +74,16 @@ namespace PWManager.Tests
             Assert.That(second.TechnicalEvaluation.Performance, Is.EqualTo(first.TechnicalEvaluation.Performance));
             Assert.That(second.WrestlerPerformances.Select(x => x.PerformanceVariance),
                 Is.EqualTo(first.WrestlerPerformances.Select(x => x.PerformanceVariance)));
+            Assert.That(second.CriticReview.FinalScore, Is.EqualTo(first.CriticReview.FinalScore));
+        }
+
+        [Test]
+        public void EvaluateTechnical_NonFiniteSpotScore_IsRejected()
+        {
+            var save = CreateSave("matchtype_001", 14f, 12f);
+            var evaluator = new MatchEvaluator(new Rules(), new Rules());
+
+            Assert.Throws<ArgumentOutOfRangeException>(() => evaluator.EvaluateTechnical(save, "event", float.NaN, 1));
         }
 
         [Test]
@@ -188,6 +200,28 @@ namespace PWManager.Tests
             Assert.That(Math.Abs(result.WrestlerPerformances[0].PerformanceVariance), Is.LessThanOrEqualTo(expectedRange));
             Assert.That(result.ActualMatchDuration, Is.EqualTo(result.PlannedDuration));
             Assert.That(result.TechnicalEvaluation.RandomVariance, Is.Zero);
+        }
+
+        [Test]
+        public void EvaluateTechnical_MoveHighlightsPreserveBookingQualityAndCondition()
+        {
+            var save = CreateSave("matchtype_001", 14f, 12f);
+            foreach (var wrestler in save.Wrestlers)
+            {
+                wrestler.Presentation.SignatureMoveIds.Add("move_001");
+                wrestler.Presentation.FinisherMoveIds.Add("move_020");
+            }
+            var baseline = new MatchEvaluator(new Rules(), new Rules()).EvaluateTechnical(save, "event", 0, 73);
+            var result = new MatchEvaluator(new Rules(), new Rules(), findMove: _ => new MatchMoveRules
+            {
+                Name = "기술", BrawlingWeight = 1, ExecutionDifficulty = 10, SellingDifficulty = 7
+            }).EvaluateTechnical(save, "event", 0, 73);
+            Assert.That(result.MoveResults.Count, Is.EqualTo(4));
+            Assert.That(result.FinalMatchQuality, Is.EqualTo(baseline.FinalMatchQuality));
+            Assert.That(result.WinnerId, Is.EqualTo(baseline.WinnerId));
+            Assert.That(result.FinishType, Is.EqualTo(baseline.FinishType));
+            Assert.That(result.WrestlerConditionChanges.Select(x => x.ConditionDelta),
+                Is.EqualTo(baseline.WrestlerConditionChanges.Select(x => x.ConditionDelta)));
         }
 
         private static GameSave CreateSave(string matchTypeId, float firstAbility, float secondAbility, float stamina = 20f)

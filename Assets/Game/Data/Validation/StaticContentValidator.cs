@@ -26,13 +26,13 @@ namespace PWManager.Data.Validation
             {
                 if (style == null) continue;
                 var sum = style.BrawlingWeight + style.PowerWeight + style.HighFlyingWeight + style.TechnicalWeight;
-                if (Math.Abs(sum - 1f) > 0.001f) errors.Add($"Style weights must total 1.0: {style.Id}");
+                if (float.IsNaN(sum) || float.IsInfinity(sum) || Math.Abs(sum - 1f) > 0.001f) errors.Add($"Style weights must be finite and total 1.0: {style.Id}");
             }
             foreach (var move in catalog.Moves ?? new())
             {
                 if (move == null) continue;
                 var sum = move.BrawlingWeight + move.PowerWeight + move.HighFlyingWeight + move.TechnicalWeight;
-                if (Math.Abs(sum - 1f) > 0.001f) errors.Add($"Move weights must total 1.0: {move.Id}");
+                if (float.IsNaN(sum) || float.IsInfinity(sum) || Math.Abs(sum - 1f) > 0.001f) errors.Add($"Move weights must be finite and total 1.0: {move.Id}");
                 if (move.ExecutionDifficulty < 1 || move.ExecutionDifficulty > 20) errors.Add($"Move execution difficulty must be 1-20: {move.Id}");
                 if (!Enum.IsDefined(typeof(MoveSellingDifficulty), move.SellingDifficulty))
                     errors.Add($"Move selling difficulty must be 7, 10, 13, or 16: {move.Id}");
@@ -63,7 +63,7 @@ namespace PWManager.Data.Validation
                     matchType.MinimumMembersPerTeam < 2 || matchType.MaximumMembersPerTeam < matchType.MinimumMembersPerTeam ||
                     matchType.MinimumTeamCount * matchType.MinimumMembersPerTeam < matchType.MinimumParticipants))
                     errors.Add($"Match type team rules are invalid: {matchType.Id}");
-                if (matchType.ConditionCostMultiplier <= 0f)
+                if (float.IsNaN(matchType.ConditionCostMultiplier) || float.IsInfinity(matchType.ConditionCostMultiplier) || matchType.ConditionCostMultiplier <= 0f)
                     errors.Add($"Match type condition cost multiplier must be positive: {matchType.Id}");
             }
             var matchTypeIds = new HashSet<string>(StringComparer.Ordinal);
@@ -73,7 +73,7 @@ namespace PWManager.Data.Validation
                 if (gimmick == null) continue;
                 if (gimmick.MinimumParticipants < 2 || gimmick.MaximumParticipants < gimmick.MinimumParticipants)
                     errors.Add($"Match gimmick participant range is invalid: {gimmick.Id}");
-                if (gimmick.ConditionCostMultiplier <= 0f)
+                if (float.IsNaN(gimmick.ConditionCostMultiplier) || float.IsInfinity(gimmick.ConditionCostMultiplier) || gimmick.ConditionCostMultiplier <= 0f)
                     errors.Add($"Match gimmick condition cost multiplier must be positive: {gimmick.Id}");
                 if (!Enum.IsDefined(typeof(PWManager.Domain.Services.MatchRuleOverride), gimmick.PinfallRule) ||
                     !Enum.IsDefined(typeof(PWManager.Domain.Services.MatchRuleOverride), gimmick.SubmissionRule) ||

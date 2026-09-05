@@ -7,6 +7,7 @@ using PWManager.Data.Definitions;
 using PWManager.Data.Generation;
 using PWManager.Data.Loading;
 using PWManager.Domain.Models;
+using PWManager.Domain.Services;
 using UnityEditor;
 
 namespace PWManager.Tests
@@ -69,8 +70,8 @@ namespace PWManager.Tests
 
             Assert.That(second.Identity.LegalName, Is.EqualTo(first.Identity.LegalName));
             Assert.That(second.Identity.BirthDate, Is.EqualTo(first.Identity.BirthDate));
-            Assert.That(second.Attributes.MatchOverall, Is.EqualTo(first.Attributes.MatchOverall).Within(.001f));
-            Assert.That(second.Attributes.PromoOverall, Is.EqualTo(first.Attributes.PromoOverall).Within(.001f));
+            Assert.That(WrestlerOverallCalculator.Match(second), Is.EqualTo(WrestlerOverallCalculator.Match(first)).Within(.001f));
+            Assert.That(WrestlerOverallCalculator.Promo(second), Is.EqualTo(WrestlerOverallCalculator.Promo(first)).Within(.001f));
             Assert.That(second.Presentation.WrestlingStyleId, Is.EqualTo(first.Presentation.WrestlingStyleId));
             Assert.That(second.Presentation.TraitIds, Is.EqualTo(first.Presentation.TraitIds));
             Assert.That(second.Presentation.SignatureMoveIds, Is.EqualTo(first.Presentation.SignatureMoveIds));
@@ -86,8 +87,8 @@ namespace PWManager.Tests
                 var candidate = generator.GenerateCandidate(i % 2 == 0 ? WrestlerGender.Male : WrestlerGender.Female, new GameDate(2026, 1, 1));
                 var values = MatchValues(candidate).Concat(PromoValues(candidate)).ToArray();
                 Assert.That(values, Has.All.InRange(1f, 20f));
-                Assert.That(candidate.Attributes.MatchTotal, Is.LessThanOrEqualTo(candidate.Growth.MatchPotentialCap * 10f));
-                Assert.That(candidate.Attributes.PromoTotal, Is.LessThanOrEqualTo(candidate.Growth.PromoPotentialCap * 7f));
+                Assert.That(WrestlerOverallCalculator.MatchTotal(candidate.Attributes), Is.LessThanOrEqualTo(candidate.Growth.MatchPotentialCap * 10f));
+                Assert.That(WrestlerOverallCalculator.PromoTotal(candidate.Attributes), Is.LessThanOrEqualTo(candidate.Growth.PromoPotentialCap * 7f));
             }
         }
 
@@ -100,11 +101,11 @@ namespace PWManager.Tests
         private static void AssertGroup(IReadOnlyCollection<WrestlerState> group)
         {
             Assert.That(group, Has.Count.EqualTo(12));
-            Assert.That(group.Min(x => x.Attributes.MatchOverall), Is.GreaterThanOrEqualTo(7f));
-            Assert.That(group.Average(x => x.Attributes.MatchOverall), Is.GreaterThanOrEqualTo(10f));
-            Assert.That(group.Count(x => x.Attributes.MatchOverall >= 10f), Is.GreaterThanOrEqualTo(3));
-            Assert.That(group.Count(x => x.Attributes.MatchOverall >= 14f), Is.GreaterThanOrEqualTo(1));
-            Assert.That(group.Count(x => x.Attributes.PromoOverall >= 10f), Is.GreaterThanOrEqualTo(2));
+            Assert.That(group.Min(x => WrestlerOverallCalculator.Match(x)), Is.GreaterThanOrEqualTo(7f));
+            Assert.That(group.Average(x => WrestlerOverallCalculator.Match(x)), Is.GreaterThanOrEqualTo(10f));
+            Assert.That(group.Count(x => WrestlerOverallCalculator.Match(x) >= 10f), Is.GreaterThanOrEqualTo(3));
+            Assert.That(group.Count(x => WrestlerOverallCalculator.Match(x) >= 14f), Is.GreaterThanOrEqualTo(1));
+            Assert.That(group.Count(x => WrestlerOverallCalculator.Promo(x) >= 10f), Is.GreaterThanOrEqualTo(2));
             Assert.That(group.Count(x => x.Identity.Background == WrestlerBackground.Rookie), Is.GreaterThanOrEqualTo(3));
             Assert.That(group.Count(x => x.Identity.Background == WrestlerBackground.OtherPromotion), Is.GreaterThanOrEqualTo(2));
             Assert.That(group.Count(x => x.Growth.MatchPotentialCap >= 12f), Is.GreaterThanOrEqualTo(2));

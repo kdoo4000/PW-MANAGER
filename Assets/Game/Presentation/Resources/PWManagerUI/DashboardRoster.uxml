@@ -1,0 +1,41 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements">
+    <Style src="Dashboard.uss"/>
+<ui:VisualElement name="roster-content" class="roster-content hidden" style="display: none;">
+    <ui:VisualElement class="roster-tabs">
+        <ui:Button name="roster-tab-all" text="전체 선수" class="roster-tab roster-tab-all roster-tab-active"/>
+        <ui:Button name="roster-tab-wrestlers" text="선수" class="roster-tab"/>
+        <ui:Button name="roster-tab-managers" text="전문 매니저" class="roster-tab"/>
+    </ui:VisualElement>
+    <ui:VisualElement class="roster-panel">
+        <ui:VisualElement class="roster-toolbar">
+            <ui:Label name="roster-summary" text="총 0명 · 선수 0 · 전문 매니저 0" class="roster-summary"/>
+            <ui:VisualElement class="roster-toolbar-spacer"/>
+            <ui:TextField name="roster-search" label="" class="roster-search"/>
+            <ui:Button name="roster-filter" text="필터" class="roster-tool-button"/>
+            <ui:Button name="roster-columns" text="표시 열" class="roster-tool-button roster-columns-button"/>
+        </ui:VisualElement>
+        <ui:ScrollView name="roster-table-scroll" mode="Vertical" class="roster-table-scroll">
+            <ui:VisualElement class="roster-table">
+                <ui:VisualElement class="roster-table-header">
+                    <ui:Button name="sort-name" text="이름" class="roster-header roster-col-name"/>
+                    <ui:Button name="sort-gender" text="성별" class="roster-header roster-col-gender"/>
+                    <ui:Button name="sort-age" text="나이" class="roster-header roster-col-age"/>
+                    <ui:Button name="sort-height" text="키" class="roster-header roster-col-height"/>
+                    <ui:Button name="sort-weight" text="몸무게" class="roster-header roster-col-weight"/>
+                    <ui:Button name="sort-role" text="역할" class="roster-header roster-col-role"/>
+                    <ui:Button name="sort-style" text="경기 스타일" class="roster-header roster-col-style"/>
+                    <ui:Button name="sort-match" text="경기 능력" class="roster-header roster-col-match"/>
+                    <ui:Button name="sort-promo" text="프로모 능력" class="roster-header roster-col-promo"/>
+                    <ui:Button name="sort-status" text="위상" class="roster-header roster-col-status"/>
+                    <ui:Button name="sort-momentum" text="모멘텀" class="roster-header roster-col-momentum"/>
+                    <ui:Button name="sort-condition" text="컨디션" class="roster-header roster-col-condition"/>
+                    <ui:Button name="sort-satisfaction" text="만족도" class="roster-header roster-col-satisfaction"/>
+                    <ui:Button name="sort-team" text="태그팀 / 스테이블" class="roster-header roster-col-team"/>
+                    <ui:Button name="sort-salary" text="급료" class="roster-header roster-col-salary"/>
+                </ui:VisualElement>
+                <ui:VisualElement name="roster-rows" class="roster-rows"/>
+            </ui:VisualElement>
+        </ui:ScrollView>
+    </ui:VisualElement>
+</ui:VisualElement>
+</ui:UXML>

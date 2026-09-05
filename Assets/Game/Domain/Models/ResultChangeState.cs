@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 
 namespace PWManager.Domain.Models
 {
@@ -16,6 +17,14 @@ namespace PWManager.Domain.Models
     {
         public string Code;
         public float Contribution;
+    }
+
+    [Serializable]
+    public sealed class CriticReviewState
+    {
+        public float FinalScore;
+        public float DisplayedStars;
+        public List<EvaluationReasonState> Reasons = new();
     }
 
     [Serializable]

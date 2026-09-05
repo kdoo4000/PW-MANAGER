@@ -1,0 +1,98 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements">
+    <Style src="Dashboard.uss"/>
+<ui:VisualElement name="show-planning-content" class="show-planning-content hidden" style="display: none;">
+    <ui:VisualElement class="show-planning-header">
+        <ui:VisualElement class="show-heading-copy">
+            <ui:Label name="show-plan-name" text="예정된 쇼 없음" class="show-plan-name"/>
+            <ui:Label name="show-plan-meta" text="일정 데이터가 없습니다" class="show-plan-meta"/>
+        </ui:VisualElement>
+        <ui:VisualElement class="show-header-stats">
+            <ui:VisualElement class="show-plan-stat">
+                <ui:Label text="상태" class="show-plan-stat-label"/>
+                <ui:Label name="show-plan-status" text="—" class="show-plan-stat-value"/>
+            </ui:VisualElement>
+            <ui:VisualElement class="show-plan-stat">
+                <ui:Label text="예상 비용" class="show-plan-stat-label"/>
+                <ui:Label name="show-plan-cost" text="—" class="show-plan-stat-value money-color"/>
+            </ui:VisualElement>
+        </ui:VisualElement>
+        <ui:VisualElement class="show-summary-grid show-header-summary-grid">
+            <ui:VisualElement class="show-summary-cell">
+                <ui:Label name="show-match-count" text="0" class="show-summary-value"/>
+                <ui:Label text="경기" class="show-summary-label"/>
+            </ui:VisualElement>
+            <ui:VisualElement class="show-summary-cell">
+                <ui:Label name="show-promo-count" text="0" class="show-summary-value blue-text"/>
+                <ui:Label text="프로모" class="show-summary-label"/>
+            </ui:VisualElement>
+            <ui:VisualElement class="show-summary-cell show-summary-cell-last">
+                <ui:Label name="show-participant-count" text="0" class="show-summary-value green"/>
+                <ui:Label text="출연 선수" class="show-summary-label"/>
+            </ui:VisualElement>
+        </ui:VisualElement>
+        <ui:VisualElement class="show-header-actions">
+            <ui:Button name="show-save-draft" text="임시 저장" class="show-save-button"/>
+            <ui:Button name="show-confirm" text="편성 확정" class="show-confirm-button"/>
+        </ui:VisualElement>
+    </ui:VisualElement>
+    <ui:VisualElement class="show-planning-body">
+        <ui:VisualElement class="show-timeline-panel show-plan-card">
+            <ui:VisualElement class="show-timeline-heading" style="margin-bottom: 0;">
+                <ui:Label text="타임라인" class="show-timeline-title"/>
+                <ui:Label name="show-event-count" text="0개 세그먼트" class="show-panel-caption"/>
+            </ui:VisualElement>
+            <ui:VisualElement class="show-summary-panel show-plan-card show-timeline-summary" style="margin-top: 12px;">
+                <ui:VisualElement class="show-duration-row" style="margin-top: 0;">
+                    <ui:Label name="show-duration-used" text="0분 사용" class="show-duration-value" style="margin-top: 2px; padding-top: 2px; margin-bottom: 4px;"/>
+                    <ui:Label name="show-duration-limit" text="총 0분" class="show-panel-caption" style="margin-top: 2px; padding-top: 2px; margin-bottom: 4px;"/>
+                </ui:VisualElement>
+                <ui:VisualElement class="show-duration-track" style="margin-bottom: 3px;">
+                    <ui:VisualElement name="show-duration-fill" class="show-duration-fill"/>
+                </ui:VisualElement>
+            </ui:VisualElement>
+            <ui:VisualElement class="show-add-actions">
+                <ui:Button name="show-add-match" text="경기 추가" class="show-action-button"/>
+                <ui:Button name="show-add-promo" text="프로모 추가" class="show-action-button promo"/>
+            </ui:VisualElement>
+            <ui:ScrollView name="show-timeline-scroll" mode="Vertical" class="show-timeline-scroll">
+                <ui:VisualElement name="show-timeline-rows" class="show-timeline-rows"/>
+            </ui:ScrollView>
+        </ui:VisualElement>
+        <ui:VisualElement class="show-detail-column">
+            <ui:VisualElement class="show-detail-panel show-plan-card">
+                <ui:VisualElement class="show-panel-heading">
+                    <ui:Label name="show-detail-position" text="선택한 세그먼트" class="show-panel-title"/>
+                    <ui:VisualElement class="show-detail-duration">
+                        <ui:Label text="배정 시간"/>
+                        <ui:Label name="show-detail-duration" text="—" class="show-detail-duration-value"/>
+                        <ui:VisualElement class="show-detail-duration-buttons">
+                            <ui:Button name="show-duration-increase" text="▲" tooltip="5분 늘리기" class="show-duration-step"/>
+                            <ui:Button name="show-duration-decrease" text="▼" tooltip="5분 줄이기" class="show-duration-step"/>
+                        </ui:VisualElement>
+                    </ui:VisualElement>
+                    <ui:Label name="show-detail-kind" text="—" class="show-kind-chip"/>
+                </ui:VisualElement>
+                <ui:Label name="show-detail-title" text="타임라인에서 항목을 선택하세요" class="show-detail-title"/>
+                <ui:Label name="show-detail-subtitle" text="경기 또는 프로모의 구성 정보를 확인할 수 있습니다" class="show-detail-subtitle"/>
+                <ui:Button name="show-edit-rules" class="show-edit-card show-edit-rules-card">
+                    <ui:Label text="규칙" class="show-edit-card-title"/>
+                    <ui:Label name="show-detail-rules-summary" text="경기 유형과 결과 방식을 설정합니다" class="show-edit-card-summary"/>
+                </ui:Button>
+                <ui:VisualElement name="show-edit-participants" class="show-edit-card show-edit-participants-card">
+                    <ui:Label text="참가자" class="show-edit-card-title"/>
+                    <ui:VisualElement name="show-detail-participants" class="show-participant-list"/>
+                </ui:VisualElement>
+                <ui:Button name="show-edit-spots" class="show-edit-card show-edit-spots-card">
+                    <ui:Label text="프로듀싱" class="show-edit-card-title"/>
+                    <ui:Label name="show-detail-spots-summary" text="설정된 스팟 없음" class="show-edit-card-summary"/>
+                </ui:Button>
+                <ui:VisualElement class="show-detail-actions">
+                    <ui:Button name="show-move-up" text="위로" class="show-detail-action"/>
+                    <ui:Button name="show-move-down" text="아래로" class="show-detail-action"/>
+                    <ui:Button name="show-remove-event" text="삭제" class="show-detail-action danger"/>
+                </ui:VisualElement>
+            </ui:VisualElement>
+        </ui:VisualElement>
+    </ui:VisualElement>
+</ui:VisualElement>
+</ui:UXML>

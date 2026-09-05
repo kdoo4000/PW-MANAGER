@@ -1,6 +1,7 @@
 using System;
 using NUnit.Framework;
 using PWManager.Domain.Models;
+using PWManager.Domain.Services;
 using PWManager.Domain.Validation;
 using UnityEngine;
 using GameEntityId = PWManager.Domain.Identifiers.EntityId;
@@ -22,7 +23,7 @@ namespace PWManager.Tests
             Assert.That(restored.Wrestlers, Has.Count.EqualTo(1));
             Assert.That(restored.Wrestlers[0].Identity.RingName, Is.EqualTo("Test Wrestler"));
             Assert.That(restored.Wrestlers[0].Presentation.WrestlingStyleId, Is.EqualTo("style_001"));
-            Assert.That(restored.Wrestlers[0].Attributes.MatchOverall, Is.EqualTo(10f));
+            Assert.That(WrestlerOverallCalculator.Match(restored.Wrestlers[0]), Is.EqualTo(10f));
             Assert.That(restored.Contracts, Has.Count.EqualTo(1));
             Assert.That(restored.Transactions, Has.Count.EqualTo(1));
         }
@@ -65,6 +66,15 @@ namespace PWManager.Tests
 
             Assert.That(errors, Has.Some.Contains("Condition"));
             Assert.That(errors, Has.Some.Contains("overlap"));
+        }
+
+        [Test]
+        public void NonFiniteAttribute_IsReported()
+        {
+            var save = CreateValidSave();
+            save.Wrestlers[0].Attributes.Brawling = float.NaN;
+
+            Assert.That(GameSaveValidator.Validate(save), Has.Some.Contains("finite"));
         }
 
         [Test]

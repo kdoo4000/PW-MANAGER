@@ -20,8 +20,8 @@ namespace PWManager.Domain.Services
             var context = ResultApplicationContext.Create(save, showResultId);
             var schedule = (save.Schedules ?? new List<ScheduleState>()).SingleOrDefault(x => x?.Id == context.Show.ScheduleId)
                 ?? throw new InvalidOperationException("Show references a missing schedule.");
-            if (context.Show.Status != ShowStatus.Completed)
-                throw new InvalidOperationException("Only a completed show result can be applied.");
+            if (context.Show.Status != ShowStatus.ResultsReviewed)
+                throw new InvalidOperationException("Only a reviewed show result can be applied.");
             if (schedule.Status != ScheduleStatus.Confirmed)
                 throw new InvalidOperationException("Only a confirmed schedule can be completed.");
 
@@ -39,15 +39,24 @@ namespace PWManager.Domain.Services
                 var wrestler = wrestlers[wrestlerId];
                 wrestler.Roster.LastAppearanceDate = new OptionalGameDate(context.Show.Date);
             }
-            foreach (var wrestlerId in conditionDeltas.Keys)
+            foreach (var matchResult in context.MatchResults)
+            foreach (var wrestlerId in (matchResult.ParticipantProfiles ?? new List<MatchParticipantProfileState>())
+                .SelectMany(x => x?.MemberIds ?? new List<string>()).Distinct(StringComparer.Ordinal))
             {
                 var wrestler = wrestlers[wrestlerId];
                 wrestler.Roster.LastMatchDate = new OptionalGameDate(context.Show.Date);
                 wrestler.Status.OfficialMatchCount++;
             }
             save.Transactions.AddRange(transactions);
+            context.Show.Status = ShowStatus.Completed;
             schedule.Status = ScheduleStatus.Completed;
             save.ProcessedIds.Add(context.ApplicationKey);
+            var inbox = new InboxService(createId);
+            inbox.ResolveBySource(save, $"show-result-review:{context.Show.Id}:{context.Show.ShowVersion}");
+            inbox.Publish(save, $"show-result-applied:{context.Show.Id}:{context.Show.ShowVersion}",
+                InboxMessageType.Navigation, InboxPriority.Important, "분석팀", $"{context.Show.Name} 결과가 반영되었습니다",
+                $"쇼 평점 {context.ShowResult.ShowEvaluation.Score:0.0} · 순손익 ${context.ShowResult.FinancialSettlement.NetIncome:N0}",
+                InboxTargetType.Show, context.Show.Id);
         }
 
         private static Dictionary<string, float> CollectConditionDeltas(

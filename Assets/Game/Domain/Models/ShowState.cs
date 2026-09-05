@@ -3,7 +3,7 @@ using System.Collections.Generic;
 
 namespace PWManager.Domain.Models
 {
-    public enum ShowStatus { Draft, Preparing, Review, Confirmed, InProgress, Completed }
+    public enum ShowStatus { Draft, Preparing, Review, Confirmed, InProgress, Completed, ResultReview, ResultsReviewed }
 
     [Serializable]
     public sealed class ShowState

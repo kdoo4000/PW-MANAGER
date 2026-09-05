@@ -352,7 +352,7 @@ namespace PWManager.Data.Generation
 
         private string DetermineStyle(WrestlerGender gender, int height, WrestlerAttributesState a, MatchArchetype archetype)
         {
-            var overall = a.MatchOverall;
+            var overall = WrestlerOverallCalculator.Match(a, null);
             if ((gender == WrestlerGender.Male ? height >= 195 : height >= 180) && a.Power >= overall + 1 && (a.Brawling >= overall || a.Selling >= overall)) return "style_006";
             if (a.HighFlying >= overall + 1.5 && a.Technical >= overall + 1 && a.SpotWork >= overall + 1) return "style_005";
             var core = new[] { a.Brawling, a.Power, a.Technical, a.HighFlying };
