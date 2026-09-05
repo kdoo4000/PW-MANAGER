@@ -62,6 +62,40 @@
 .wrestler-link:hover { color: rgb(147, 197, 253); }
 .hidden { display: none; }
 .roster-content { flex-grow: 1; min-height: 0; padding: 0 24px 18px; background-color: #05070b; }
+.message-content { flex-grow: 1; min-height: 0; flex-direction: row; padding: 18px 24px 22px; background-color: #05070b; }
+.message-list-pane { width: 35%; min-width: 310px; max-width: 450px; margin-right: 14px; overflow: hidden; border-width: 1px; border-color: #202c3d; border-radius: 8px; background-color: #0c111a; }
+.message-toolbar { height: 58px; flex-shrink: 0; padding: 0 16px; flex-direction: row; align-items: center; justify-content: space-between; border-bottom-width: 1px; border-bottom-color: #202c3d; }
+.message-heading { color: #edf5ff; font-size: 18px; -unity-font-style: bold; }
+.message-count { color: #71839a; font-size: 13px; }
+.message-list-scroll { flex-grow: 1; min-height: 0; }
+.message-list-scroll .unity-scroll-view__horizontal-scroller { display: none; }
+.message-list { width: 100%; }
+.message-date-group { height: 36px; padding: 0 14px; flex-direction: row; align-items: center; border-bottom-width: 1px; border-bottom-color: #26364a; background-color: #111a27; }
+.message-date-label { color: #91a3b8; font-size: 12px; -unity-font-style: bold; }
+.message-row { width: 100%; height: 68px; margin: 0; padding: 11px 14px; flex-direction: column; align-items: stretch; border-width: 0 0 1px 3px; border-color: transparent transparent #182435 transparent; border-radius: 0; background-color: #0c111a; }
+.message-row:hover { background-color: #111c2b; }
+.message-row.unread { background-color: #172b40; }
+.message-row.unread:hover { background-color: #1d354d; }
+.message-row.selected { border-left-color: #4fafff; background-color: #11263c; }
+.message-row.unread.selected { background-color: #204361; }
+.message-row.required { border-left-color: #e15761; }
+.message-row.important .message-subject { color: #f1c453; }
+.message-row-top { height: 20px; flex-direction: row; align-items: center; justify-content: space-between; }
+.message-sender { flex-grow: 1; min-width: 0; color: #aab9cb; font-size: 12px; -unity-font-style: bold; -unity-text-align: middle-left; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.message-row.unread .message-sender { color: #72baff; }
+.message-subject { height: 23px; margin-top: 4px; color: #e0e9f5; font-size: 14px; -unity-font-style: bold; -unity-text-align: middle-left; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.message-detail-pane { flex-grow: 1; min-width: 0; padding: 28px 32px; border-width: 1px; border-color: #202c3d; border-radius: 8px; background-color: #0c111a; }
+.message-detail-empty { flex-grow: 1; align-items: center; justify-content: center; }
+.message-empty-title { color: #687b92; font-size: 15px; }
+.message-detail { flex-grow: 1; min-height: 0; }
+.message-detail-header { height: 30px; flex-direction: row; align-items: center; justify-content: space-between; }
+.message-detail-sender { color: #69b7f5; font-size: 14px; -unity-font-style: bold; }
+.message-detail-time { color: #687a91; font-size: 12px; }
+.message-detail-subject { margin-top: 14px; color: #f0f6ff; font-size: 24px; -unity-font-style: bold; white-space: normal; }
+.message-detail-rule { height: 1px; margin: 22px 0; background-color: #202c3d; }
+.message-detail-body { color: #b4c2d3; font-size: 15px; white-space: normal; }
+.message-detail-spacer { flex-grow: 1; }
+.message-open-target { width: 150px; height: 38px; align-self: flex-end; margin: 16px 0 0; border-width: 1px; border-color: #3677ad; border-radius: 7px; background-color: #1769aa; color: #eef7ff; -unity-font-style: bold; }
 .roster-tabs { height: 72px; min-height: 72px; flex-direction: row; align-items: center; }
 .roster-tab { width: 116px; height: 44px; margin: 0 8px 0 0; padding: 0; border-width: 0; border-radius: 7px; background-color: transparent; color: #748197; font-size: 14px; -unity-font-style: bold; }
 .roster-tab.roster-tab-all { width: 88px; }
@@ -224,6 +258,12 @@
 .show-participant-list.multi-side .wrestler-portrait-name { width: 88px; font-size: 12px; }
 .show-detail-info-row { height: 32px; flex-direction: row; justify-content: space-between; align-items: center; color: #92a1b4; font-size: 13px; }
 .show-detail-info-value { color: #d6e1ef; -unity-font-style: bold; }
+.show-detail-duration { flex-grow: 1; flex-direction: row; align-items: center; justify-content: flex-end; margin: 0 14px; color: #92a1b4; font-size: 13px; }
+.show-detail-duration-value { min-width: 58px; margin: 0 8px; color: #d6e1ef; -unity-text-align: middle-center; }
+.show-detail-duration-buttons { flex-shrink: 0; }
+.show-duration-step { width: 32px; height: 20px; margin: 1px 0; padding: 0; border-width: 1px; border-color: #263a54; border-radius: 3px; background-color: #111a27; color: #a9c8e7; font-size: 10px; }
+.show-duration-step:hover { background-color: #17314a; }
+.show-duration-step:disabled { opacity: 0.35; }
 .show-detail-actions { height: 36px; margin-top: 12px; flex-direction: row; justify-content: flex-end; }
 .show-detail-action { width: 64px; height: 30px; margin: 0 0 0 7px; padding: 0; border-width: 1px; border-color: #263a54; border-radius: 6px; background-color: #111a27; color: #a9b8cb; font-size: 12px; }
 .show-detail-action.edit { width: 82px; border-color: #2d6592; background-color: #123354; color: #86caff; }
@@ -261,7 +301,27 @@
 .show-editor-rule-arrow { color: #4a98d2; font-size: 40px; -unity-font-style: bold; }
 .show-editor-rule-empty { margin-top: 8px; color: #8495aa; font-size: 14px; }
 .show-editor-spots { flex-grow: 1; min-height: 0; margin-top: 10px; }
-.show-editor-spot-field { flex-grow: 1; margin-bottom: 14px; color: #cdd8e7; font-size: 14px; }
+.spot-production-columns { flex-direction: row; flex-grow: 1; min-height: 0; }
+.show-editor-dialog.spot-production { width: 94%; height: 94%; max-width: 1440px; max-height: 1000px; }
+.spot-production .show-editor-spot-field .unity-base-text-field__input { min-height: 50px; }
+.spot-heading > Label { -unity-font-definition: url("project://database/Assets/Game/Presentation/Resources/PWManagerUI/Fonts/SEBANGGothic-Bold.ttf"); }
+.spot-authored-events { flex-grow: 1; flex-basis: 0; min-width: 0; }
+.spot-catalog { flex-grow: 1.6; flex-basis: 0; min-width: 0; margin-left: 20px; }
+.spot-heading { flex-direction: row; justify-content: space-between; align-items: center; margin-bottom: 12px; color: #dce7f5; font-size: 17px; -unity-font-style: bold; }
+.spot-list { flex-grow: 1; min-height: 0; }
+.spot-row { flex-shrink: 0; padding: 12px; margin-bottom: 12px; border-width: 1px; border-color: #26384f; border-radius: 7px; background-color: #111925; }
+.spot-row .show-editor-field { margin-right: 6px; margin-bottom: 10px; min-width: 0; }
+.spot-row > .show-editor-field { flex-grow: 0; flex-shrink: 0; }
+.spot-roles .show-editor-field { flex-basis: 0; }
+.spot-preview { flex-shrink: 0; color: #cdd8e7; font-size: 14px; white-space: normal; margin-bottom: 14px; }
+.spot-row .unity-popup-field__input { min-height: 28px; }
+.spot-roles { flex-direction: row; }
+.spot-info, .spot-empty { color: #94a3b7; font-size: 13px; white-space: normal; margin-bottom: 8px; }
+.spot-warning { color: #e3b36c; font-size: 13px; white-space: normal; margin-bottom: 8px; }
+.spot-row > .small-button { align-self: flex-end; }
+.show-editor-finish { flex-direction: row; flex-shrink: 0; min-height: 94px; margin-bottom: 12px; }
+.show-editor-finish .show-editor-field { flex-basis: 0; min-width: 0; }
+.show-editor-spot-field { flex-grow: 1; flex-direction: column; margin-bottom: 14px; color: #cdd8e7; font-size: 14px; }
 .show-editor-spot-field .unity-base-field__label { width: 100%; margin-bottom: 7px; color: #94a3b7; font-size: 14px; }
 .show-editor-spot-field .unity-base-text-field__input { flex-grow: 1; min-height: 100px; padding: 12px; border-width: 1px; border-color: #26384f; border-radius: 7px; background-color: #111925; color: #dce7f5; font-size: 14px; white-space: normal; }
 .show-editor-field { flex-grow: 1; margin-right: 18px; flex-direction: column; color: #cdd8e7; font-size: 14px; }
@@ -269,13 +329,21 @@
 .show-editor-field .unity-base-field__label { width: 100%; color: #94a3b7; font-size: 14px; }
 .show-editor-field .unity-base-field__input { width: 100%; height: 42px; margin-top: 8px; padding: 0 12px; border-width: 1px; border-color: #26384f; border-radius: 7px; background-color: #111925; font-size: 14px; }
 .show-editor-roster-heading { height: 52px; margin-top: 18px; flex-direction: row; align-items: center; justify-content: space-between; border-bottom-width: 1px; border-bottom-color: #1d2a3b; }
+.show-editor-roster-sort { min-width: 230px; margin-left: 20px; color: #cdd8e7; }
+.show-editor-roster-sort .unity-base-field__label { min-width: 40px; }
+.show-editor-roster-sort .unity-base-field__input { min-height: 34px; padding: 0 10px; border-width: 1px; border-color: #26384f; border-radius: 7px; background-color: #111925; }
 .show-editor-section-title { color: #dce7f5; font-size: 16px; -unity-font-style: bold; }
 .show-editor-selected-count { color: #62b3f4; font-size: 14px; -unity-font-style: bold; }
 .show-editor-roster-scroll { flex-grow: 1; min-height: 0; margin-top: 14px; }
+.show-timeline-scroll .unity-scroll-view__horizontal-scroller,
+.show-editor-roster-scroll .unity-scroll-view__horizontal-scroller { display: none; }
+.show-timeline-scroll .unity-scroll-view__vertical-scroller .unity-base-slider__dragger,
+.show-editor-dialog .unity-scroll-view__vertical-scroller .unity-base-slider__dragger { width: 7px; min-width: 7px; }
 .show-editor-roster { flex-direction: row; flex-wrap: wrap; }
 .show-editor-wrestler { width: 32%; height: 142px; margin: 0 1.3% 14px 0; padding: 13px 14px; flex-direction: row; align-items: center; border-width: 1px; border-color: #223248; border-radius: 8px; background-color: #101722; color: #aebdd0; }
 .show-editor-wrestler:hover { border-color: #365574; background-color: #131e2c; }
 .show-editor-wrestler.selected { border-color: #3b9cff; background-color: #123050; }
+.show-editor-wrestler:disabled { opacity: 0.35; border-color: #223248; background-color: #101722; }
 .show-editor-wrestler-portrait { width: 76px; height: 76px; flex-shrink: 0; align-items: center; justify-content: center; overflow: hidden; border-width: 2px; border-color: #315b82; border-radius: 38px; background-color: #14283d; }
 .show-editor-wrestler.selected .show-editor-wrestler-portrait { border-color: #65b9ff; }
 .show-editor-wrestler-image { width: 100%; height: 100%; }
@@ -297,7 +365,9 @@
 .show-editor-cancel, .show-editor-submit { width: 110px; height: 42px; margin: 0 0 0 10px; padding: 0; border-width: 1px; border-radius: 7px; font-size: 14px; -unity-font-style: bold; }
 .show-editor-cancel { border-color: #2a394c; background-color: #111925; color: #9eacbd; }
 .show-editor-submit { border-color: #3677ad; background-color: #1769aa; color: #eef7ff; }
+.show-simulation { max-height: 220px; margin-top: 10px; padding: 10px; overflow: hidden; border-radius: 6px; background-color: #0b121c; color: #cdd8e7; font-size: 12px; white-space: normal; }
 .nav-icon-home { background-image: url("project://database/Assets/Game/Presentation/Resources/PWManagerUI/VectorIcons/home.svg"); }
+.nav-icon-message { background-image: url("project://database/Assets/Game/Presentation/Resources/PWManagerUI/VectorIcons/message.svg"); }
 .nav-icon-roster { background-image: url("project://database/Assets/Game/Presentation/Resources/PWManagerUI/VectorIcons/roster.svg"); }
 .nav-icon-teams { background-image: url("project://database/Assets/Game/Presentation/Resources/PWManagerUI/VectorIcons/teams.svg"); }
 .nav-icon-locker { background-image: url("project://database/Assets/Game/Presentation/Resources/PWManagerUI/VectorIcons/locker.svg"); }

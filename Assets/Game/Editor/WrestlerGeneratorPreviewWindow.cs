@@ -5,6 +5,7 @@ using PWManager.Data.Catalogs;
 using PWManager.Data.Generation;
 using PWManager.Data.Loading;
 using PWManager.Domain.Models;
+using PWManager.Domain.Services;
 using UnityEditor;
 using UnityEngine;
 
@@ -110,8 +111,8 @@ namespace PWManager.Editor
                     var row = GUILayoutUtility.GetLastRect();
                     GUI.backgroundColor = previousColor;
                     DrawRowAt(row, (i + 1).ToString(), wrestler.Identity.RingName, wrestler.Identity.Gender.ToString(),
-                        GetAge(wrestler.Identity.BirthDate).ToString(), wrestler.Attributes.MatchOverall.ToString("F1"),
-                        wrestler.Attributes.PromoOverall.ToString("F1"), GetStyleName(wrestler.Presentation.WrestlingStyleId));
+                        GetAge(wrestler.Identity.BirthDate).ToString(), WrestlerOverallCalculator.Match(wrestler).ToString("F1"),
+                        WrestlerOverallCalculator.Promo(wrestler).ToString("F1"), GetStyleName(wrestler.Presentation.WrestlingStyleId));
                 }
                 EditorGUILayout.EndScrollView();
             }
@@ -135,8 +136,8 @@ namespace PWManager.Editor
                 Field("Career", $"{wrestler.Identity.CareerYears} years");
                 Field("Match archetype", wrestler.Presentation.MatchArchetype.ToString());
                 Field("Promo archetype", wrestler.Presentation.PromoArchetype.ToString());
-                Field("Match", $"{wrestler.Attributes.MatchOverall:F2} / potential {wrestler.Growth.MatchPotentialCap:F1}");
-                Field("Promo", $"{wrestler.Attributes.PromoOverall:F2} / potential {wrestler.Growth.PromoPotentialCap:F1}");
+                Field("Match", $"{WrestlerOverallCalculator.Match(wrestler):F2} / potential {wrestler.Growth.MatchPotentialCap:F1}");
+                Field("Promo", $"{WrestlerOverallCalculator.Promo(wrestler):F2} / potential {wrestler.Growth.PromoPotentialCap:F1}");
                 Field("Style", GetStyleName(wrestler.Presentation.WrestlingStyleId));
                 Field("Traits", Names(wrestler.Presentation.TraitIds, id => content.Traits[id].DisplayName));
                 Field("Signature", Names(wrestler.Presentation.SignatureMoveIds, id => content.Moves[id].DisplayName));

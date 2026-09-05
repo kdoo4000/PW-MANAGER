@@ -7,6 +7,7 @@ namespace PWManager.Domain.Models
     public sealed class ShowEvaluationState
     {
         public float Score;
+        public CriticReviewState CriticReview;
         public List<EvaluationReasonState> EvaluationReasons = new();
     }
 

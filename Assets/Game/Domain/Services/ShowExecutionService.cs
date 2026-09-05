@@ -23,15 +23,21 @@ namespace PWManager.Domain.Services
             this.createId = createId ?? EntityId.CreateRuntimeId;
         }
 
-        public ShowResultState Execute(GameSave save, string showId, int resultSeed)
+        public ShowResultState Execute(GameSave save, string showId, int resultSeed, int venueCapacity, long venueBaseTicketPrice)
         {
             if (save == null) throw new ArgumentNullException(nameof(save));
             var show = save.Shows.SingleOrDefault(x => x?.Id == showId)
                 ?? throw new ArgumentException("Show was not found.", nameof(showId));
-            if (show.Status != ShowStatus.Confirmed || show.ShowVersion < 1)
-                throw new InvalidOperationException("Only a confirmed show version can be executed.");
+            if (show.Status != ShowStatus.InProgress || show.ShowVersion < 1)
+                throw new InvalidOperationException("Only an in-progress show version can be executed.");
             if (save.ShowResults.Any(x => x?.ShowId == show.Id && x.ShowVersion == show.ShowVersion))
                 throw new InvalidOperationException("This show version has already been executed.");
+
+            var ticketUnitPrice = TicketPricingRules.GetReferencePrice(venueBaseTicketPrice, show.ShowType);
+            // ponytail: venue capacity is the temporary base demand until the box-office system supplies its own value.
+            var ticketSalesCount = TicketPricingRules.GetActualAttendance(
+                venueCapacity, ticketUnitPrice, ticketUnitPrice, venueCapacity, show.AttendanceVarianceBasisPoints);
+            var ticketRevenue = checked(ticketUnitPrice * ticketSalesCount);
 
             var issues = planningService.Validate(save, showId).Where(x => x.Severity == ShowValidationSeverity.Error).ToList();
             if (issues.Count > 0)
@@ -51,7 +57,15 @@ namespace PWManager.Domain.Services
                 var eventSeed = CreateEventSeed(resultSeed, show.ShowVersion, showEvent.Id);
                 if (showEvent.EventType == ShowEventType.Match)
                 {
-                    var result = matchEvaluator.EvaluateTechnical(save, showEvent.Id, 0f, eventSeed);
+                    var result = matchEvaluator.EvaluateTechnical(save, showEvent.Id, 0f, eventSeed, matchResults);
+                    var plan = save.MatchPlans.Single(x => x.Id == result.MatchPlanId);
+                    var narration = new MatchNarrationService();
+                    result.SimulationBeats = narration.CreateBeats(plan, result, save);
+                    result.NarrativeLines = narration.Narrate(plan, result, id =>
+                    {
+                        var wrestler = save.Wrestlers.FirstOrDefault(x => x?.Id == id);
+                        return wrestler == null ? "선수" : string.IsNullOrWhiteSpace(wrestler.Identity.RingName) ? wrestler.Identity.LegalName : wrestler.Identity.RingName;
+                    }, save);
                     matchResults.Add(result);
                     timelineResultIds.Add(result.Id);
                 }
@@ -73,13 +87,49 @@ namespace PWManager.Domain.Services
                 TimelineResultIds = timelineResultIds,
                 MatchResultIds = matchResults.Select(x => x.Id).ToList(),
                 PromoResultIds = promoResults.Select(x => x.Id).ToList(),
-                FinancialSettlement = new FinancialSettlementState { Revenue = 0, Cost = 0, NetIncome = 0 }
+                ShowEvaluation = CreateShowEvaluation(save, eventIds, matchResults, promoResults),
+                FinancialSettlement = new FinancialSettlementState
+                {
+                    Revenue = ticketRevenue,
+                    Cost = show.EstimatedCost,
+                    NetIncome = ticketRevenue - show.EstimatedCost
+                }
             };
             save.MatchResults.AddRange(matchResults);
             save.PromoResults.AddRange(promoResults);
             save.ShowResults.Add(showResult);
-            show.Status = ShowStatus.Completed;
+            show.Status = ShowStatus.ResultReview;
+            new InboxService(createId).Publish(save, $"show-result-review:{show.Id}:{show.ShowVersion}",
+                InboxMessageType.Decision, InboxPriority.Required, "분석팀", $"{show.Name} 결과를 확인하세요",
+                "쇼가 종료되었습니다. 결과를 확인해야 일정을 마칠 수 있습니다.", InboxTargetType.Show, show.Id, save.CurrentDate);
             return showResult;
+        }
+
+        private static ShowEvaluationState CreateShowEvaluation(
+            GameSave save, IReadOnlyCollection<string> eventIds,
+            IReadOnlyCollection<MatchResultState> matchResults, IReadOnlyCollection<PromoResultState> promoResults)
+        {
+            var matchScores = matchResults.ToDictionary(x => x.ShowEventId, x => x.FinalMatchQuality * 5f, StringComparer.Ordinal);
+            var promoScores = promoResults.ToDictionary(x => x.ShowEventId, x => x.PromoScore, StringComparer.Ordinal);
+            var weightedScore = 0f;
+            var totalDuration = 0;
+            foreach (var eventId in eventIds)
+            {
+                var showEvent = save.ShowEvents.Single(x => x.Id == eventId);
+                var score = showEvent.EventType == ShowEventType.Match ? matchScores[eventId] : promoScores[eventId];
+                weightedScore += score * showEvent.PlannedDuration;
+                totalDuration += showEvent.PlannedDuration;
+            }
+            var showScore = totalDuration == 0 ? 0f : weightedScore / totalDuration;
+            return new ShowEvaluationState
+            {
+                Score = showScore,
+                CriticReview = CriticReviewCalculator.Show(matchResults.Select(x => x.CriticReview).ToList()),
+                EvaluationReasons = new List<EvaluationReasonState>
+                {
+                    new() { Code = "show.event-quality", Contribution = showScore }
+                }
+            };
         }
 
         private static PromoEvaluationInput CreatePromoInput(GameSave save, ShowEventState showEvent, int resultSeed)
@@ -89,7 +139,7 @@ namespace PWManager.Domain.Services
             var performances = promo.ParticipantIds.Select(id => new PromoParticipantPerformance
             {
                 WrestlerId = id,
-                Score = Math.Max(0f, Math.Min(100f, save.Wrestlers.Single(x => x.Id == id).Attributes.PromoOverall * 5f))
+                Score = Math.Max(0f, Math.Min(100f, WrestlerOverallCalculator.Promo(save.Wrestlers.Single(x => x.Id == id)) * 5f))
             }).ToList();
             var isProductionOnly = promo.Presentation == PromoPresentation.VideoPackage ||
                 promo.Purpose == PromoPurpose.SponsorAdvertisement;

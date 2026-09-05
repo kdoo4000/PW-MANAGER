@@ -124,8 +124,8 @@ namespace PWManager.Domain.Services
 
         private static void ValidateRange(float value, float minimum, float maximum, string name)
         {
-            if (value < minimum || value > maximum)
-                throw new ArgumentOutOfRangeException(name, $"Value must be between {minimum} and {maximum}.");
+            if (float.IsNaN(value) || float.IsInfinity(value) || value < minimum || value > maximum)
+                throw new ArgumentOutOfRangeException(name, $"Value must be finite and between {minimum} and {maximum}.");
         }
 
         private static float Clamp(float value, float minimum, float maximum) => Math.Max(minimum, Math.Min(maximum, value));

@@ -4,7 +4,9 @@
   "references": [
     "PWMANAGER.Domain",
     "PWMANAGER.Infrastructure",
-    "PWMANAGER.Data"
+    "PWMANAGER.Data",
+    "PWMANAGER.Presentation",
+    "undream.llmunity.Runtime"
   ],
   "optionalUnityReferences": [
     "TestAssemblies"

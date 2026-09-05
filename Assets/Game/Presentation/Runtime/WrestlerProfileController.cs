@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using PWManager.Data.Catalogs;
@@ -86,13 +86,13 @@ namespace PWManager.Presentation
             instance.root.EnableInClassList("pre-game", !inGame);
             instance.root.EnableInClassList("in-game", inGame);
             instance.Bind(wrestler);
-            if (inGame) DashboardController.ShowWrestlerShell(wrestler.Identity?.RingName ?? "선수", wrestler.Id);
+            if (inGame) DashboardController.ShowWrestlerShell(WrestlerNameText.DisplayName(wrestler), wrestler.Id);
             instance.root.style.display = DisplayStyle.Flex;
         }
         public static Button CreateLink(WrestlerState wrestler, string className = null)
         {
-            var button = new Button { text = wrestler?.Identity?.RingName ?? "—" }; button.AddToClassList("wrestler-link"); if (!string.IsNullOrEmpty(className)) button.AddToClassList(className);
-            button.clicked += () => Open(wrestler); button.RegisterCallback<ClickEvent>(e => e.StopPropagation()); return button;
+            var button = new Button { text = WrestlerNameText.DisplayName(wrestler) }; button.AddToClassList("wrestler-link"); if (!string.IsNullOrEmpty(className)) button.AddToClassList(className);
+            button.clicked += () => Open(wrestler); button.RegisterCallback<PointerDownEvent>(e => e.StopPropagation()); button.RegisterCallback<PointerUpEvent>(e => e.StopPropagation()); button.RegisterCallback<ClickEvent>(e => e.StopPropagation()); return button;
         }
 
         public static Button CreatePortraitLink(WrestlerState wrestler, string className = null)
@@ -118,7 +118,7 @@ namespace PWManager.Presentation
                 portraitFrame.Add(initials);
             }
 
-            var name = new Label(wrestler?.Identity?.RingName ?? "—");
+            var name = new Label(WrestlerNameText.DisplayName(wrestler));
             name.AddToClassList("wrestler-portrait-name");
             button.Add(portraitFrame);
             button.Add(name);
@@ -151,7 +151,7 @@ namespace PWManager.Presentation
                 portraitFrame.Add(initials);
             }
 
-            var name = new Button { text = wrestler?.Identity?.RingName ?? "—" };
+            var name = new Button { text = WrestlerNameText.DisplayName(wrestler) };
             name.AddToClassList("wrestler-portrait-name");
             name.AddToClassList("wrestler-portrait-name-link");
             name.clicked += () => Open(wrestler);

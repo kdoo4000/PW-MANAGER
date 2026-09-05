@@ -1,0 +1,30 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements">
+    <Style src="Dashboard.uss"/>
+<ui:VisualElement name="message-content" class="message-content hidden">
+    <ui:VisualElement class="message-list-pane">
+        <ui:VisualElement class="message-toolbar">
+            <ui:Label text="수신함" class="message-heading"/>
+            <ui:Label name="message-count" text="0개" class="message-count"/>
+        </ui:VisualElement>
+        <ui:ScrollView mode="Vertical" class="message-list-scroll">
+            <ui:VisualElement name="message-list" class="message-list"/>
+        </ui:ScrollView>
+    </ui:VisualElement>
+    <ui:VisualElement class="message-detail-pane">
+        <ui:VisualElement name="message-detail-empty" class="message-detail-empty">
+            <ui:Label text="표시할 메시지가 없습니다" class="message-empty-title"/>
+        </ui:VisualElement>
+        <ui:VisualElement name="message-detail" class="message-detail hidden">
+            <ui:VisualElement class="message-detail-header">
+                <ui:Label name="message-detail-sender" text="—" class="message-detail-sender"/>
+                <ui:Label name="message-detail-time" text="—" class="message-detail-time"/>
+            </ui:VisualElement>
+            <ui:Label name="message-detail-subject" text="—" class="message-detail-subject"/>
+            <ui:VisualElement class="message-detail-rule"/>
+            <ui:Label name="message-detail-body" text="—" class="message-detail-body"/>
+            <ui:VisualElement class="message-detail-spacer"/>
+            <ui:Button name="message-open-target" text="관련 화면 열기" class="message-open-target"/>
+        </ui:VisualElement>
+    </ui:VisualElement>
+</ui:VisualElement>
+</ui:UXML>

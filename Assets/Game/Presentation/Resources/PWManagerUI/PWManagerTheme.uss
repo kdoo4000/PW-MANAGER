@@ -167,6 +167,7 @@ Button, TextField, DropdownField,
     height: 4px;
     border-radius: 2px;
     background-color: #121b28;
+    background-image: none;
 }
 
 .unity-base-slider__dragger {
@@ -177,11 +178,13 @@ Button, TextField, DropdownField,
     border-width: 0;
     border-radius: 4px;
     background-color: #365879;
+    background-image: none;
 }
 
 .unity-base-slider__dragger-border {
     border-width: 0;
     background-color: transparent;
+    background-image: none;
 }
 
 .unity-base-slider__dragger:hover {

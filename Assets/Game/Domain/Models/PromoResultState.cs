@@ -19,6 +19,7 @@ namespace PWManager.Domain.Models
         public List<ResultChangeState> RelationshipChanges = new();
         public List<ResultChangeState> SponsorProgressChanges = new();
         public List<EvaluationReasonState> EvaluationReasons = new();
+        public PromoScriptState Narrative;
         public int ResultSeed;
     }
 }

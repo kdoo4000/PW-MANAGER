@@ -17,17 +17,22 @@ namespace PWManager.Domain.Services
         private readonly IMatchTypeRules matchTypeRules;
         private readonly IWrestlingStyleRules styleRules;
         private readonly Func<string> createId;
+        private readonly Func<string, MatchMoveRules> findMove;
 
-        public MatchEvaluator(IMatchTypeRules matchTypeRules, IWrestlingStyleRules styleRules, Func<string> createId = null)
+        public MatchEvaluator(IMatchTypeRules matchTypeRules, IWrestlingStyleRules styleRules, Func<string> createId = null,
+            Func<string, MatchMoveRules> findMove = null)
         {
             this.matchTypeRules = matchTypeRules ?? throw new ArgumentNullException(nameof(matchTypeRules));
             this.styleRules = styleRules ?? throw new ArgumentNullException(nameof(styleRules));
             this.createId = createId ?? EntityId.CreateRuntimeId;
+            this.findMove = findMove;
         }
 
-        public MatchResultState EvaluateTechnical(GameSave save, string showEventId, float spotScore, int resultSeed)
+        public MatchResultState EvaluateTechnical(GameSave save, string showEventId, float spotScore, int resultSeed,
+            IEnumerable<MatchResultState> pendingResults = null)
         {
             if (save == null) throw new ArgumentNullException(nameof(save));
+            if (float.IsNaN(spotScore) || float.IsInfinity(spotScore)) throw new ArgumentOutOfRangeException(nameof(spotScore));
             var showEvent = save.ShowEvents.SingleOrDefault(x => x?.Id == showEventId)
                 ?? throw new ArgumentException("Show event was not found.", nameof(showEventId));
             if (showEvent.EventType != ShowEventType.Match)
@@ -41,10 +46,16 @@ namespace PWManager.Domain.Services
                 ?? throw new InvalidOperationException("Match plan was not found.");
             var sides = ResolveSides(match);
             ValidateMatch(save, match, sides);
+            var spots = MatchSpotEvaluator.Evaluate(save, match, show.Date, showEventId, resultSeed, pendingResults);
+            var endingSpot = spots.FirstOrDefault(x => x.ScriptedEffect == SpotScriptedEffect.MatchStopped || x.ScriptedEffect == SpotScriptedEffect.Disqualification);
+            if (endingSpot?.ScriptedEffect == SpotScriptedEffect.MatchStopped)
+                actualMatchDuration = endingSpot.Phase == MatchSpotPhase.Entrance ? 0 :
+                    Math.Max(1, (int)Math.Round(showEvent.PlannedDuration * (endingSpot.Phase == MatchSpotPhase.Early ? .25f : endingSpot.Phase == MatchSpotPhase.Middle ? .6f : .9f)));
 
             if (!matchTypeRules.TryGetTeamRules(match.MatchTypeId, out var minimumTeamCount, out _, out _, out _))
                 throw new InvalidOperationException("Match type was not found.");
-            if (!matchTypeRules.TryGetConditionCostMultiplier(match.MatchTypeId, out var conditionCostMultiplier) || conditionCostMultiplier <= 0f)
+            if (!matchTypeRules.TryGetConditionCostMultiplier(match.MatchTypeId, out var conditionCostMultiplier) ||
+                float.IsNaN(conditionCostMultiplier) || float.IsInfinity(conditionCostMultiplier) || conditionCostMultiplier <= 0f)
                 throw new InvalidOperationException("Match type condition cost multiplier is invalid.");
             var gimmickConditionCostMultiplier = 1f;
             if (!string.IsNullOrEmpty(match.MatchGimmickId))
@@ -53,6 +64,8 @@ namespace PWManager.Domain.Services
                     !gimmickRules.IsCompatible(match.MatchTypeId, sides.Sum(x => x.MemberIds.Count)))
                     throw new InvalidOperationException("Match gimmick is missing or incompatible.");
                 gimmickConditionCostMultiplier = gimmickRules.ConditionCostMultiplier;
+                if (float.IsNaN(gimmickConditionCostMultiplier) || float.IsInfinity(gimmickConditionCostMultiplier) || gimmickConditionCostMultiplier <= 0f)
+                    throw new InvalidOperationException("Match gimmick condition cost multiplier is invalid.");
             }
             var participantIds = sides.SelectMany(x => x.MemberIds).ToList();
             var participants = participantIds.Select(id => save.Wrestlers.Single(x => x.Id == id)).ToList();
@@ -68,13 +81,20 @@ namespace PWManager.Domain.Services
             var baseQuality = routineExecution * 0.70f + structureScore * 0.30f;
             var durationMultiplier = GetDurationMultiplier(baseQuality, actualMatchDuration);
             var durationContribution = baseQuality * durationMultiplier - baseQuality;
+            spotScore += spots.Sum(x => x.FinalSpotScore);
             var finalQuality = Clamp(baseQuality * durationMultiplier + spotScore, 0f, 20f);
 
-            var finishPerformerId = match.FinishType == MatchFinishType.Draw ? null :
+            var finishType = endingSpot?.ScriptedEffect == SpotScriptedEffect.MatchStopped ? MatchFinishType.Draw :
+                endingSpot?.ScriptedEffect == SpotScriptedEffect.Disqualification ? MatchFinishType.Disqualification : match.FinishType;
+            var finishPerformerId = endingSpot?.ScriptedEffect == SpotScriptedEffect.Disqualification ? endingSpot.TargetId :
+                finishType == MatchFinishType.Draw ? null :
                 (string.IsNullOrEmpty(match.FinishPerformerId) ? match.WinnerId : match.FinishPerformerId);
-            var winningSide = match.FinishType == MatchFinishType.Draw ? null :
-                sides.Single(x => x.Id == ResolveWinningSideId(match, sides, finishPerformerId));
-            var loserTargetId = match.FinishType == MatchFinishType.Draw ? null : match.LoserTargetId;
+            var winningSide = finishType == MatchFinishType.Draw ? null : endingSpot?.ScriptedEffect == SpotScriptedEffect.Disqualification
+                ? sides.Single(x => x.MemberIds.Contains(finishPerformerId))
+                : sides.Single(x => x.Id == ResolveWinningSideId(match, sides, finishPerformerId));
+            var loserTargetId = finishType == MatchFinishType.Draw ? null :
+                endingSpot?.ScriptedEffect == SpotScriptedEffect.Disqualification
+                    ? sides.First(x => x.Id != winningSide.Id).MemberIds.FirstOrDefault() : match.LoserTargetId;
             var losingSide = string.IsNullOrEmpty(loserTargetId) ? null : sides.Single(x => x.MemberIds.Contains(loserTargetId));
             var result = new MatchResultState
             {
@@ -91,8 +111,10 @@ namespace PWManager.Domain.Services
                 LoserTargetId = loserTargetId,
                 IndirectWinnerIds = winningSide?.MemberIds.Where(x => x != finishPerformerId).ToList() ?? new List<string>(),
                 IndirectLoserIds = losingSide?.MemberIds.Where(x => x != loserTargetId).ToList() ?? new List<string>(),
-                FinishType = match.FinishType,
+                FinishType = finishType,
+                WasStoppedBySpot = endingSpot?.ScriptedEffect == SpotScriptedEffect.MatchStopped,
                 FinalMatchQuality = finalQuality,
+                CriticReview = CriticReviewCalculator.Match(finalQuality),
                 TechnicalEvaluation = new TechnicalEvaluationBreakdownState
                 {
                     Performance = routineExecution,
@@ -112,6 +134,8 @@ namespace PWManager.Domain.Services
                 },
                 ResultSeed = resultSeed
             };
+            result.SpotResults = spots;
+            result.MoveResults = MatchMoveService.Evaluate(save, sides, result, findMove);
             foreach (var participant in participants)
                 result.WrestlerConditionChanges.Add(new WrestlerConditionChangeData
                 {
@@ -325,6 +349,79 @@ namespace PWManager.Domain.Services
             if (baseQuality < 13f) return 0.85f;
             if (baseQuality < 15f) return 0.95f;
             return 1f;
+        }
+
+        private static float Clamp(float value, float minimum, float maximum) => Math.Max(minimum, Math.Min(maximum, value));
+    }
+
+    public static class CriticReviewCalculator
+    {
+        public const float NeutralScore = 50f;
+
+        public static CriticReviewState Match(float finalMatchQuality, float storyScore = NeutralScore)
+        {
+            ValidateRange(finalMatchQuality, 0f, 20f, nameof(finalMatchQuality));
+            ValidateRange(storyScore, 0f, 100f, nameof(storyScore));
+            var technicalScore = finalMatchQuality * 5f;
+            var storyModifier = (storyScore - NeutralScore) / 10f;
+            return Create(Clamp(technicalScore + storyModifier, 0f, 105f),
+                new EvaluationReasonState { Code = "critic.technical", Contribution = technicalScore },
+                new EvaluationReasonState { Code = "critic.story", Contribution = storyModifier });
+        }
+
+        public static CriticReviewState Show(
+            IReadOnlyCollection<CriticReviewState> matchReviews,
+            float flowScore = NeutralScore,
+            float storyScore = NeutralScore)
+        {
+            if (matchReviews == null || matchReviews.Count == 0) return null;
+            ValidateRange(flowScore, 0f, 100f, nameof(flowScore));
+            ValidateRange(storyScore, 0f, 100f, nameof(storyScore));
+            var scores = matchReviews.Select(x => x?.FinalScore ?? throw new ArgumentException("Match review is required.", nameof(matchReviews))).ToList();
+            foreach (var score in scores) ValidateRange(score, 0f, 105f, nameof(matchReviews));
+            var matchAverage = scores.Average();
+            var topAverage = scores.OrderByDescending(x => x).Take(3).Average();
+            var finalScore = Clamp(matchAverage * .55f + topAverage * .20f + flowScore * .15f + storyScore * .10f, 0f, 105f);
+            return Create(finalScore,
+                new EvaluationReasonState { Code = "critic.show.matches", Contribution = matchAverage * .55f },
+                new EvaluationReasonState { Code = "critic.show.top-matches", Contribution = topAverage * .20f },
+                new EvaluationReasonState { Code = "critic.show.flow", Contribution = flowScore * .15f },
+                new EvaluationReasonState { Code = "critic.show.story", Contribution = storyScore * .10f });
+        }
+
+        public static float Stars(float score)
+        {
+            ValidateRange(score, 0f, 105f, nameof(score));
+            if (score >= 105f) return 7f;
+            if (score >= 104f) return 6f;
+            if (score >= 103f) return 5.75f;
+            if (score >= 102f) return 5.5f;
+            if (score >= 101f) return 5.25f;
+            if (score >= 100f) return 5f;
+            if (score >= 97f) return 4.75f;
+            if (score >= 94f) return 4.5f;
+            if (score >= 90f) return 4.25f;
+            if (score >= 84f) return 4f;
+            if (score >= 76f) return 3.75f;
+            if (score >= 68f) return 3.5f;
+            if (score >= 60f) return 3.25f;
+            if (score >= 52f) return 3f;
+            if (score >= 44f) return 2.75f;
+            if (score >= 36f) return 2.5f;
+            return Math.Max(.25f, (float)Math.Floor(score / 4f) * .25f + .25f);
+        }
+
+        private static CriticReviewState Create(float score, params EvaluationReasonState[] reasons) => new()
+        {
+            FinalScore = score,
+            DisplayedStars = Stars(score),
+            Reasons = new List<EvaluationReasonState>(reasons)
+        };
+
+        private static void ValidateRange(float value, float minimum, float maximum, string name)
+        {
+            if (float.IsNaN(value) || float.IsInfinity(value) || value < minimum || value > maximum)
+                throw new ArgumentOutOfRangeException(name, $"Value must be finite and between {minimum} and {maximum}.");
         }
 
         private static float Clamp(float value, float minimum, float maximum) => Math.Max(minimum, Math.Min(maximum, value));

@@ -1,0 +1,65 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements">
+    <Style src="Dashboard.uss"/>
+<ui:VisualElement name="show-editor-overlay" class="show-editor-overlay hidden">
+    <ui:VisualElement class="show-editor-dialog">
+        <ui:VisualElement class="show-editor-heading">
+            <ui:VisualElement>
+                <ui:Label name="show-editor-title" text="경기 추가" class="show-editor-title"/>
+            </ui:VisualElement>
+            <ui:Button name="show-editor-close" text="×" class="show-editor-close"/>
+        </ui:VisualElement>
+        <ui:VisualElement class="show-editor-fields">
+            <ui:DropdownField name="show-editor-primary" label="경기 유형" class="show-editor-field"/>
+            <ui:DropdownField name="show-editor-secondary" label="경기 방식" class="show-editor-field"/>
+            <ui:DropdownField name="show-editor-duration" label="배정 시간" class="show-editor-field duration"/>
+        </ui:VisualElement>
+        <ui:VisualElement name="show-editor-match-rules" class="show-editor-match-rules hidden">
+            <ui:VisualElement class="show-editor-rule-column">
+                <ui:Label text="규칙 선택" class="show-editor-rule-title"/>
+                <ui:ScrollView mode="Vertical" class="show-editor-rule-scroll">
+                    <ui:VisualElement name="show-editor-rule-options" class="show-editor-rule-options"/>
+                </ui:ScrollView>
+            </ui:VisualElement>
+            <ui:VisualElement class="show-editor-rule-divider">
+                <ui:Label text="›" class="show-editor-rule-arrow"/>
+            </ui:VisualElement>
+            <ui:VisualElement class="show-editor-rule-column">
+                <ui:Label text="기믹 선택" class="show-editor-rule-title"/>
+                <ui:ScrollView mode="Vertical" class="show-editor-rule-scroll">
+                    <ui:VisualElement name="show-editor-gimmick-options" class="show-editor-rule-options"/>
+                </ui:ScrollView>
+            </ui:VisualElement>
+        </ui:VisualElement>
+        <ui:VisualElement name="show-editor-spots" class="show-editor-spots hidden">
+            <ui:VisualElement name="show-editor-finish" class="show-editor-finish hidden">
+                <ui:DropdownField name="show-editor-finish-type" label="결말 방식" class="show-editor-field"/>
+                <ui:DropdownField name="show-editor-winning-side" label="승리 선수 / 팀" class="show-editor-field"/>
+                <ui:DropdownField name="show-editor-finish-performer" label="승부를 결정할 선수" class="show-editor-field"/>
+                <ui:DropdownField name="show-editor-loser" label="패배 대상" class="show-editor-field"/>
+            </ui:VisualElement>
+            <ui:VisualElement class="spot-production-columns">
+                <ui:VisualElement class="spot-authored-events">
+                    <ui:TextField name="show-editor-opening-spot" label="경기 전 스팟" multiline="true" class="show-editor-spot-field"/>
+                    <ui:TextField name="show-editor-middle-spot" label="경기 중 스팟" multiline="true" class="show-editor-spot-field"/>
+                    <ui:TextField name="show-editor-closing-spot" label="경기 후 스팟" multiline="true" class="show-editor-spot-field"/>
+                </ui:VisualElement>
+                <ui:VisualElement name="show-editor-match-spots" class="spot-catalog"/>
+            </ui:VisualElement>
+        </ui:VisualElement>
+        <ui:VisualElement class="show-editor-roster-heading">
+            <ui:Label text="출연 선수" class="show-editor-section-title"/>
+            <ui:DropdownField name="show-editor-roster-sort" label="정렬" class="show-editor-roster-sort"/>
+            <ui:Button name="show-editor-roster-sort-direction" text="내림차순" class="small-button"/>
+            <ui:Label name="show-editor-selected-count" text="0명 선택" class="show-editor-selected-count"/>
+        </ui:VisualElement>
+        <ui:ScrollView mode="Vertical" class="show-editor-roster-scroll">
+            <ui:VisualElement name="show-editor-roster" class="show-editor-roster"/>
+        </ui:ScrollView>
+        <ui:Label name="show-editor-message" text="" class="show-editor-message"/>
+        <ui:VisualElement class="show-editor-footer">
+            <ui:Button name="show-editor-cancel" text="취소" class="show-editor-cancel"/>
+            <ui:Button name="show-editor-submit" text="추가" class="show-editor-submit"/>
+        </ui:VisualElement>
+    </ui:VisualElement>
+</ui:VisualElement>
+</ui:UXML>

@@ -19,6 +19,7 @@ namespace PWManager.Presentation
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
         private static void ValidateSceneUi()
         {
+            if (UnityEngine.SceneManagement.SceneManager.GetActiveScene().name != "Main Scene") return;
             if (GameObject.Find("Title UI")?.GetComponent<UIDocument>() == null)
                 Debug.LogError("Main Scene에 Title UI UIDocument가 없습니다.");
             if (GameObject.Find("New Game UI")?.GetComponent<UIDocument>() == null)
@@ -500,7 +501,7 @@ namespace PWManager.Presentation
             {
                 var slot = saveService.ListSlots().FirstOrDefault();
                 if (slot == null) throw new FileNotFoundException("저장 파일이 없습니다.");
-                EnterDashboard(saveService.Load(slot));
+                LoadSlot(slot);
             }
             catch (Exception exception) { ShowStatus($"저장 파일을 불러오지 못했습니다: {exception.Message}", true); }
         }
@@ -521,6 +522,13 @@ namespace PWManager.Presentation
                 var captured = slot;
                 row.clicked += () => LoadSlot(captured);
                 loadRows.Add(row);
+                if (saveService.HasBackup(slot))
+                {
+                    var backup = new Button(() => LoadSlot(captured, true)) { text = $"{slot} · 이전 백업 불러오기" };
+                    backup.AddToClassList("save-load-row");
+                    backup.AddToClassList("save-load-row-name");
+                    loadRows.Add(backup);
+                }
             }
             if (slots.Count == 0) { var empty = new Label("저장된 게임이 없습니다"); empty.AddToClassList("save-load-empty"); loadRows.Add(empty); }
             loadOverlay.RemoveFromClassList("hidden");
@@ -528,10 +536,21 @@ namespace PWManager.Presentation
 
         private void CloseLoadMenu() => loadOverlay.AddToClassList("hidden");
 
-        private void LoadSlot(string slotName)
+        private void LoadSlot(string slotName, bool backup = false)
         {
-            try { CloseLoadMenu(); EnterDashboard(saveService.Load(slotName)); }
-            catch (Exception exception) { ShowStatus($"저장 파일을 불러오지 못했습니다: {exception.Message}", true); }
+            try
+            {
+                var save = backup ? saveService.LoadBackup(slotName) : saveService.Load(slotName);
+                EnterDashboard(save);
+                CloseLoadMenu();
+            }
+            catch (Exception exception)
+            {
+                OpenLoadMenu();
+                var error = new Label($"불러오기 실패: {exception.Message}");
+                error.AddToClassList("save-load-empty");
+                loadRows.Insert(0, error);
+            }
         }
 
         private void EnterDashboard(GameSave save)

@@ -1,0 +1,35 @@
+.highlight-screen { flex-grow:1; background-color:#090d13; color:#f3f0e9; padding:24px 36px; -unity-font-definition:resource("PWManagerUI/Fonts/SEBANGGothic-Regular"); }
+.highlight-screen * { -unity-font-definition:resource("PWManagerUI/Fonts/SEBANGGothic-Regular"); }
+.highlight-header, .highlight-footer, .highlight-controls, .highlight-stage-top { flex-direction:row; align-items:center; justify-content:space-between; }
+.highlight-header { height:48px; margin-bottom:18px; }
+.highlight-brand { font-size:22px; -unity-font-definition:resource("PWManagerUI/Fonts/SEBANGGothic-Bold"); }
+.highlight-meta { font-size:12px; color:#8b96a4; letter-spacing:2px; }
+.highlight-stage { flex-grow:1; flex-shrink:1; min-height:0; overflow:hidden; background-color:#111923; border-width:1px; border-color:#2a3543; padding:22px 30px; }
+.highlight-stage-top { height:28px; flex-shrink:0; }
+.highlight-kicker { color:#dfbe75; font-size:14px; }
+.highlight-cast { flex-direction:row; flex-grow:1; flex-shrink:1; min-height:0; margin-top:14px; }
+.highlight-wrestler { flex-grow:1; flex-basis:0; min-width:0; background-color:#172333; border-bottom-width:3px; border-bottom-color:#384a60; padding:14px 20px; opacity:.55; }
+.highlight-wrestler.defender { background-color:#2b2028; border-bottom-color:#76535b; }
+.highlight-wrestler.focused { opacity:1; border-bottom-color:#e0bf76; }
+.highlight-role { color:#9aa6b7; font-size:12px; }
+.highlight-portrait { flex-grow:1; flex-shrink:1; min-height:0; width:100%; }
+.highlight-screen .highlight-name { height:48px; flex-shrink:0; font-size:26px; color:#f3f0e9; background-color:transparent; border-width:0; -unity-text-align:middle-center; -unity-font-definition:resource("PWManagerUI/Fonts/SEBANGGothic-Bold"); }
+.highlight-name:hover { color:#dfbe75; background-color:#263345; }
+.highlight-center { width:20%; align-items:center; justify-content:center; }
+.highlight-count { font-size:64px; color:#dfbe75; -unity-font-definition:resource("PWManagerUI/Fonts/SEBANGGothic-Bold"); }
+.highlight-fallback { position:absolute; top:30%; align-self:center; font-size:88px; color:#66768c; }
+.highlight-caption { height:130px; flex-shrink:0; justify-content:center; align-items:center; }
+.highlight-headline { font-size:34px; margin-bottom:10px; -unity-font-definition:resource("PWManagerUI/Fonts/SEBANGGothic-Bold"); }
+.highlight-narration { white-space:normal; font-size:18px; -unity-text-align:middle-center; color:#bfc9d5; }
+.highlight-track { height:3px; background-color:#26303b; margin-top:20px; }
+.highlight-progress { height:3px; background-color:#dfbe75; }
+.highlight-footer { height:60px; margin-top:10px; flex-shrink:0; }
+.highlight-controls Button { height:38px; margin-right:8px; padding:0 18px; background-color:#1a2431; border-width:1px; border-color:#334154; border-radius:3px; color:#edf0f5; font-size:14px; }
+.highlight-controls Button:hover { background-color:#334154; }
+.highlight-controls Button:focus { border-color:#dfbe75; }
+.highlight-controls Button:disabled { opacity:.45; }
+.highlight-controls Toggle { margin-left:18px; color:#aab5c4; font-size:13px; }
+.near-fall .highlight-count { font-size:100px; color:#f0d6a0; }
+.near-fall { background-color:#0b1019; }
+.kickout { border-color:#dfbe75; }
+.kickout .highlight-headline { color:#dfbe75; }
