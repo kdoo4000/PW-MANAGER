@@ -96,28 +96,20 @@
             <ui:VisualElement class="operations-grid">
                 <ui:VisualElement class="inner-card fan-card">
                     <ui:VisualElement class="inner-heading">
-                        <ui:Label text="선수 팬 반응 평균" class="inner-title"/>
-                        <ui:Label name="fan-caption" text="로스터 기준" class="inner-title"/>
+                        <ui:Label text="단체 팔로워" class="inner-title"/>
+                        <ui:Label name="fan-caption" text="—" class="inner-title"/>
                     </ui:VisualElement>
-                    <ui:VisualElement class="fan-bar">
-                        <ui:VisualElement name="mania-bar" class="fan mania"/>
-                        <ui:VisualElement name="light-bar" class="fan light"/>
-                        <ui:VisualElement name="family-bar" class="fan family"/>
-                    </ui:VisualElement>
-                    <ui:VisualElement class="fan-row">
+                    <ui:VisualElement class="fan-row" style="flex-grow: 1;">
                         <ui:Label text="●  매니아 팬" class="mania-text fan-name"/>
-                        <ui:Label name="mania-value" text="—" class="fan-percent"/>
-                        <ui:Label text="평균 반응" class="fan-note"/>
+                        <ui:Label name="mania-value" text="—" class="fan-percent" style="width: auto;"/>
                     </ui:VisualElement>
-                    <ui:VisualElement class="fan-row">
-                        <ui:Label text="●  라이트 팬" class="light-text fan-name"/>
-                        <ui:Label name="light-value" text="—" class="fan-percent"/>
-                        <ui:Label text="평균 반응" class="fan-note"/>
+                    <ui:VisualElement class="fan-row" style="flex-grow: 1;">
+                        <ui:Label text="●  캐주얼 팬" class="light-text fan-name"/>
+                        <ui:Label name="light-value" text="—" class="fan-percent" style="width: auto;"/>
                     </ui:VisualElement>
-                    <ui:VisualElement class="fan-row">
-                        <ui:Label text="●  패밀리 팬" class="family-text fan-name"/>
-                        <ui:Label name="family-value" text="—" class="fan-percent"/>
-                        <ui:Label text="평균 반응" class="fan-note"/>
+                    <ui:VisualElement class="fan-row" style="flex-grow: 1;">
+                        <ui:Label text="●  몰입형 팬" class="family-text fan-name"/>
+                        <ui:Label name="family-value" text="—" class="fan-percent" style="width: auto;"/>
                     </ui:VisualElement>
                 </ui:VisualElement>
                 <ui:VisualElement class="inner-card stories">
@@ -159,11 +151,11 @@
                 <ui:Label name="result-mania" text="—" class="mania-text"/>
             </ui:VisualElement>
             <ui:VisualElement class="rating">
-                <ui:Label text="라이트" class="light-text"/>
+                <ui:Label text="캐주얼" class="light-text"/>
                 <ui:Label name="result-light" text="—" class="light-text"/>
             </ui:VisualElement>
             <ui:VisualElement class="rating">
-                <ui:Label text="패밀리" class="family-text"/>
+                <ui:Label text="몰입형" class="family-text"/>
                 <ui:Label name="result-family" text="—" class="family-text"/>
             </ui:VisualElement>
             <ui:VisualElement class="change">

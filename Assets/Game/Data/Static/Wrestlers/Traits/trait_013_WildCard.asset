@@ -13,7 +13,8 @@ MonoBehaviour:
   m_Name: trait_013_WildCard
   m_EditorClassIdentifier: PWMANAGER.Data::PWManager.Data.Definitions.TraitDefinition
   id: trait_013
-  displayName: "\uC8FC\uC0AC\uC704"
+  koreanName: "\uC8FC\uC0AC\uC704"
+  englishName: Wild Card
   Polarity: 2
   Description: "\uACBD\uAE30\xB7\uD504\uB85C\uBAA8 \uAC1C\uC778 \uC218\uD589 \uD3B8\uCC28\uB97C
     -1.0~+1.0\uC73C\uB85C \uD655\uB300"

@@ -13,7 +13,8 @@ MonoBehaviour:
   m_Name: move_020_Superkick
   m_EditorClassIdentifier: PWMANAGER.Data::PWManager.Data.Definitions.MoveDefinition
   id: move_020
-  displayName: Superkick
+  koreanName: 슈퍼킥
+  englishName: Superkick
   BrawlingWeight: 0.6
   PowerWeight: 0
   TechnicalWeight: 0.4

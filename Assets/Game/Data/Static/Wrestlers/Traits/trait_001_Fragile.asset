@@ -13,7 +13,8 @@ MonoBehaviour:
   m_Name: trait_001_Fragile
   m_EditorClassIdentifier: PWMANAGER.Data::PWManager.Data.Definitions.TraitDefinition
   id: trait_001
-  displayName: "\uC720\uB9AC\uBAB8"
+  koreanName: "\uC720\uB9AC\uBAB8"
+  englishName: Fragile
   Polarity: 1
   Description: "\uACBD\uAE30 \uC911 \uBD80\uC0C1 \uBC1C\uC0DD \uD655\uB960 20% \uC99D\uAC00"
   ConflictingTraitIds:

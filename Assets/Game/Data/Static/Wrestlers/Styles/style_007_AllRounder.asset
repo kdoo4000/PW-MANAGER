@@ -13,7 +13,8 @@ MonoBehaviour:
   m_Name: style_007_AllRounder
   m_EditorClassIdentifier: PWMANAGER.Data::PWManager.Data.Definitions.WrestlingStyleDefinition
   id: style_007
-  displayName: "\uC62C\uB77C\uC6B4\uB354"
+  koreanName: "\uC62C\uB77C\uC6B4\uB354"
+  englishName: All-Rounder
   BrawlingWeight: 0.25
   PowerWeight: 0.25
   HighFlyingWeight: 0.25

@@ -86,10 +86,6 @@ namespace PWManager.Domain.Services
             text.AppendLine("[MANDATORY EVENTS]");
             for (var i = 0; i < context.MandatoryBeats.Count; i++) text.Append(context.MandatoryBeatIds[i]).Append(": ").AppendLine(context.MandatoryBeats[i]);
             text.AppendLine("[ACTUAL RESULT]").Append("PromoScore: ").AppendLine(context.Result.PromoScore.ToString("0.0"));
-            if (context.Result.FanReaction != null)
-                text.Append("FanReaction: Mania ").Append(context.Result.FanReaction.Mania.ToString("+0.0;-0.0;0.0"))
-                    .Append(", Light ").Append(context.Result.FanReaction.Light.ToString("+0.0;-0.0;0.0"))
-                    .Append(", Family ").AppendLine(context.Result.FanReaction.Family.ToString("+0.0;-0.0;0.0"));
             foreach (var reason in context.Result.EvaluationReasons ?? new List<EvaluationReasonState>())
                 text.Append(reason.Code).Append(": ").AppendLine(reason.Contribution.ToString("+0.0;-0.0;0.0"));
             AppendChanges(text, "StoryChanges", context.Result.StoryChanges);

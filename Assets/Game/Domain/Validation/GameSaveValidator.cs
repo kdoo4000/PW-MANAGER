@@ -27,6 +27,7 @@ namespace PWManager.Domain.Validation
             }
 
             ValidatePromotion(save.Promotion, errors);
+            ValidateAudience(save, errors);
             ValidateWrestlers(save, errors);
             ValidateTagTeams(save, errors);
             ValidateManagers(save, errors);
@@ -77,6 +78,8 @@ namespace PWManager.Domain.Validation
             {
                 if (show == null) { errors.Add("Show cannot be null."); continue; }
                 ValidateUniqueRuntimeId(show.Id, "Show", showIds, errors);
+                if (show.TicketPricePercent != 0 && (show.TicketPricePercent < 60 || show.TicketPricePercent > 160))
+                    errors.Add($"Show {show.Id} ticket price must be between 60% and 160%.");
                 if (!scheduleIds.Contains(show.ScheduleId)) errors.Add($"Show {show.Id} references a missing schedule.");
                 if (!venueContractIds.Contains(show.VenueContractId)) errors.Add($"Show {show.Id} references a missing venue contract.");
                 if (show.DurationLimit <= 0 || show.DurationLimit % 5 != 0) errors.Add($"Show {show.Id} duration limit must be a positive multiple of five.");
@@ -103,6 +106,22 @@ namespace PWManager.Domain.Validation
             }
             foreach (var showEvent in save.ShowEvents ?? new List<ShowEventState>())
                 if (showEvent != null && !showIds.Contains(showEvent.ShowId)) errors.Add($"Show event {showEvent.Id} references a missing show.");
+        }
+
+        private static void ValidateAudience(GameSave save, List<string> errors)
+        {
+            try { FanAudienceService.ValidateAudience(save); }
+            catch (InvalidOperationException exception) { errors.Add(exception.Message); }
+            foreach (var result in save.ShowResults ?? new List<ShowResultState>())
+            {
+                if (result == null) { errors.Add("Show result cannot be null."); continue; }
+                try { FanAudienceService.ValidateResult(save, result); }
+                catch (InvalidOperationException exception) { errors.Add(exception.Message); }
+                var settlement = result.FinancialSettlement;
+                if (settlement == null || settlement.Attendance < 0 || settlement.TicketPrice < 0 ||
+                    (settlement.TicketPrice > 0 && (decimal)settlement.Attendance * settlement.TicketPrice != settlement.Revenue))
+                    errors.Add("Ticket settlement is inconsistent.");
+            }
         }
 
         private static void ValidateOperations(GameSave save, List<string> errors)
@@ -211,6 +230,14 @@ namespace PWManager.Domain.Validation
                 ValidateRange(wrestler.FanReaction.ManiaFanReaction, -100, 100, "ManiaFanReaction", errors);
                 ValidateRange(wrestler.FanReaction.LightFanReaction, -100, 100, "LightFanReaction", errors);
                 ValidateRange(wrestler.FanReaction.FamilyFanReaction, -100, 100, "FamilyFanReaction", errors);
+                if (wrestler.FanReaction.UsesTwoAxes)
+                {
+                    foreach (var response in new[] { wrestler.FanReaction.Mark, wrestler.FanReaction.Casual, wrestler.FanReaction.Hardcore })
+                    {
+                        ValidateRange(response.Preference, 0, 100, "FanPreference", errors);
+                        ValidateRange(response.Interest, 0, 100, "FanInterest", errors);
+                    }
+                }
                 ValidatePresentation(wrestler, errors);
             }
         }

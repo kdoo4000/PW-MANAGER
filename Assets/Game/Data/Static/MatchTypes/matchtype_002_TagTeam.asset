@@ -13,7 +13,8 @@ MonoBehaviour:
   m_Name: matchtype_002_TagTeam
   m_EditorClassIdentifier: PWMANAGER.Data::PWManager.Data.Definitions.MatchTypeDefinition
   id: matchtype_002
-  displayName: Tag Team
+  koreanName: "\uD0DC\uADF8\uD300 \uACBD\uAE30"
+  englishName: Tag Team
   MinimumParticipants: 4
   MaximumParticipants: 8
   MinimumTeamCount: 2

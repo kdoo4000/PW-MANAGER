@@ -13,7 +13,8 @@ MonoBehaviour:
   m_Name: style_003_Technician
   m_EditorClassIdentifier: PWMANAGER.Data::PWManager.Data.Definitions.WrestlingStyleDefinition
   id: style_003
-  displayName: "\uD14C\uD06C\uB2C8\uC158"
+  koreanName: "\uD14C\uD06C\uB2C8\uC158"
+  englishName: Technician
   BrawlingWeight: 0.1
   PowerWeight: 0.15
   HighFlyingWeight: 0.2

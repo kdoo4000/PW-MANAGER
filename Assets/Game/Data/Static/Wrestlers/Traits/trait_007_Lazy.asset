@@ -13,7 +13,8 @@ MonoBehaviour:
   m_Name: trait_007_Lazy
   m_EditorClassIdentifier: PWMANAGER.Data::PWManager.Data.Definitions.TraitDefinition
   id: trait_007
-  displayName: "\uAC8C\uC73C\uB984"
+  koreanName: "\uAC8C\uC73C\uB984"
+  englishName: Lazy
   Polarity: 2
   Description: "\uD6C8\uB828 \uACBD\uD5D8\uCE58\uC640 \uD6C8\uB828 \uCCB4\uB825 \uC18C\uBAA8\uB7C9
     20% \uAC10\uC18C"

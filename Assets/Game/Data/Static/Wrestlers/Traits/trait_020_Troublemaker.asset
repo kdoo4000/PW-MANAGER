@@ -13,7 +13,8 @@ MonoBehaviour:
   m_Name: trait_020_Troublemaker
   m_EditorClassIdentifier: PWMANAGER.Data::PWManager.Data.Definitions.TraitDefinition
   id: trait_020
-  displayName: "\uBB38\uC81C\uC544"
+  koreanName: "\uBB38\uC81C\uC544"
+  englishName: Troublemaker
   Polarity: 1
   Description: "\uBD80\uC815\uC801 \uB77C\uCEE4\uB8F8 \uC774\uBCA4\uD2B8 \uBC1C\uC0DD
     \uD655\uB960 \uC99D\uAC00"

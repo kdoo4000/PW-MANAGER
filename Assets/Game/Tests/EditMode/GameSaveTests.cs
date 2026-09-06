@@ -33,6 +33,8 @@ namespace PWManager.Tests
             Assert.That(save.MatchResults, Is.Empty);
             Assert.That(save.PromoResults, Is.Empty);
             Assert.That(save.Transactions, Is.Empty);
+            Assert.That(save.SystemNames.Find(x => x.Id == "attribute.ring_psychology").KoreanName, Is.EqualTo("경기 운영"));
+            Assert.That(save.SystemNames.Find(x => x.Id == "attribute.ring_psychology").EnglishName, Is.EqualTo("Ring Psychology"));
         }
 
         [Test]
@@ -48,6 +50,8 @@ namespace PWManager.Tests
             Assert.That(restored.SaveId, Is.EqualTo(save.SaveId));
             Assert.That(restored.CurrentDate, Is.EqualTo(save.CurrentDate));
             Assert.That(restored.ProcessedIds, Is.EqualTo(save.ProcessedIds));
+            Assert.That(restored.SystemNames[0].KoreanName, Is.Not.Empty);
+            Assert.That(restored.SystemNames[0].EnglishName, Is.Not.Empty);
         }
 
         [Test]
@@ -63,5 +67,15 @@ namespace PWManager.Tests
         {
             Assert.Throws<ArgumentOutOfRangeException>(() => new GameDate(2026, 2, 30));
         }
+
+        [Test]
+        public void AgeOn_UsesWhetherBirthdayHasPassed()
+        {
+            var birthDate = new GameDate(2000, 9, 7);
+
+            Assert.That(birthDate.AgeOn(new GameDate(2026, 9, 6)), Is.EqualTo(25));
+            Assert.That(birthDate.AgeOn(new GameDate(2026, 9, 7)), Is.EqualTo(26));
+        }
+
     }
 }

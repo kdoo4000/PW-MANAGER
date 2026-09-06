@@ -131,7 +131,7 @@ namespace PWManager.Presentation
         };
 
         private long Salary(WrestlerState wrestler) => save?.Contracts?.FirstOrDefault(x => x != null && x.PersonId == wrestler.Id && (x.Status == ContractStatus.Active || x.Status == ContractStatus.Expiring))?.MonthlySalary ?? 0;
-        private int Age(WrestlerState wrestler) { var now = save?.CurrentDate ?? default; var birth = wrestler.Identity.BirthDate; return Math.Max(0, now.Year - birth.Year - ((now.Month < birth.Month || now.Month == birth.Month && now.Day < birth.Day) ? 1 : 0)); }
+        private int Age(WrestlerState wrestler) => wrestler.Identity.BirthDate.AgeOn(save?.CurrentDate ?? default);
         private static void AddCell(VisualElement row, string text, string columnClass, string extraClass = null) { var cell = new Label(text ?? "—"); cell.AddToClassList("roster-cell"); cell.AddToClassList(columnClass); if (!string.IsNullOrEmpty(extraClass)) cell.AddToClassList(extraClass); row.Add(cell); }
         private static void AddGradeCell(VisualElement row, float value, string columnClass) { var grade = WrestlerOverallCalculator.Grade(value); var cell = new Label(grade); cell.AddToClassList("roster-cell"); cell.AddToClassList(columnClass); cell.AddToClassList("roster-grade"); cell.AddToClassList(GradeClass(grade)); row.Add(cell); }
         private static void AddMeterCell(VisualElement row, float value, string columnClass, MeterKind kind) { value = Mathf.Clamp(value, 0, 100); AddCell(row, $"{value:0}", columnClass, MeterClass(value, kind)); }

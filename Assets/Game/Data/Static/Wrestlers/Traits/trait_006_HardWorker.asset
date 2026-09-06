@@ -13,7 +13,8 @@ MonoBehaviour:
   m_Name: trait_006_HardWorker
   m_EditorClassIdentifier: PWMANAGER.Data::PWManager.Data.Definitions.TraitDefinition
   id: trait_006
-  displayName: "\uB178\uB825\uD30C"
+  koreanName: "\uB178\uB825\uD30C"
+  englishName: Hard Worker
   Polarity: 2
   Description: "\uD6C8\uB828 \uACBD\uD5D8\uCE58\uC640 \uD6C8\uB828 \uCCB4\uB825 \uC18C\uBAA8\uB7C9
     20% \uC99D\uAC00"

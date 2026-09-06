@@ -42,6 +42,9 @@ namespace PWManager.Infrastructure.Save
             if (save.SaveVersion != GameSave.CurrentSaveVersion)
                 throw new InvalidDataException($"Save version must be {GameSave.CurrentSaveVersion}.");
 
+            save.SystemNames = SystemNames.CreateDefaults();
+            NormalizePlayerBirthDate(save);
+
             var errors = GameSaveValidator.Validate(save);
             if (errors.Count > 0) throw new InvalidDataException(string.Join(Environment.NewLine, errors));
 
@@ -117,11 +120,16 @@ namespace PWManager.Infrastructure.Save
 
             var errors = GameSaveValidator.Validate(save);
             if (errors.Count > 0) throw new InvalidDataException(string.Join(Environment.NewLine, errors));
+            foreach (var wrestler in save.Wrestlers) wrestler.FanReaction.Upgrade();
+            FanAudienceService.Initialize(save);
             return save;
         }
 
         private static void NormalizeOptionalState(GameSave save)
         {
+            save.SystemNames = SystemNames.CreateDefaults();
+            NormalizePlayerBirthDate(save);
+            if (save.Promotion != null && save.Promotion.Audience?.IsInitialized != true) save.Promotion.Audience = null;
             if (save.Promotion != null && string.IsNullOrWhiteSpace(save.Promotion.Abbreviation))
                 save.Promotion.Abbreviation = PromotionState.CreateAbbreviation(save.Promotion.Name);
             save.Shows ??= new List<ShowState>();
@@ -143,6 +151,13 @@ namespace PWManager.Infrastructure.Save
             save.InboxMessages ??= new List<InboxMessageState>();
             if (save.SeasonPolicy != null && string.IsNullOrEmpty(save.SeasonPolicy.Id))
                 save.SeasonPolicy = null;
+        }
+
+        private static void NormalizePlayerBirthDate(GameSave save)
+        {
+            if (save.Player == null || save.Player.BirthDate.Year > 0 || save.Player.Age <= 0) return;
+            save.Player.BirthDate = new GameDate(2026 - save.Player.Age, 6, 1);
+            save.Player.Age = 0;
         }
 
         private void MigrateToCurrentVersion(GameSave save)

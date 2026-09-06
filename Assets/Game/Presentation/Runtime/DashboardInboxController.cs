@@ -58,9 +58,11 @@ namespace PWManager.Presentation
                 row.EnableInClassList("unread", item.Status == InboxMessageStatus.Unread);
                 row.EnableInClassList("required", item.Priority == InboxPriority.Required && item.Status is InboxMessageStatus.Unread or InboxMessageStatus.Read);
                 row.EnableInClassList("important", item.Priority == InboxPriority.Important);
+                var avatar = new Label(string.IsNullOrWhiteSpace(item.Sender) ? "?" : item.Sender.Trim().Substring(0, 1)); avatar.AddToClassList("message-avatar"); row.Add(avatar);
+                var copy = new VisualElement(); copy.AddToClassList("message-row-copy");
                 var top = new VisualElement(); top.AddToClassList("message-row-top");
-                var sender = WrestlerNameText.Create(item.Sender, save?.Wrestlers); sender.AddToClassList("message-sender"); top.Add(sender); row.Add(top);
-                var subject = WrestlerNameText.Create(item.Subject, save?.Wrestlers); subject.AddToClassList("message-subject"); row.Add(subject);
+                var sender = WrestlerNameText.Create(item.Sender, save?.Wrestlers); sender.AddToClassList("message-sender"); top.Add(sender); copy.Add(top);
+                var subject = WrestlerNameText.Create(item.Subject, save?.Wrestlers); subject.AddToClassList("message-subject"); copy.Add(subject); row.Add(copy);
                 var captured = i; row.clicked += () => Select(captured); host.Add(row);
             }
             var detail = root.Q<VisualElement>("message-detail");

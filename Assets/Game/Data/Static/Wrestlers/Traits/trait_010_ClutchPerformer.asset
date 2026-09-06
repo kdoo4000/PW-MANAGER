@@ -13,7 +13,8 @@ MonoBehaviour:
   m_Name: trait_010_ClutchPerformer
   m_EditorClassIdentifier: PWMANAGER.Data::PWManager.Data.Definitions.TraitDefinition
   id: trait_010
-  displayName: "\uAC15\uC2EC\uC7A5"
+  koreanName: "\uAC15\uC2EC\uC7A5"
+  englishName: Clutch Performer
   Polarity: 0
   Description: "\uC911\uC694 \uACBD\uAE30\uC5D0\uC11C \uC720\uD6A8 \uACBD\uAE30 \uB2A5\uB825
     +1.0"

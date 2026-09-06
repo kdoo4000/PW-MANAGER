@@ -50,10 +50,48 @@ namespace PWManager.Domain.Models
     [Serializable]
     public sealed class WrestlerFanReactionState
     {
+        // Retained for old saves. Family maps to Mark, Light to Casual, Mania to Hardcore.
         public float ManiaFanReaction;
         public float LightFanReaction;
         public float FamilyFanReaction;
         public OptionalGameDate LastUpdatedAt;
+        public bool UsesTwoAxes;
+        public FanResponseState Mark;
+        public FanResponseState Casual;
+        public FanResponseState Hardcore;
+
+        public FanResponseState MarkResponse => UsesTwoAxes ? Mark : ConvertLegacy(FamilyFanReaction);
+        public FanResponseState CasualResponse => UsesTwoAxes ? Casual : ConvertLegacy(LightFanReaction);
+        public FanResponseState HardcoreResponse => UsesTwoAxes ? Hardcore : ConvertLegacy(ManiaFanReaction);
+
+        public void Upgrade()
+        {
+            if (UsesTwoAxes) return;
+            Mark = MarkResponse;
+            Casual = CasualResponse;
+            Hardcore = HardcoreResponse;
+            UsesTwoAxes = true;
+        }
+
+        public WrestlerFanReactionState Copy()
+        {
+            var copy = (WrestlerFanReactionState)MemberwiseClone();
+            copy.Upgrade();
+            return copy;
+        }
+
+        private static FanResponseState ConvertLegacy(float reaction) => new()
+        {
+            Preference = (reaction + 100f) * .5f,
+            Interest = Math.Abs(reaction)
+        };
+    }
+
+    [Serializable]
+    public struct FanResponseState
+    {
+        public float Preference;
+        public float Interest;
     }
 
     [Serializable]

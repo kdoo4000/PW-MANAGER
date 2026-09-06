@@ -13,7 +13,8 @@ MonoBehaviour:
   m_Name: staff_004_CommentaryTeam
   m_EditorClassIdentifier: PWMANAGER.Data::PWManager.Data.Definitions.StaffDepartmentDefinition
   id: staff_004
-  displayName: "\uD574\uC124\uC9C4"
+  koreanName: "\uD574\uC124\uC9C4"
+  englishName: Commentary Team
   DepartmentType: 3
   StartingLevel: 0
   UnlockPrestigeByLevel: b0040000000000009808000000000000480d000000000000c0120000000000006419000000000000

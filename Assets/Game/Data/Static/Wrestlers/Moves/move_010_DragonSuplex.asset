@@ -13,7 +13,8 @@ MonoBehaviour:
   m_Name: move_010_DragonSuplex
   m_EditorClassIdentifier: PWMANAGER.Data::PWManager.Data.Definitions.MoveDefinition
   id: move_010
-  displayName: Dragon Suplex
+  koreanName: 드래곤 수플렉스
+  englishName: Dragon Suplex
   BrawlingWeight: 0
   PowerWeight: 0.3
   TechnicalWeight: 0.7

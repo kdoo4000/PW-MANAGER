@@ -15,6 +15,7 @@ namespace PWManager.Domain.Models
         public List<string> UnlockedIds = new();
         public List<string> AppliedPrestigeReasonIds = new();
         public string SeasonPolicyId;
+        public PromotionAudienceState Audience;
 
         public string GetDisplayAbbreviation() => string.IsNullOrWhiteSpace(Abbreviation)
             ? CreateAbbreviation(Name)
@@ -45,5 +46,26 @@ namespace PWManager.Domain.Models
 
             return currentCash;
         }
+    }
+
+    [Serializable]
+    public sealed class PromotionAudienceState
+    {
+        public bool IsInitialized;
+        public AudienceGroupState Mark = new();
+        public AudienceGroupState Casual = new();
+        public AudienceGroupState Hardcore = new();
+        public GameDate LastWeeklyUpdate;
+        public long LastWeeklyChange;
+        public long TotalFollowers => Mark.Followers + Casual.Followers + Hardcore.Followers;
+    }
+
+    [Serializable]
+    public sealed class AudienceGroupState
+    {
+        public long Followers;
+        public float Satisfaction = 50f;
+        public float WeeklyExposure;
+        public double FollowerRemainder;
     }
 }

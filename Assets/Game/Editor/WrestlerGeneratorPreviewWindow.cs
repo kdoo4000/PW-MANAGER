@@ -184,11 +184,7 @@ namespace PWManager.Editor
         private string GetStyleName(string id) => content.Styles.TryGetValue(id, out var style) ? style.DisplayName : id;
         private static string Names(IEnumerable<string> ids, Func<string, string> getName) => string.Join(", ", ids.Select(getName));
         private static string FormatDate(GameDate date) => $"{date.Year:D4}-{date.Month:D2}-{date.Day:D2}";
-        private int GetAge(GameDate birthDate)
-        {
-            var age = year - birthDate.Year;
-            return month < birthDate.Month || month == birthDate.Month && day < birthDate.Day ? age - 1 : age;
-        }
+        private int GetAge(GameDate birthDate) => birthDate.AgeOn(new GameDate(year, month, day));
         private static void Field(string label, string value) => EditorGUILayout.LabelField(label, value);
     }
 }

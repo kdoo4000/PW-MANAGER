@@ -13,7 +13,8 @@ MonoBehaviour:
   m_Name: venue_005_LargeArena
   m_EditorClassIdentifier: PWMANAGER.Data::PWManager.Data.Definitions.VenueDefinition
   id: venue_005
-  displayName: Large Arena
+  koreanName: "\uB300\uD615 \uC544\uB808\uB098"
+  englishName: Large Arena
   Scale: 4
   Capacity: 20000
   RequiredPrestige: 20000

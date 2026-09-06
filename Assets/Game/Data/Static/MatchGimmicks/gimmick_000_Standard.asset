@@ -13,7 +13,8 @@ MonoBehaviour:
   m_Name: gimmick_000_Standard
   m_EditorClassIdentifier: PWMANAGER.Data::PWManager.Data.Definitions.MatchGimmickDefinition
   id: gimmick_000
-  displayName: Standard
+  koreanName: "\uAE30\uBCF8 \uACBD\uAE30"
+  englishName: Standard
   MinimumParticipants: 2
   MaximumParticipants: 8
   CompatibleMatchTypeIds:

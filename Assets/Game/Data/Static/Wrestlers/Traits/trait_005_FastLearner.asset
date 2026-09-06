@@ -13,7 +13,8 @@ MonoBehaviour:
   m_Name: trait_005_FastLearner
   m_EditorClassIdentifier: PWMANAGER.Data::PWManager.Data.Definitions.TraitDefinition
   id: trait_005
-  displayName: "\uBE60\uB978 \uD559\uC2B5"
+  koreanName: "\uBE60\uB978 \uD559\uC2B5"
+  englishName: Fast Learner
   Polarity: 0
   Description: "\uBAA8\uB4E0 \uACBD\uD5D8\uCE58 \uD68D\uB4DD\uB7C9 20% \uC99D\uAC00"
   ConflictingTraitIds: []

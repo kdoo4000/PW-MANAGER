@@ -120,6 +120,7 @@ namespace PWManager.Domain.Services
             if (days > MaxAdvanceDays) throw new ArgumentException($"Time can advance at most {MaxAdvanceDays} days.", nameof(targetDate));
 
             var inbox = new InboxService(createId);
+            FanAudienceService.Initialize(save);
             inbox.EnsureForCurrentDate(save);
             var result = new TimeFlowResult { State = TimeFlowState.Completed, ReachedDate = save.CurrentDate };
             while (save.CurrentDate.CompareTo(targetDate) < 0)
@@ -141,6 +142,9 @@ namespace PWManager.Domain.Services
 
                 save.CurrentDate = nextDate;
                 ProcessContracts(save, nextDate, result.ProcessedIds);
+                foreach (var wrestler in save.Wrestlers.Where(x => x?.Condition != null && x.Condition.InjuryStatus == InjuryStatus.None))
+                    wrestler.Condition.Condition = Math.Min(100f, wrestler.Condition.Condition + 3f);
+                FanAudienceService.AdvanceWeek(save, nextDate);
                 inbox.EnsureForCurrentDate(save);
                 result.ProcessedDays++;
                 result.ReachedDate = nextDate;

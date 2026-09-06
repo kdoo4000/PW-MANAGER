@@ -200,12 +200,14 @@ namespace PWManager.Presentation
             Set("wp-signature-1", MoveName(wrestler.Presentation?.SignatureMoveIds, 0)); Set("wp-signature-2", MoveName(wrestler.Presentation?.SignatureMoveIds, 1));
             Set("wp-finisher-1", MoveName(wrestler.Presentation?.FinisherMoveIds, 0)); Set("wp-finisher-2", MoveName(wrestler.Presentation?.FinisherMoveIds, 1));
             Set("wp-availability", Availability(c.Availability)); Set("wp-condition", $"{condition:0}"); Set("wp-satisfaction", $"{c.Satisfaction:0}"); Set("wp-injury", Injury(c.InjuryStatus)); Set("wp-momentum", $"{momentum:0}");
-            Set("wp-mania", $"{f.ManiaFanReaction:0}"); Set("wp-light", $"{f.LightFanReaction:0}"); Set("wp-family", $"{f.FamilyFanReaction:0}"); Set("wp-fan-total", $"{(f.ManiaFanReaction + f.LightFanReaction + f.FamilyFanReaction) / 3f:0} / 100");
+            Set("wp-mania", $"선호 {f.HardcoreResponse.Preference:0} · 관심 {f.HardcoreResponse.Interest:0}");
+            Set("wp-light", $"선호 {f.CasualResponse.Preference:0} · 관심 {f.CasualResponse.Interest:0}");
+            Set("wp-family", $"선호 {f.MarkResponse.Preference:0} · 관심 {f.MarkResponse.Interest:0}");
             Set("wp-matches", Math.Max(status.OfficialMatchCount, results.Count).ToString()); Set("wp-wins", wins.ToString()); Set("wp-draws", draws.ToString()); Set("wp-losses", losses.ToString()); Set("wp-recent-result", results.Count == 0 ? "기록 없음" : wins > 0 ? "승리" : "패배");
             Set("wp-championships", "0"); Set("wp-world-championships", "0"); Set("wp-win-streak", winStreak.ToString());
-            Class("wp-status-title", card.ClassName); Class("wp-card-status", card.ClassName); Class("wp-role", $"role-{roster.Alignment.ToString().ToLowerInvariant()}"); Class("wp-condition", ConditionClass(condition)); Class("wp-satisfaction", StateClass(100f - c.Satisfaction)); Class("wp-injury", c.InjuryStatus == InjuryStatus.None ? "state-good" : "state-danger"); Class("wp-momentum", MomentumClass(momentum)); GradeClass("wp-mania", f.ManiaFanReaction); GradeClass("wp-light", f.LightFanReaction); GradeClass("wp-family", f.FamilyFanReaction);
-            Abilities("wp-match-abilities", new[] { ("경기 운영", a.RingPsychology), ("임기응변", a.RingImprovisation), ("브롤링", a.Brawling), ("파워", a.Power), ("테크니컬", a.Technical), ("하이플라잉", a.HighFlying), ("스팟 수행력", a.SpotWork), ("특수 경기", a.SpecialtyMatches), ("접수력", a.Selling), ("체력", a.Stamina) });
-            Abilities("wp-promo-abilities", new[] { ("카리스마", a.Charisma), ("마이크", a.MicWork), ("즉흥성", a.Improvisation), ("캐릭터 표현력", a.Acting), ("페이스 연기", a.FaceWork), ("힐 연기", a.HeelWork), ("코미디", a.Comedy) });
+            Class("wp-status-title", card.ClassName); Class("wp-card-status", card.ClassName); Class("wp-role", $"role-{roster.Alignment.ToString().ToLowerInvariant()}"); Class("wp-condition", ConditionClass(condition)); Class("wp-satisfaction", StateClass(100f - c.Satisfaction)); Class("wp-injury", c.InjuryStatus == InjuryStatus.None ? "state-good" : "state-danger"); Class("wp-momentum", MomentumClass(momentum));
+            Abilities("wp-match-abilities", MatchAbilities(a));
+            Abilities("wp-promo-abilities", PromoAbilities(a));
             SetGrade("wp-match-potential", g.MatchPotentialCap); SetGrade("wp-promo-potential", g.PromoPotentialCap);
             RenderStyleChoices();
             RenderPromoChoices();
@@ -299,10 +301,21 @@ namespace PWManager.Presentation
         {
             var target = root.Q<VisualElement>(targetId); if (target == null) return; target.Clear(); for (var i = 0; i < values.Length; i++) AddAbility(target, values[i].Name, values[i].Value, i % 2 == 1 ? "alt" : null);
         }
-        private static void AddAbility(VisualElement target, string title, float value, string extra)
+        internal static void AddAbility(VisualElement target, string title, float value, string extra)
         {
             var row = new VisualElement(); row.AddToClassList("wp-ability-row"); if (!string.IsNullOrEmpty(extra)) row.AddToClassList(extra); var name = new Label(title); name.AddToClassList("wp-ability-label"); var grade = new Label(Grade(value)); grade.AddToClassList("wp-ability-value"); grade.AddToClassList(ToGradeClass(value)); row.Add(name); row.Add(grade); target.Add(row);
         }
+        internal static (string Name, float Value)[] MatchAbilities(WrestlerAttributesState a) => new[]
+        {
+            ("경기 운영", a.RingPsychology), ("임기응변", a.RingImprovisation), ("브롤링", a.Brawling),
+            ("파워", a.Power), ("테크니컬", a.Technical), ("하이플라잉", a.HighFlying),
+            ("스팟 수행력", a.SpotWork), ("특수 경기", a.SpecialtyMatches), ("접수력", a.Selling), ("스태미나", a.Stamina)
+        };
+        internal static (string Name, float Value)[] PromoAbilities(WrestlerAttributesState a) => new[]
+        {
+            ("카리스마", a.Charisma), ("마이크", a.MicWork), ("즉흥성", a.Improvisation),
+            ("캐릭터 표현력", a.Acting), ("페이스 연기", a.FaceWork), ("힐 연기", a.HeelWork), ("코미디", a.Comedy)
+        };
         private void Set(string key, string value) { var label = root.Q<Label>(key); if (label != null) label.text = value ?? "—"; }
         private void Class(string key, string value) { var e = root.Q<VisualElement>(key); if (e == null) return; foreach (var old in Palette) e.RemoveFromClassList(old); e.AddToClassList(value); }
         private void GradeClass(string key, float value) => Class(key, ToGradeClass(value));
@@ -350,7 +363,7 @@ namespace PWManager.Presentation
             }
         }
         private static bool IsParticipant(MatchResultState r, string id) => r != null && (r.WrestlerPerformances?.Any(x => x.WrestlerId == id) ?? false);
-        private static int Age(GameDate birth, GameDate current) => Math.Max(0, current.Year - birth.Year - (current.Month < birth.Month || current.Month == birth.Month && current.Day < birth.Day ? 1 : 0));
+        private static int Age(GameDate birth, GameDate current) => birth.AgeOn(current);
         private static string Date(GameDate d) => $"{d.Year}년 {d.Month}월 {d.Day}일";
         private static string Initials(string name) { if (string.IsNullOrWhiteSpace(name)) return "PW"; var p = name.Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries); return p.Length > 1 ? $"{p[0][0]}{p[^1][0]}".ToUpperInvariant() : name.Substring(0, Math.Min(2, name.Length)).ToUpperInvariant(); }
         private static string Grade(float v) => WrestlerOverallCalculator.Grade(v);

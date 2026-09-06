@@ -13,7 +13,8 @@ MonoBehaviour:
   m_Name: move_002_DiscusLariat
   m_EditorClassIdentifier: PWMANAGER.Data::PWManager.Data.Definitions.MoveDefinition
   id: move_002
-  displayName: Discus Lariat
+  koreanName: "\uB514\uC2A4\uCEE4\uC2A4 \uB798\uB9AC\uC5B4\uD2B8"
+  englishName: Discus Lariat
   BrawlingWeight: 0.8
   PowerWeight: 0.2
   TechnicalWeight: 0

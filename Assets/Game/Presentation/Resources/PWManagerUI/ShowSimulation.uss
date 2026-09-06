@@ -1,17 +1,18 @@
-.sim-screen { position: absolute; left: 0; right: 0; top: 0; bottom: 0; padding: 22px; background-color: #090c12; color: #d7deea; }
+.sim-screen { position: absolute; left: 0; right: 0; top: 0; bottom: 0; padding: 22px; background-color: #090a0c; color: #d9d6cf; }
 .sim-header { flex-direction: row; align-items: center; margin-bottom: 20px; }
-.sim-title { flex-grow: 1; min-width: 0; font-size: 24px; white-space: normal; }
+.sim-title { flex-grow: 1; min-width: 0; font-size: 26px; white-space: normal; }
 .sim-title, .sim-match-title, .sim-card-title { -unity-font-definition: url("project://database/Assets/Game/Presentation/Resources/PWManagerUI/Fonts/SEBANGGothic-Bold.ttf"); }
-.sim-position { margin: 0 16px; color: #82bafa; }
-.sim-button { min-height: 40px; margin: 0 0 0 8px; padding: 8px 14px; border-width: 1px; border-color: #31506d; border-radius: 5px; background-color: #142336; color: #dceaff; font-size: 14px; }
-.sim-button:hover, .sim-button:focus { border-color: #8bcaff; background-color: #203a55; }
+.sim-position { margin: 0 16px; color: #d9b45b; }
+.sim-button { min-height: 40px; margin: 0 0 0 8px; padding: 8px 14px; border-width: 1px; border-color: #454047; border-radius: 3px; background-color: #1a1b1f; color: #f4f0e7; font-size: 16px; transition-duration: 0.12s; }
+.sim-button:hover, .sim-button:focus { scale: 1.015 1.015; border-color: #d9b45b; background-color: #28241d; }
+.sim-button:active { scale: 0.985 0.985; }
 .sim-button:disabled { color: #667486; background-color: #131923; }
 .sim-body { flex-grow: 1; min-height: 0; flex-direction: row; }
-.sim-main { flex-grow: 1; flex-basis: 0; min-width: 0; margin-right: 20px; }
+.sim-main { flex-grow: 1.7; flex-basis: 0; min-width: 0; margin-right: 24px; }
 .sim-match-heading { flex-direction: row; align-items: center; min-height: 46px; margin-bottom: 12px; }
-.sim-match-title { flex-grow: 1; min-width: 0; font-size: 20px; white-space: normal; }
-.sim-clock { margin-left: 16px; color: #82bafa; font-size: 20px; }
-.sim-stage { flex-grow: 3; flex-basis: 0; min-height: 180px; overflow: hidden; background-color: #111d2a; border-radius: 8px; }
+.sim-match-title { flex-grow: 1; min-width: 0; font-size: 22px; white-space: normal; }
+.sim-clock { margin-left: 16px; color: #d9b45b; font-size: 22px; }
+.sim-stage { flex-grow: 3; flex-basis: 0; min-height: 180px; overflow: hidden; background-color: #171719; border-radius: 4px; }
 .sim-ring { position: absolute; left: 6%; right: 6%; top: 28%; bottom: 10%; background-color: #294357; border-width: 5px; border-color: #62778a; }
 .sim-rope { position: absolute; left: 6%; right: 6%; height: 4px; background-color: #b6c9db; }
 .sim-rope-top { top: 28%; }
@@ -20,18 +21,18 @@
 .sim-cast { position: absolute; left: 8%; right: 8%; top: 28%; bottom: 24%; flex-direction: row; justify-content: center; align-items: flex-end; }
 .sim-wrestler { flex-grow: 1; flex-basis: 0; min-width: 0; align-items: center; justify-content: flex-end; }
 .sim-sprite { width: 64px; height: 64px; flex-shrink: 0; }
-.sim-wrestler-name { position: absolute; top: 100%; left: 2px; right: 2px; margin-top: 6px; padding: 5px; background-color: #0a1421; color: #dceaff; font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; -unity-text-align: middle-center; }
-.sim-wrestler.active .sim-wrestler-name { background-color: #1a5787; }
-.sim-commentary-panel { min-height: 126px; flex-shrink: 0; justify-content: center; margin-top: 16px; padding: 16px 20px; border-left-width: 3px; border-left-color: #60a5fa; background-color: #111824; }
-.sim-speaker { color: #82bafa; font-size: 13px; margin-bottom: 9px; }
-.sim-commentary { font-size: 20px; color: #edf5ff; white-space: normal; }
+.sim-wrestler-name { position: absolute; top: 100%; left: 2px; right: 2px; margin-top: 6px; padding: 5px; background-color: #0a1421; color: #dceaff; font-size: 16px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; -unity-text-align: middle-center; }
+.sim-wrestler.active .sim-wrestler-name { background-color: #6f2525; }
+.sim-commentary-panel { min-height: 126px; flex-shrink: 0; justify-content: center; margin-top: 16px; padding: 16px 20px; border-left-width: 3px; border-left-color: #d9b45b; background-color: #1a1b1f; }
+.sim-speaker { color: #d9b45b; font-size: 16px; margin-bottom: 9px; }
+.sim-commentary { font-size: 22px; color: #edf5ff; white-space: normal; }
 .sim-log { flex-grow: 1; flex-basis: 0; min-height: 70px; margin-top: 12px; }
-.sim-log-line { margin-bottom: 10px; color: #8f9fb3; font-size: 14px; white-space: normal; }
-.sim-card-panel { flex-grow: 0.32; flex-basis: 0; min-width: 220px; padding: 18px; border-width: 1px; border-color: #263143; border-radius: 8px; background-color: #0c111a; }
-.sim-card-title { font-size: 18px; margin-bottom: 18px; }
+.sim-log-line { margin-bottom: 10px; color: #8f9fb3; font-size: 16px; white-space: normal; }
+.sim-card-panel { flex-grow: 0.55; flex-basis: 0; min-width: 280px; max-width: 440px; padding: 22px; border-width: 1px; border-color: #343238; border-radius: 4px; background-color: #141518; }
+.sim-card-title { font-size: 20px; margin-bottom: 18px; }
 .sim-card { flex-grow: 1; min-height: 0; }
-.sim-card-row { padding: 12px; margin-bottom: 10px; border-left-width: 3px; border-left-color: #263143; background-color: #111824; white-space: normal; font-size: 14px; }
-.sim-card-row.current { border-left-color: #60a5fa; color: #d9ecff; background-color: #162a40; }
+.sim-card-row { padding: 12px; margin-bottom: 10px; border-left-width: 3px; border-left-color: #263143; background-color: #111824; white-space: normal; font-size: 16px; }
+.sim-card-row.current { border-left-color: #d9b45b; color: #f4f0e7; background-color: #2b2419; }
 .sim-card-row.done { border-left-color: #4cc69a; color: #a6cbbd; }
-.sim-return { margin: 14px 0 0; background-color: #1769aa; }
+.sim-return { margin: 14px 0 0; background-color: #8f2f2d; }
 .sim-hidden { display: none; }

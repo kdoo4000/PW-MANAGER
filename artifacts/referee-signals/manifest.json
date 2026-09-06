@@ -1,0 +1,30 @@
+{
+  "cell_size": [
+    64,
+    64
+  ],
+  "reference": "REF.png",
+  "actions": [
+    {
+      "name": "Standing_Count",
+      "frames": 7,
+      "duration_ms": 1100,
+      "png": "Standing_Count.png",
+      "source": "Standing_Count.aseprite"
+    },
+    {
+      "name": "Ring_Bell_Signal",
+      "frames": 7,
+      "duration_ms": 1100,
+      "png": "Ring_Bell_Signal.png",
+      "source": "Ring_Bell_Signal.aseprite"
+    },
+    {
+      "name": "Stop_Match",
+      "frames": 6,
+      "duration_ms": 1100,
+      "png": "Stop_Match.png",
+      "source": "Stop_Match.aseprite"
+    }
+  ]
+}

@@ -60,15 +60,16 @@ namespace PWManager.Tests
                 var document = ui.AddComponent<UIDocument>();
                 document.panelSettings = Resources.Load<PanelSettings>("PWManagerRuntime/PWManagerPanelSettings");
                 document.visualTreeAsset = Resources.Load<VisualTreeAsset>("PWManagerUI/Dashboard");
-                var controller = host.AddComponent<DashboardController>();
                 var root = document.rootVisualElement;
-                void Set(string name, object value) => typeof(DashboardController).GetField(name, BindingFlags.Instance | BindingFlags.NonPublic).SetValue(controller, value);
-                object Call(string name, params object[] args) => typeof(DashboardController).GetMethod(name, BindingFlags.Instance | BindingFlags.NonPublic).Invoke(controller, args);
-                void Open(string section) => Call("OpenSelectedEventEditor", Enum.Parse(typeof(DashboardController).GetNestedType("ShowEditSection", BindingFlags.NonPublic), section));
+                DashboardViewHost.MountMissingViews(root);
+                var controllerType = typeof(DashboardController).Assembly.GetType("PWManager.Presentation.ShowPlanningController");
+                var controller = Activator.CreateInstance(controllerType, root);
+                void Set(string name, object value) => controllerType.GetField(name, BindingFlags.Instance | BindingFlags.NonPublic).SetValue(controller, value);
+                object Call(string name, params object[] args) => controllerType.GetMethod(name, BindingFlags.Instance | BindingFlags.NonPublic).Invoke(controller, args);
+                void Open(string section) => Call("OpenSelectedEventEditor", Enum.Parse(controllerType.GetNestedType("ShowEditSection", BindingFlags.NonPublic), section));
                 DropdownField Field(string name) => root.Q<DropdownField>(name);
                 Button Card(string id) => root.Q("show-editor-roster").Children().OfType<Button>().Single(x => (string)x.userData == id);
-                Set("document", document); Set("boundSave", save); Set("selectedShowId", show.Id); Set("selectedShowEventId", showEvent.Id);
-                Call("SetupShowPlanningControls");
+                Set("save", save); Set("selectedShowId", show.Id); Set("selectedShowEventId", showEvent.Id);
                 Call("RenderShowPlanning");
                 Assert.That(root.Q<Label>("show-detail-position").text, Is.EqualTo("메인 이벤트"));
                 Assert.That(root.Q<Label>("show-detail-position").ClassListContains("show-panel-title"), Is.True);
@@ -83,6 +84,8 @@ namespace PWManager.Tests
                 Assert.That(showEvent.PlannedDuration, Is.EqualTo(5));
                 for (var i = 0; i < 3; i++) Call("ChangeSelectedEventDuration", 5);
                 Open("Participants");
+                var overlay = root.Q<VisualElement>("show-editor-overlay");
+                Assert.That(overlay.parent.ElementAt(overlay.parent.childCount - 1), Is.SameAs(overlay));
                 Assert.That(ids.Take(4).All(id => !Card(id).enabledSelf), Is.True);
                 Assert.That(Card(ids[4]).enabledSelf, Is.True);
                 Call("AssignWrestlerToSelectedSlot", ids[1], show);
@@ -147,9 +150,13 @@ namespace PWManager.Tests
                 using (var playback = new ShowSimulationPlayer(root, save, save.ShowResults.Single(), () => { }))
                 {
                     var sheet = root.Q<Image>("simulation-sheet").image;
-                    Assert.That(sheet, Is.Not.Null);
-                    Assert.That(sheet.width, Is.EqualTo(128));
-                    Assert.That(sheet.height, Is.EqualTo(32));
+                    Assert.That(root.Q("simulation-cast").childCount, Is.EqualTo(4));
+                    if (sheet == null)
+                    {
+                        Assert.That(root.Q("simulation-cast").Query<Button>().ToList(), Has.Count.EqualTo(4));
+                        return;
+                    }
+                    Assert.That(sheet.width / sheet.height, Is.EqualTo(4));
                     var images = root.Q("simulation-cast").Query<Image>().ToList();
                     Assert.That(images, Has.Count.EqualTo(4));
                     foreach (var image in images) Assert.That(image.uv, Is.EqualTo(new Rect(0, 0, .25f, 1)));

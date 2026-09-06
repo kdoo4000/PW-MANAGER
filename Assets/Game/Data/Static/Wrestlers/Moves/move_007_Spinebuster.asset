@@ -13,7 +13,8 @@ MonoBehaviour:
   m_Name: move_007_Spinebuster
   m_EditorClassIdentifier: PWMANAGER.Data::PWManager.Data.Definitions.MoveDefinition
   id: move_007
-  displayName: Spinebuster
+  koreanName: 스파인버스터
+  englishName: Spinebuster
   BrawlingWeight: 0
   PowerWeight: 0.65
   TechnicalWeight: 0.35

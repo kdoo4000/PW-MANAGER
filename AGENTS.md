@@ -1,5 +1,7 @@
 # PWMANAGER 작업 기본 원칙
 
+- Unity Editor 제어·컴파일·테스트·검증은 `unity-cli` 스킬과 Unity CLI만 사용한다. Unity MCP 도구와 `unity-mcp-orchestrator` 스킬은 사용하거나 다시 연결하지 않는다. CLI에 필요한 `com.unity.pipeline` 패키지는 유지한다.
+
 - 코드 구조, 파일 관계, 데이터 흐름, 변경 영향 범위를 파악할 때는 `graphify`를 우선 사용한다. 기존 `graphify-out/graph.json`이 있으면 재생성하지 말고 먼저 조회한다.
 - 구현과 수정에는 `ponytail:ponytail`의 `full` 원칙을 기본 적용한다. 실제 흐름을 확인한 뒤 기존 코드와 Unity 기본 기능을 재사용하고, 동작하는 가장 작고 단순한 변경을 선택한다.
 - 코드를 작성, 검토, 디버깅하거나 리팩터링할 때는 `andrej-karpathy-skill` 원칙을 함께 적용한다. 구현에 영향을 주는 가정을 먼저 확인하고, 요청에 필요한 파일만 수술적으로 수정하며, 관찰 가능한 완료 조건과 가장 좁은 검증 방법을 정한다.

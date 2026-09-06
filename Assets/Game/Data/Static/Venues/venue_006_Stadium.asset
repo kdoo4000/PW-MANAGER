@@ -13,7 +13,8 @@ MonoBehaviour:
   m_Name: venue_006_Stadium
   m_EditorClassIdentifier: PWMANAGER.Data::PWManager.Data.Definitions.VenueDefinition
   id: venue_006
-  displayName: Stadium
+  koreanName: "\uC2A4\uD0C0\uB514\uC6C0"
+  englishName: Stadium
   Scale: 5
   Capacity: 70000
   RequiredPrestige: 55000

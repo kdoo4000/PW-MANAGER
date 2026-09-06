@@ -147,6 +147,11 @@ namespace PWManager.Presentation
             cards[segmentIndex].AddToClassList("current");
             foreach (var id in segment.Participants.Distinct())
             {
+                if (screen.Q<Image>("simulation-sheet").image == null)
+                {
+                    cast.Add(WrestlerProfileController.CreatePortraitDisplayWithNameLink(save.Wrestlers.First(w => w.Id == id), "sim-wrestler"));
+                    continue;
+                }
                 var wrestler = new VisualElement();
                 wrestler.AddToClassList("sim-wrestler");
                 var sprite = new Image

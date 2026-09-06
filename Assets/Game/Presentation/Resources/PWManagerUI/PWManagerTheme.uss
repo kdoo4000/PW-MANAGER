@@ -1,15 +1,15 @@
 :root {
-    --pw-bg: #090c12;
-    --pw-surface: #0c1018;
-    --pw-card: #0c111a;
-    --pw-card-raised: #111824;
-    --pw-border: #263143;
-    --pw-divider: #202a39;
-    --pw-text: #d7deea;
-    --pw-text-strong: #f2f5fa;
-    --pw-text-muted: #748197;
-    --pw-accent: #60a5fa;
-    --pw-accent-deep: #1769aa;
+    --pw-bg: #090a0c;
+    --pw-surface: #101114;
+    --pw-card: #141518;
+    --pw-card-raised: #1a1b1f;
+    --pw-border: #343238;
+    --pw-divider: #29282d;
+    --pw-text: #d9d6cf;
+    --pw-text-strong: #f4f0e7;
+    --pw-text-muted: #918c84;
+    --pw-accent: #d9b45b;
+    --pw-accent-deep: #8f2f2d;
 }
 
 * {
@@ -46,7 +46,7 @@ Button, TextField, DropdownField,
 .card, .wp-card, .cost-panel, .info-card, .review-card, .venue-card {
     background-color: var(--pw-card);
     border-color: var(--pw-border);
-    border-radius: 8px;
+    border-radius: 4px;
 }
 
 .card, .wp-card {
@@ -71,22 +71,22 @@ Button, TextField, DropdownField,
     background-color: var(--pw-card-raised);
     border-width: 1px;
     border-color: var(--pw-border);
-    border-radius: 6px;
+    border-radius: 3px;
 }
 
 .primary-button, .wp-primary-button, .setup-button.start {
     color: #ffffff;
     background-color: var(--pw-accent-deep);
     border-width: 0;
-    border-radius: 6px;
+    border-radius: 3px;
 }
 
 .title-background {
-    -unity-background-image-tint-color: #9bbfe5;
+    -unity-background-image-tint-color: #d8c9ad;
 }
 
 .title-vignette {
-    background-color: rgba(3, 12, 24, 0.42);
+    background-color: rgba(6, 5, 4, 0.52);
 }
 
 .title-menu, .new-game-setup {
@@ -108,7 +108,7 @@ Button, TextField, DropdownField,
 
 .title-button.primary {
     color: #ffffff;
-    background-color: #163150;
+    background-color: #6f2525;
     border-color: var(--pw-accent);
 }
 
@@ -117,7 +117,7 @@ Button, TextField, DropdownField,
 }
 
 .selection-row.selected {
-    background-color: #101f33;
+    background-color: #2b2419;
     border-color: var(--pw-accent);
 }
 
@@ -126,7 +126,7 @@ Button, TextField, DropdownField,
 }
 
 .venue-card.selected {
-    background-color: #101f33;
+    background-color: #2b2419;
     border-color: var(--pw-accent);
 }
 
@@ -139,6 +139,91 @@ Button, TextField, DropdownField,
 .small-button, .primary-button, .wp-small-button, .wp-primary-button,
 .setup-button, .title-button, .venue-card {
     transition-duration: 0.12s;
+}
+
+.nav:hover, .wp-nav:hover, .tab:hover, .wp-tab:hover, .wp-choice:hover,
+.small-button:hover, .primary-button:hover, .wp-small-button:hover,
+.wp-primary-button:hover, .setup-button:hover, .title-button:hover, .venue-card:hover {
+    scale: 1.015 1.015;
+}
+
+.nav:active, .wp-nav:active, .tab:active, .wp-tab:active, .wp-choice:active,
+.small-button:active, .primary-button:active, .wp-small-button:active,
+.wp-primary-button:active, .setup-button:active, .title-button:active, .venue-card:active {
+    scale: 0.985 0.985;
+}
+
+.nav.active, .wp-nav.active, .tab.active-tab, .wp-tab.active, .wp-choice.selected {
+    background-color: #302719;
+    border-color: var(--pw-accent);
+    color: var(--pw-text-strong);
+}
+
+.sidebar > .nav.active,
+.wp-sidebar > .wp-nav.active,
+.tabs > .tab.active-tab,
+.wp-tabs > .wp-tab.active,
+.roster-tabs > .roster-tab.roster-tab-active {
+    background-color: #302719;
+    color: var(--pw-text-strong);
+    border-bottom-color: var(--pw-accent);
+}
+
+.sidebar > .nav.active .nav-label,
+.wp-sidebar > .wp-nav.active .nav-label {
+    color: var(--pw-text-strong);
+}
+
+.card-title, .wp-card-title, .show-schedule-title, .show-plan-name,
+.message-heading, .roster-name, .show-editor-title {
+    letter-spacing: 0.6px;
+}
+
+.card, .wp-card, .message-list-pane, .message-detail-pane,
+.roster-panel, .show-plan-card, .show-editor-dialog {
+    border-top-color: #454047;
+}
+
+.brand-subtitle, .link, .task-link, .blue-text,
+.message-row.unread .message-sender, .message-detail-sender,
+.wrestler-link, .wrestler-link.roster-name-link,
+.wrestler-link.show-editor-wrestler-name, .show-editor-selected-count,
+.show-editor-rule-arrow, .wp-preview-state, .save-load-row-action {
+    color: var(--pw-accent);
+}
+
+.nav.active, .wp-nav.active, .tab.active-tab, .wp-tab.active,
+.show-editor-rule-option.selected, .wp-choice.selected {
+    background-color: #302719;
+    border-color: var(--pw-accent);
+}
+
+.message-row.selected, .message-row.unread.selected {
+    background-color: #302719;
+    border-left-color: var(--pw-accent);
+}
+
+.progress-fill, .show-duration-fill,
+.show-ticket-controls .unity-base-slider__dragger {
+    background-color: var(--pw-accent);
+}
+
+.primary-button, .wp-primary-button, .message-open-target,
+.show-schedule-title-edit, .schedule-title-save, .show-schedule-open,
+.show-action-button, .show-save-button, .show-confirm-button,
+.show-detail-action.edit, .show-editor-submit, .manual-save-button,
+.wp-save-button {
+    background-color: #5a461e;
+    border-color: var(--pw-accent);
+    color: var(--pw-text-strong);
+}
+
+.message-avatar, .show-editor-wrestler.selected .show-editor-wrestler-portrait {
+    border-color: var(--pw-accent);
+}
+
+.message-avatar, .wrestler-portrait-initials, .show-editor-wrestler-initials {
+    color: var(--pw-accent);
 }
 
 .unity-scroll-view__vertical-scroller {
@@ -170,10 +255,9 @@ Button, TextField, DropdownField,
     background-image: none;
 }
 
-.unity-base-slider__dragger {
+.unity-scroll-view__vertical-scroller .unity-base-slider__dragger {
     width: 7px;
-    height: 7px;
-    min-width: 34px;
+    min-width: 7px;
     min-height: 34px;
     border-width: 0;
     border-radius: 4px;
@@ -181,12 +265,22 @@ Button, TextField, DropdownField,
     background-image: none;
 }
 
-.unity-base-slider__dragger-border {
+.unity-scroll-view__horizontal-scroller .unity-base-slider__dragger {
+    height: 7px;
+    min-width: 34px;
+    min-height: 7px;
     border-width: 0;
-    background-color: transparent;
+    border-radius: 4px;
+    background-color: #365879;
     background-image: none;
 }
 
-.unity-base-slider__dragger:hover {
+.unity-scroll-view__vertical-scroller .unity-base-slider__dragger-border,
+.unity-scroll-view__horizontal-scroller .unity-base-slider__dragger-border {
+    display: none;
+}
+
+.unity-scroll-view__vertical-scroller .unity-base-slider__dragger:hover,
+.unity-scroll-view__horizontal-scroller .unity-base-slider__dragger:hover {
     background-color: #4d7aa3;
 }

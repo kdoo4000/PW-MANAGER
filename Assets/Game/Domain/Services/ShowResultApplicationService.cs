@@ -30,6 +30,11 @@ namespace PWManager.Domain.Services
             var conditionDeltas = CollectConditionDeltas(context, wrestlers);
             var appearanceIds = CollectAppearanceIds(context, wrestlers);
             var transactions = CreateSettlementTransactions(context, save.Transactions ?? new List<TransactionRecord>());
+            FanAudienceService.ValidateResult(save, context.ShowResult);
+            FanAudienceService.ValidateAudience(save);
+            if (context.ShowResult.FanSatisfaction?.IsCalculated == true &&
+                context.ShowResult.FanResponseChanges.Any(x => !appearanceIds.Contains(x.WrestlerId)))
+                throw new InvalidOperationException("Fan changes must belong to show participants.");
 
             // Everything above is validation and preparation. Mutation starts only after the full result is valid.
             foreach (var pair in conditionDeltas)
@@ -48,6 +53,7 @@ namespace PWManager.Domain.Services
                 wrestler.Status.OfficialMatchCount++;
             }
             save.Transactions.AddRange(transactions);
+            FanAudienceService.Apply(save, context.Show, context.ShowResult);
             context.Show.Status = ShowStatus.Completed;
             schedule.Status = ScheduleStatus.Completed;
             save.ProcessedIds.Add(context.ApplicationKey);

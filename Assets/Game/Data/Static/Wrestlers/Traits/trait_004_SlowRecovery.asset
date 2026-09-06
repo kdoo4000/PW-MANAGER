@@ -13,7 +13,8 @@ MonoBehaviour:
   m_Name: trait_004_SlowRecovery
   m_EditorClassIdentifier: PWMANAGER.Data::PWManager.Data.Definitions.TraitDefinition
   id: trait_004
-  displayName: "\uB290\uB9B0 \uD68C\uBCF5"
+  koreanName: "\uB290\uB9B0 \uD68C\uBCF5"
+  englishName: Slow Recovery
   Polarity: 1
   Description: "\uCCB4\uB825 \uBC0F \uBD80\uC0C1 \uD68C\uBCF5 \uAE30\uAC04 25% \uC99D\uAC00"
   ConflictingTraitIds:

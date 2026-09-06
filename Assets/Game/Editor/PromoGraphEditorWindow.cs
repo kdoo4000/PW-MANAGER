@@ -66,7 +66,8 @@ namespace PWManager.Editor
 
             var asset = CreateInstance<PromoTemplateGraphAsset>();
             asset.TemplateId = $"promo_template_{Guid.NewGuid():N}";
-            asset.DisplayName = System.IO.Path.GetFileNameWithoutExtension(path);
+            asset.KoreanName = System.IO.Path.GetFileNameWithoutExtension(path);
+            asset.EnglishName = asset.KoreanName;
             var start = new PromoGraphNodeData
             {
                 Id = Guid.NewGuid().ToString("N"), Type = PromoGraphNodeType.Start,

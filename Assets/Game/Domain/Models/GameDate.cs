@@ -54,5 +54,12 @@ namespace PWManager.Domain.Models
             var target = new DateTime(other.Year, other.Month, other.Day);
             return (target - current).Days;
         }
+
+        public int AgeOn(GameDate current)
+        {
+            if (Year <= 0) return 0;
+            return Math.Max(0, current.Year - Year -
+                (current.Month < Month || current.Month == Month && current.Day < Day ? 1 : 0));
+        }
     }
 }

@@ -13,7 +13,8 @@ MonoBehaviour:
   m_Name: style_006_Giant
   m_EditorClassIdentifier: PWMANAGER.Data::PWManager.Data.Definitions.WrestlingStyleDefinition
   id: style_006
-  displayName: "\uC790\uC774\uC5B8\uD2B8"
+  koreanName: "\uC790\uC774\uC5B8\uD2B8"
+  englishName: Giant
   BrawlingWeight: 0.3
   PowerWeight: 0.55
   HighFlyingWeight: 0

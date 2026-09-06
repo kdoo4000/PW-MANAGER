@@ -29,8 +29,9 @@ namespace PWManager.Tests
             Assert.That(result.ShowEvaluation.CriticReview, Is.Not.Null);
             Assert.That(result.ShowEvaluation.CriticReview.DisplayedStars, Is.GreaterThanOrEqualTo(.25f));
             Assert.That(result.FinancialSettlement.Cost, Is.EqualTo(save.Shows[0].EstimatedCost));
-            Assert.That(result.FinancialSettlement.Revenue, Is.EqualTo(100000));
-            Assert.That(result.FinancialSettlement.NetIncome, Is.EqualTo(99600));
+            Assert.That(result.FinancialSettlement.Attendance, Is.GreaterThan(0).And.LessThan(1000));
+            Assert.That(result.FinancialSettlement.Revenue, Is.EqualTo(result.FinancialSettlement.Attendance * 100));
+            Assert.That(result.FinancialSettlement.NetIncome, Is.EqualTo(result.FinancialSettlement.Revenue - 400));
             Assert.That(ResultApplicationContext.Create(save, result.Id).ShowResult, Is.SameAs(result));
         }
 
@@ -105,7 +106,7 @@ namespace PWManager.Tests
             Assert.That(save.ProcessedIds, Does.Contain("show-result:show:1"));
         }
 
-        private static ShowExecutionService Service()
+        internal static ShowExecutionService Service()
         {
             var rules = new Rules();
             var nextId = 0;
@@ -117,7 +118,7 @@ namespace PWManager.Tests
                 CreateId);
         }
 
-        private static GameSave CreateSave()
+        internal static GameSave CreateSave()
         {
             var save = new GameSave
             {

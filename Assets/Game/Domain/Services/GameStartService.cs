@@ -20,6 +20,16 @@ namespace PWManager.Domain.Services
 
     public sealed class GameStartRequest
     {
+        public bool HasPlayerCharacter;
+        public string PlayerName;
+        public PlayerCareerRole PlayerRole;
+        public PlayerReputation PlayerReputation;
+        public PlayerWrestlingType PlayerWrestlingType;
+        public string PlayerWrestlingStyleId;
+        public WrestlerGender PlayerGender;
+        public GameDate PlayerBirthDate = new(1994, 6, 1);
+        public int PlayerHeightCm = 180;
+        public int PlayerWeightKg = 90;
         public string PromotionName;
         public string PromotionAbbreviation;
         public long InitialCash;
@@ -60,6 +70,8 @@ namespace PWManager.Domain.Services
                 InitialCash = request.InitialCash,
                 PromotionPrestige = request.InitialPrestige
             };
+
+            if (request.HasPlayerCharacter) AddPlayer(save, request);
 
             foreach (var input in request.WrestlerContracts)
             {
@@ -116,9 +128,16 @@ namespace PWManager.Domain.Services
                 InitialStatus = ScheduleStatus.Confirmed
             });
             save.SeasonPolicy = scheduleResult.Policy;
+            save.SeasonPolicy.RegularShowName = "정규 쇼";
+            save.SeasonPolicy.PpvShowTitles = scheduleResult.Schedules
+                .Where(x => x.ShowType != ScheduledShowType.Regular)
+                .Select(x => new PpvTitlePolicyState { Month = x.Date.Month, Title = $"{x.Date.Month}월 PPV" }).ToList();
             save.Schedules.AddRange(scheduleResult.Schedules);
             save.Promotion.SeasonPolicyId = save.SeasonPolicy.Id;
             AddInitialShowDrafts(save, venueContract.Id);
+            save.Promotion.Audience = request.HasPlayerCharacter
+                ? FanAudienceService.CreateInitial(save.CurrentDate, PlayerCharacterRules.StartingFans(request.PlayerReputation))
+                : FanAudienceService.CreateInitial(save.CurrentDate);
 
             var errors = GameSaveValidator.Validate(save);
             if (errors.Count > 0)
@@ -128,18 +147,19 @@ namespace PWManager.Domain.Services
 
         private void AddInitialShowDrafts(GameSave save, string venueContractId)
         {
-            var typeCounts = new Dictionary<ScheduledShowType, int>();
+            var regularSequence = 0;
             foreach (var schedule in save.Schedules.OrderBy(x => x.Date))
             {
-                typeCounts.TryGetValue(schedule.ShowType, out var count);
-                count++;
-                typeCounts[schedule.ShowType] = count;
-
+                if (schedule.ShowType == ScheduledShowType.Regular) regularSequence++;
                 save.Shows.Add(new ShowState
                 {
                     Id = createId(),
                     ScheduleId = schedule.Id,
-                    Name = CreateInitialShowName(save.Promotion.Abbreviation, schedule.ShowType, count),
+                    Name = ShowNamingRules.Compose(save.Promotion.Abbreviation,
+                        schedule.ShowType == ScheduledShowType.Regular
+                            ? save.SeasonPolicy.RegularShowName
+                            : save.SeasonPolicy.PpvShowTitles.Single(x => x.Month == schedule.Date.Month).Title,
+                        schedule.ShowType, regularSequence, schedule.Date.Year),
                     ShowType = schedule.ShowType,
                     Date = schedule.Date,
                     VenueContractId = venueContractId,
@@ -150,22 +170,15 @@ namespace PWManager.Domain.Services
             }
         }
 
-        private static string CreateInitialShowName(string abbreviation, ScheduledShowType showType, int sequence)
-        {
-            var category = showType switch
-            {
-                ScheduledShowType.Regular => "정규 쇼",
-                ScheduledShowType.PpvRegular => "PPV",
-                ScheduledShowType.PpvMajor => "메이저 PPV",
-                ScheduledShowType.PpvSignature => "시그니처 PPV",
-                _ => "쇼"
-            };
-            return $"{abbreviation} {category} {sequence}";
-        }
-
         private static void ValidateRequest(GameStartRequest request)
         {
             if (request == null) throw new ArgumentNullException(nameof(request));
+            var playerAge = request.PlayerBirthDate.AgeOn(StartDate);
+            if (request.HasPlayerCharacter && (playerAge < 18 || playerAge > 70 || !PlayerCharacterRules.IsPhysicalProfileValid(request.PlayerGender, request.PlayerHeightCm, request.PlayerWeightKg)))
+                throw new ArgumentException("Player age, height, or weight is outside the allowed range.", nameof(request));
+            if (request.HasPlayerCharacter && request.PlayerRole == PlayerCareerRole.WrestlerManager &&
+                !PlayerCharacterRules.IsStyleAvailable(request.PlayerWrestlingStyleId, request.PlayerHeightCm, request.PlayerGender))
+                throw new ArgumentException("The selected wrestling style is not available for the player's physical profile.", nameof(request));
             if (string.IsNullOrWhiteSpace(request.PromotionName)) throw new ArgumentException("Promotion name is required.", nameof(request));
             if (!string.IsNullOrWhiteSpace(request.PromotionAbbreviation) &&
                 (request.PromotionAbbreviation.Trim().Length < 2 || request.PromotionAbbreviation.Trim().Length > 8))
@@ -187,6 +200,66 @@ namespace PWManager.Domain.Services
                 throw new ArgumentException("Contract amounts cannot be negative.", nameof(request));
             if (contracts.Sum(x => x.SigningBonus) > request.InitialCash)
                 throw new ArgumentException("Signing bonuses exceed the initial cash.", nameof(request));
+        }
+
+        private void AddPlayer(GameSave save, GameStartRequest request)
+        {
+            var build = PlayerCharacterRules.Build(request.PlayerRole, request.PlayerReputation, request.PlayerWrestlingType, request.PlayerWrestlingStyleId);
+            var playerName = string.IsNullOrWhiteSpace(request.PlayerName) ? "플레이어" : request.PlayerName.Trim();
+            save.Player = new PlayerCharacterState
+            {
+                Name = playerName, Role = request.PlayerRole, Reputation = request.PlayerReputation,
+                WrestlingType = request.PlayerWrestlingType, WrestlingStyleId = build.WrestlingStyleId,
+                Gender = request.PlayerGender, BirthDate = request.PlayerBirthDate, HeightCm = request.PlayerHeightCm,
+                WeightKg = request.PlayerWeightKg, MatchAbility = build.MatchAbility, PromoAbility = build.PromoAbility
+            };
+
+            if (request.PlayerRole == PlayerCareerRole.ProfessionalManager)
+            {
+                var manager = new ManagerState
+                {
+                    Id = createId(), PromotionId = save.Promotion.Id, PromoPotentialCap = build.PromoAbility,
+                    ActivityState = RosterActivityState.Active,
+                    Attributes = new ManagerAttributesState
+                    {
+                        Charisma = build.Attributes.Charisma, MicWork = build.Attributes.MicWork, Improvisation = build.Attributes.Improvisation, Acting = build.Attributes.Acting,
+                        FaceWork = build.Attributes.FaceWork, HeelWork = build.Attributes.HeelWork, Comedy = build.Attributes.Comedy,
+                        RingImprovisation = build.Attributes.Improvisation, SpotWork = build.Attributes.Acting, Selling = build.Attributes.Charisma
+                    }
+                };
+                save.Managers.Add(manager);
+                save.Player.ManagerId = manager.Id;
+                return;
+            }
+
+            var wrestler = CreatePlayerWrestler(save, request, playerName, build);
+            save.Wrestlers.Add(wrestler);
+            save.Player.WrestlerId = wrestler.Id;
+        }
+
+        private WrestlerState CreatePlayerWrestler(GameSave save, GameStartRequest request, string name, PlayerCharacterBuild build)
+        {
+            var type = request.PlayerWrestlingType;
+            return new WrestlerState
+            {
+                Identity = new WrestlerIdentityState
+                {
+                    Id = createId(), LegalName = name, RingName = name, Background = WrestlerBackground.OtherPromotion,
+                    Gender = request.PlayerGender, BirthDate = request.PlayerBirthDate, CreatedDate = StartDate,
+                    HeightCm = request.PlayerHeightCm, WeightKg = request.PlayerWeightKg,
+                    BodyType = WrestlerBodyType.Balanced, CareerYears = 10
+                },
+                Attributes = build.Attributes,
+                Growth = new WrestlerGrowthState { MatchPotentialCap = 20, PromoPotentialCap = 20 },
+                Condition = new WrestlerConditionState { Condition = 100, Satisfaction = 50, Availability = WrestlerAvailability.Available },
+                Roster = new WrestlerRosterState { PromotionId = save.Promotion.Id, ActivityState = RosterActivityState.Active },
+                Presentation = new WrestlerPresentationState
+                {
+                    MatchArchetype = type == PlayerWrestlingType.Worker ? MatchArchetype.Technical : type == PlayerWrestlingType.Showman ? MatchArchetype.Spot : MatchArchetype.Balanced,
+                    PromoArchetype = type == PlayerWrestlingType.Showman ? PromoArchetype.Charisma : PromoArchetype.Balanced,
+                    PromoDisposition = PromoDisposition.Balanced, WrestlingStyleId = build.WrestlingStyleId
+                }
+            };
         }
 
         private void AddInitialStaff(GameSave save)
@@ -238,11 +311,7 @@ namespace PWManager.Domain.Services
                     LastMomentumRelease = source.Momentum.LastMomentumRelease, ReleaseType = source.Momentum.ReleaseType,
                     ReleaseReason = source.Momentum.ReleaseReason
                 },
-                FanReaction = new WrestlerFanReactionState
-                {
-                    ManiaFanReaction = source.FanReaction.ManiaFanReaction, LightFanReaction = source.FanReaction.LightFanReaction,
-                    FamilyFanReaction = source.FanReaction.FamilyFanReaction, LastUpdatedAt = source.FanReaction.LastUpdatedAt
-                },
+                FanReaction = source.FanReaction.Copy(),
                 Roster = new WrestlerRosterState
                 {
                     PromotionId = source.Roster.PromotionId, Alignment = source.Roster.Alignment,

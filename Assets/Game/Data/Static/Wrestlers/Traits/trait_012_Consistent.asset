@@ -13,7 +13,8 @@ MonoBehaviour:
   m_Name: trait_012_Consistent
   m_EditorClassIdentifier: PWMANAGER.Data::PWManager.Data.Definitions.TraitDefinition
   id: trait_012
-  displayName: "\uAFB8\uC900\uD568"
+  koreanName: "\uAFB8\uC900\uD568"
+  englishName: Consistent
   Polarity: 0
   Description: "\uACBD\uAE30\xB7\uD504\uB85C\uBAA8 \uAC1C\uC778 \uC218\uD589 \uD3B8\uCC28\uB97C
     -0.25~+0.25\uB85C \uCD95\uC18C"

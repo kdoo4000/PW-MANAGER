@@ -1,27 +1,111 @@
 <ui:UXML xmlns:ui="UnityEngine.UIElements" editor-extension-mode="False">
     <Style src="project://database/Assets/Game/Presentation/Resources/PWManagerUI/TitleScreen.uss?fileID=7433441132597879392&amp;guid=2ba1cdd6e29de4b4b83119c0c647f2cc&amp;type=3#TitleScreen"/>
+    <Style src="project://database/Assets/Game/Presentation/Resources/PWManagerUI/WrestlerProfile.uss?fileID=7433441132597879392&amp;guid=dee1fd46bff057449ab3a4ffcaa78f0a&amp;type=3#WrestlerProfile"/>
     <Style src="PWManagerTheme.uss"/>
     <ui:VisualElement name="new-game-screen" class="new-game-screen">
         <ui:VisualElement name="new-game-wizard" class="wizard new-game-wizard-visible">
-            <ui:VisualElement class="wizard-header" style="height: 107px;">
+            <ui:VisualElement class="wizard-header">
                 <ui:VisualElement>
                     <ui:Label text="NEW PROMOTION" class="wizard-kicker"/>
-                    <ui:Label name="wizard-title" text="단체 설정" class="wizard-title" style="width: 142px; justify-content: space-around; align-content: center; align-self: center;"/>
+                    <ui:Label name="wizard-title" text="단체 설정" class="wizard-title"/>
                 </ui:VisualElement>
                 <ui:Button name="cancel-new-game" text="×" class="wizard-close"/>
             </ui:VisualElement>
-            <ui:VisualElement name="wizard-progress" class="wizard-progress" style="height: 60px;"/>
+            <ui:VisualElement name="wizard-progress" class="wizard-progress"/>
             <ui:VisualElement class="wizard-main">
                 <ui:VisualElement class="wizard-content">
-                    <ui:VisualElement name="wizard-step-0" class="wizard-step">
-                        <ui:Label text="당신이 운영할 프로레슬링 단체의 정체성을 정하세요." class="step-copy"/>
+                    <ui:VisualElement name="wizard-step-0" class="wizard-step player-step player-basic-step">
+                        <ui:VisualElement class="player-basic-card">
+                            <ui:Label text="기본 정보" class="player-card-title"/>
+                            <ui:VisualElement class="player-fields">
+                                <ui:VisualElement class="player-field">
+                                    <ui:Label text="플레이어 이름" class="field-label"/>
+                                    <ui:TextField name="player-name-input" value="플레이어" max-length="24" class="promotion-input"/>
+                                </ui:VisualElement>
+                                <ui:VisualElement class="player-field">
+                                    <ui:Label text="직책" class="field-label"/>
+                                    <ui:DropdownField name="player-role" class="wizard-dropdown"/>
+                                </ui:VisualElement>
+                                <ui:VisualElement class="player-field">
+                                    <ui:Label text="성별" class="field-label"/>
+                                    <ui:DropdownField name="player-gender" class="wizard-dropdown"/>
+                                </ui:VisualElement>
+                                <ui:VisualElement class="player-field">
+                                    <ui:Label text="생년월일" class="field-label"/>
+                                    <ui:VisualElement class="birth-date-control">
+                                        <ui:TextField name="player-birth-date" value="1994-06-01" max-length="10" class="promotion-input birth-date-input"/>
+                                        <ui:Button name="birth-date-button" text="▾" class="birth-date-button"/>
+                                    </ui:VisualElement>
+                                </ui:VisualElement>
+                                <ui:VisualElement class="player-field">
+                                    <ui:Label name="player-height-label" text="키(cm, 165~220)" class="field-label"/>
+                                    <ui:IntegerField name="player-height" value="180" class="promotion-input"/>
+                                </ui:VisualElement>
+                                <ui:VisualElement class="player-field player-field-last">
+                                    <ui:Label name="player-weight-label" text="몸무게(kg, 55~220)" class="field-label"/>
+                                    <ui:IntegerField name="player-weight" value="90" class="promotion-input"/>
+                                </ui:VisualElement>
+                            </ui:VisualElement>
+                            <ui:VisualElement name="birth-date-calendar" class="birth-date-calendar hidden">
+                                <ui:VisualElement class="calendar-header">
+                                    <ui:Button name="calendar-previous" text="‹" class="calendar-nav"/>
+                                    <ui:DropdownField name="calendar-year" class="calendar-period"/>
+                                    <ui:DropdownField name="calendar-month" class="calendar-period calendar-month"/>
+                                    <ui:Button name="calendar-next" text="›" class="calendar-nav"/>
+                                </ui:VisualElement>
+                                <ui:VisualElement class="calendar-weekdays">
+                                    <ui:Label text="일"/><ui:Label text="월"/><ui:Label text="화"/><ui:Label text="수"/><ui:Label text="목"/><ui:Label text="금"/><ui:Label text="토"/>
+                                </ui:VisualElement>
+                                <ui:VisualElement name="calendar-days" class="calendar-days"/>
+                            </ui:VisualElement>
+                        </ui:VisualElement>
+                        <ui:VisualElement class="appearance-card">
+                            <ui:Label text="외형 설정" class="player-card-title"/>
+                            <ui:VisualElement class="appearance-workspace">
+                                <ui:VisualElement class="appearance-preview">
+                                    <ui:VisualElement class="appearance-silhouette">
+                                        <ui:Label text="PW" class="appearance-silhouette-mark"/>
+                                    </ui:VisualElement>
+                                </ui:VisualElement>
+                                <ui:VisualElement class="appearance-editor"/>
+                            </ui:VisualElement>
+                        </ui:VisualElement>
+                    </ui:VisualElement>
+                    <ui:VisualElement name="wizard-step-1" class="wizard-step player-step hidden">
+                        <ui:VisualElement class="player-ability-fields">
+                            <ui:VisualElement class="player-field">
+                                <ui:Label text="선수 시절 명성" class="field-label"/>
+                                <ui:DropdownField name="player-reputation" class="wizard-dropdown"/>
+                            </ui:VisualElement>
+                            <ui:VisualElement name="wrestler-ability-settings" class="wrestler-ability-settings">
+                                <ui:VisualElement class="player-field">
+                                    <ui:Label text="선수 유형" class="field-label"/>
+                                    <ui:DropdownField name="player-wrestling-type" class="wizard-dropdown"/>
+                                </ui:VisualElement>
+                                <ui:VisualElement class="player-field">
+                                    <ui:Label text="경기 스타일" class="field-label"/>
+                                    <ui:DropdownField name="player-wrestling-style" class="wizard-dropdown"/>
+                                </ui:VisualElement>
+                            </ui:VisualElement>
+                        </ui:VisualElement>
+                        <ui:VisualElement name="player-ability-box" class="player-ability-box wp-card">
+                            <ui:VisualElement class="wp-section-heading">
+                                <ui:Label text="능력치" class="wp-card-title"/>
+                            </ui:VisualElement>
+                            <ui:VisualElement name="player-ability-columns" class="wp-ability-columns"/>
+                            <ui:VisualElement class="wp-ability-summary">
+                                <ui:VisualElement name="player-ability-summary" class="wp-summary-line"/>
+                            </ui:VisualElement>
+                        </ui:VisualElement>
+                    </ui:VisualElement>
+                    <ui:VisualElement name="wizard-step-2" class="wizard-step hidden">
                         <ui:Label text="단체 이름" class="field-label"/>
                         <ui:TextField name="promotion-name-input" value="PW Wrestling" max-length="32" class="promotion-input"/>
                         <ui:Label text="단체 약자" class="field-label spaced"/>
                         <ui:TextField name="promotion-abbreviation-input" value="PW" max-length="8" class="promotion-input short-input"/>
                         <ui:Label text="약자는 대시보드와 경기 화면의 단체 로고 자리에 표시됩니다." class="field-help"/>
                     </ui:VisualElement>
-                    <ui:VisualElement name="wizard-step-1" class="wizard-step hidden">
+                    <ui:VisualElement name="wizard-step-3" class="wizard-step hidden">
                         <ui:Label text="첫 시즌을 함께할 선수를 8~20명 선택하세요." class="step-copy"/>
                         <ui:VisualElement class="roster-heading">
                             <ui:Label text="후보 선수"/>
@@ -30,7 +114,7 @@
                         <ui:VisualElement name="roster-table-header" class="roster-table-header"/>
                         <ui:ScrollView name="roster-list" class="roster-list"/>
                     </ui:VisualElement>
-                    <ui:VisualElement name="wizard-step-2" class="wizard-step hidden">
+                    <ui:VisualElement name="wizard-step-4" class="wizard-step hidden">
                         <ui:Label text="첫 시즌의 정규 쇼와 PPV 개최 주기를 정하세요." class="step-copy"/>
                         <ui:Label text="정규 쇼 주기" class="field-label"/>
                         <ui:DropdownField name="regular-frequency" class="wizard-dropdown"/>
@@ -41,13 +125,13 @@
                             <ui:Label text="2026.06.01 — 2027.05.31" class="summary-value"/>
                         </ui:VisualElement>
                     </ui:VisualElement>
-                    <ui:VisualElement name="wizard-step-3" class="wizard-step hidden">
+                    <ui:VisualElement name="wizard-step-5" class="wizard-step hidden">
                         <ui:Label text="정규 시즌 홈 경기장을 선택하세요. 잠긴 경기장도 다음 시즌 확장 비용과 운영 규모를 비교할 수 있습니다." class="step-copy"/>
                         <ui:ScrollView name="venue-list" class="venue-list">
                             <ui:VisualElement name="venue-grid" class="venue-grid"/>
                         </ui:ScrollView>
                     </ui:VisualElement>
-                    <ui:VisualElement name="wizard-step-4" class="wizard-step hidden">
+                    <ui:VisualElement name="wizard-step-6" class="wizard-step hidden">
                         <ui:Label text="선택한 내용을 확인하세요. 게임 시작 시 하나의 저장 파일로 생성됩니다." class="step-copy"/>
                         <ui:VisualElement name="final-review" class="review-card"/>
                     </ui:VisualElement>
@@ -56,6 +140,10 @@
                     <ui:Label text="START SUMMARY" class="wizard-kicker"/>
                     <ui:Label name="summary-promotion" text="PW WRESTLING · PW" class="cost-title"/>
                     <ui:VisualElement class="divider"/>
+                    <ui:VisualElement class="summary-line">
+                        <ui:Label text="플레이어" class="summary-label"/>
+                        <ui:Label name="summary-player" text="플레이어 · 전국구" class="summary-value"/>
+                    </ui:VisualElement>
                     <ui:VisualElement class="summary-line">
                         <ui:Label text="선택 선수" class="summary-label"/>
                         <ui:Label name="summary-roster" text="12명" class="summary-value"/>

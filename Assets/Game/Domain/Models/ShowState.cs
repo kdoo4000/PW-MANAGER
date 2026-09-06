@@ -21,6 +21,7 @@ namespace PWManager.Domain.Models
         public long EstimatedCost;
         public int ShowVersion;
         public int AttendanceVarianceBasisPoints = 10000;
+        public int TicketPricePercent = 100;
         public ShowStatus Status;
 
         public int CalculatePlannedDuration(IEnumerable<ShowEventState> events)
