@@ -267,7 +267,9 @@ namespace PWManager.Presentation
             Set("show-editor-message", string.Empty);
             RenderShowEditorRoster(show);
             ConfigureShowEditorSection();
-            root.Q<VisualElement>("show-editor-overlay")?.RemoveFromClassList("hidden");
+            var overlay = root.Q<VisualElement>("show-editor-overlay");
+            overlay?.BringToFront();
+            overlay?.RemoveFromClassList("hidden");
         }
 
         private void OpenSelectedEventEditor(ShowEditSection section)
@@ -1206,7 +1208,7 @@ namespace PWManager.Presentation
             "salary" => x => Salary(x), _ => x => WrestlerNameText.DisplayName(x)
         };
         private long Salary(WrestlerState wrestler) => save?.Contracts?.FirstOrDefault(x => x != null && x.PersonId == wrestler.Id && (x.Status == ContractStatus.Active || x.Status == ContractStatus.Expiring))?.MonthlySalary ?? 0;
-        private int Age(WrestlerState wrestler) { var now = save?.CurrentDate ?? default; var birth = wrestler.Identity.BirthDate; return Math.Max(0, now.Year - birth.Year - ((now.Month < birth.Month || now.Month == birth.Month && now.Day < birth.Day) ? 1 : 0)); }
+        private int Age(WrestlerState wrestler) => wrestler.Identity.BirthDate.AgeOn(save?.CurrentDate ?? default);
         private static string StyleText(string id) => id switch { "style_001" => "브롤러", "style_002" => "파워하우스", "style_003" => "테크니션", "style_004" => "하이플라이어", "style_005" => "루차 리브레", "style_006" => "자이언트", _ => "올라운더" };
         private static string GradeClass(string grade) => grade switch { "SS" => "grade-ss", "S+" => "grade-sp", "S" => "grade-s", "A+" => "grade-ap", "A" => "grade-a", "B+" => "grade-bp", "B" => "grade-b", "C" => "grade-c", "D" => "grade-d", _ => "grade-e" };
         private static string GenderText(WrestlerGender value) => value == WrestlerGender.Female ? "여성" : "남성";

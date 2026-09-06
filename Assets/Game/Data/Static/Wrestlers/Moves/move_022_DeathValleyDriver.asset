@@ -13,7 +13,8 @@ MonoBehaviour:
   m_Name: move_022_DeathValleyDriver
   m_EditorClassIdentifier: PWMANAGER.Data::PWManager.Data.Definitions.MoveDefinition
   id: move_022
-  displayName: Death Valley Driver
+  koreanName: 데스 밸리 드라이버
+  englishName: Death Valley Driver
   BrawlingWeight: 0
   PowerWeight: 0.5
   TechnicalWeight: 0.5

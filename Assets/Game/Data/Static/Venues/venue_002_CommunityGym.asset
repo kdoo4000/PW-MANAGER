@@ -13,7 +13,8 @@ MonoBehaviour:
   m_Name: venue_002_CommunityGym
   m_EditorClassIdentifier: PWMANAGER.Data::PWManager.Data.Definitions.VenueDefinition
   id: venue_002
-  displayName: Community Gym
+  koreanName: "\uCEE4\uBBA4\uB2C8\uD2F0 \uCCB4\uC721\uAD00"
+  englishName: Community Gym
   Scale: 1
   Capacity: 500
   RequiredPrestige: 0

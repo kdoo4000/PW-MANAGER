@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -63,6 +63,7 @@ namespace PWManager.Presentation
             document = GetComponent<UIDocument>();
             foreach (var view in GetComponentsInChildren<DashboardViewHost>())
                 view.Mount(document.rootVisualElement);
+            DashboardViewHost.MountMissingViews(document.rootVisualElement);
             showPlanningController = new ShowPlanningController(document.rootVisualElement);
             scheduleController = new DashboardScheduleController(document.rootVisualElement, showPlanningController.VenueName, id => ShowPlanningPage(id));
             inboxController = new DashboardInboxController(document.rootVisualElement, () => ShowSchedulePage(), id => ShowPlanningPage(id));
@@ -223,7 +224,7 @@ namespace PWManager.Presentation
             var show = schedule == null ? null : save.Shows?.FirstOrDefault(x => x?.ScheduleId == schedule.Id);
             BindNextShow(save, schedule, show);
             var tasks = BuildTasks(save, schedule, show, active);
-            BindTasks(tasks); inboxController.Bind(save); BindFanReaction(active); BindStories(save); BindResult(save); BindAdvanceButton(save);
+            BindTasks(tasks); inboxController.Bind(save); BindFanReaction(); BindStories(save); BindResult(save); BindAdvanceButton(save);
             Badge("home-badge", tasks.Count); Badge("message-badge", inboxController.UnreadCount); Badge("show-badge", save.Shows?.Count(x => x != null && x.Status != ShowStatus.Completed) ?? 0); Badge("report-badge", save.ShowResults?.Count ?? 0);
             var notifications = document.rootVisualElement.Q<Button>("notifications"); if (notifications != null) notifications.text = $"알림  {tasks.Count}";
             rosterController.Render(boundSave);
@@ -580,15 +581,16 @@ namespace PWManager.Presentation
             }
         }
 
-        private void BindFanReaction(List<WrestlerState> wrestlers)
+        private void BindFanReaction()
         {
-            var values = wrestlers.Where(x => x.FanReaction != null).ToList();
-            if (values.Count == 0) { Set("fan-caption", "데이터 없음"); Set("mania-value", "—"); Set("light-value", "—"); Set("family-value", "—"); FanBars(0, 0, 0); return; }
-            var mania = values.Average(x => x.FanReaction.ManiaFanReaction); var light = values.Average(x => x.FanReaction.LightFanReaction); var family = values.Average(x => x.FanReaction.FamilyFanReaction);
-            Set("fan-caption", $"{values.Count}명 기준"); Set("mania-value", Signed(mania)); Set("light-value", Signed(light)); Set("family-value", Signed(family)); FanBars(mania, light, family);
+            var audience = boundSave?.Promotion?.Audience;
+            if (audience?.IsInitialized != true)
+            { Set("fan-caption", "—"); Set("mania-value", "—"); Set("light-value", "—"); Set("family-value", "—"); return; }
+            Set("fan-caption", $"{audience.TotalFollowers:N0}명 · 주간 {Signed(audience.LastWeeklyChange)}");
+            Set("mania-value", $"{audience.Hardcore.Followers:N0}명 · 만족 {audience.Hardcore.Satisfaction:0}");
+            Set("light-value", $"{audience.Casual.Followers:N0}명 · 만족 {audience.Casual.Satisfaction:0}");
+            Set("family-value", $"{audience.Mark.Followers:N0}명 · 만족 {audience.Mark.Satisfaction:0}");
         }
-
-
         private void BindStories(GameSave save)
         {
             var changes = (save.ShowResults ?? new List<ShowResultState>()).Where(x => x != null).SelectMany(x => x.StoryChanges ?? new List<ResultChangeState>()).TakeLast(3).Reverse().ToList();
@@ -607,11 +609,11 @@ namespace PWManager.Presentation
             if (result == null) { Set("result-name", "결과 데이터 없음"); Set("result-finance", "완료된 쇼 결과가 생성되면 표시됩니다"); SetResultEmpty(); return; }
             var show = save.Shows?.FirstOrDefault(x => x?.Id == result.ShowId);
             var matches = (save.MatchResults ?? new List<MatchResultState>()).Where(x => x != null && result.MatchResultIds.Contains(x.Id)).ToList();
-            var promos = (save.PromoResults ?? new List<PromoResultState>()).Where(x => x != null && result.PromoResultIds.Contains(x.Id)).ToList();
-            var reactions = matches.Select(x => x.FanReaction).Concat(promos.Select(x => x.FanReaction)).Where(x => x != null).ToList();
             Set("result-name", show?.Name ?? "완료된 쇼"); Set("result-finance", $"수익 {Compact(result.FinancialSettlement.Revenue)} · 비용 {Compact(result.FinancialSettlement.Cost)} · 순손익 {SignedMoney(result.FinancialSettlement.NetIncome)}");
             Set("show-score", Stars(result.ShowEvaluation.CriticReview)); Set("match-score", matches.Count == 0 ? "—" : Stars(matches.OrderByDescending(x => x.CriticReview?.FinalScore ?? 0f).First().CriticReview));
-            Set("result-mania", reactions.Count == 0 ? "—" : Signed(reactions.Average(x => x.Mania))); Set("result-light", reactions.Count == 0 ? "—" : Signed(reactions.Average(x => x.Light))); Set("result-family", reactions.Count == 0 ? "—" : Signed(reactions.Average(x => x.Family)));
+            Set("result-mania", result.FanSatisfaction?.IsCalculated == true ? $"{result.FanSatisfaction.Mania:0}" : "—");
+            Set("result-light", result.FanSatisfaction?.IsCalculated == true ? $"{result.FanSatisfaction.Light:0}" : "—");
+            Set("result-family", result.FanSatisfaction?.IsCalculated == true ? $"{result.FanSatisfaction.Family:0}" : "—");
             var change = result.WrestlerChanges?.Concat(result.StoryChanges ?? new List<ResultChangeState>()).FirstOrDefault(); Set("result-change", change == null ? "기록된 변화 없음" : $"{change.ValueKey} {Signed(change.Amount)} · {change.Reason}");
             BindShowSimulation(save, result);
         }
@@ -672,7 +674,7 @@ namespace PWManager.Presentation
             Set("next-show-caption", "다음 쇼 일정"); Set("next-show-date", "—"); Set("next-show-name", "활성 저장 데이터가 없습니다"); Set("next-show-detail", "새 게임 또는 저장 데이터를 연결하세요"); Set("next-show-type", "—"); Set("next-show-status", "저장 없음");
             Set("cash-detail", "활성 저장 없음"); Set("promotion-name", "—"); Set("promotion-abbreviation", "—"); Set("roster-detail", "전체 —"); Set("risk-detail", "부상 — · 컨디션 —"); Set("staff-detail", "부서 데이터 없음");
             SetProgress(0); Set("card-count", "카드 —"); Set("participant-count", "출연 —"); Set("estimated-cost", "예상 비용 —");
-            BindTasks(new List<TaskItem> { new("—", "활성 저장 데이터 없음", "") }); BindFanReaction(new List<WrestlerState>()); BindStories(new GameSave());
+            BindTasks(new List<TaskItem> { new("—", "활성 저장 데이터 없음", "") }); BindFanReaction(); BindStories(new GameSave());
             Set("result-name", "결과 데이터 없음"); Set("result-finance", "완료된 쇼 결과가 생성되면 표시됩니다"); SetResultEmpty();
             inboxController.Bind(boundSave);
             Badge("home-badge", 0); Badge("message-badge", 0); Badge("show-badge", 0); Badge("report-badge", 0); var button = document.rootVisualElement.Q<Button>("notifications"); if (button != null) button.text = "알림  0";
@@ -682,8 +684,6 @@ namespace PWManager.Presentation
 
         private void SetResultEmpty() { foreach (var id in new[] { "show-score", "match-score", "result-mania", "result-light", "result-family" }) Set(id, "—"); Set("result-change", "데이터 없음"); document?.rootVisualElement?.Q("show-simulation")?.AddToClassList("hidden"); }
         private void SetProgress(int value) { Set("preparation-value", $"준비도 {value}%"); var bar = document.rootVisualElement.Q<VisualElement>(className: "progress-fill"); if (bar != null) bar.style.width = Length.Percent(value); }
-        private void FanBars(float mania, float light, float family) { var v = new[] { Math.Max(0, mania + 100), Math.Max(0, light + 100), Math.Max(0, family + 100) }; var total = Math.Max(v.Sum(), 1); Width("mania-bar", (float)(v[0] / total * 100)); Width("light-bar", (float)(v[1] / total * 100)); Width("family-bar", (float)(v[2] / total * 100)); }
-        private void Width(string id, float value) { var e = document.rootVisualElement.Q<VisualElement>(id); if (e != null) e.style.width = Length.Percent(value); }
         private void Badge(string id, int count) { var e = document.rootVisualElement.Q<Label>(id); if (e == null) return; e.text = count.ToString(); e.style.display = count > 0 ? DisplayStyle.Flex : DisplayStyle.None; }
         private void Set(string id, string value) { var label = document.rootVisualElement.Q<Label>(id); WrestlerNameText.Set(label, value, boundSave?.Wrestlers); }
         private void ApplyIcons()

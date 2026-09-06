@@ -19,7 +19,8 @@ namespace PWManager.Data.Validation
             var nodes = graph.Nodes ?? new List<PromoGraphNodeData>();
             var edges = graph.Edges ?? new List<PromoGraphEdgeData>();
             if (string.IsNullOrWhiteSpace(graph.TemplateId)) errors.Add("Template ID is required.");
-            if (string.IsNullOrWhiteSpace(graph.DisplayName)) errors.Add("Display name is required.");
+            if (string.IsNullOrWhiteSpace(graph.KoreanName)) errors.Add("Korean name is required.");
+            if (string.IsNullOrWhiteSpace(graph.EnglishName)) errors.Add("English name is required.");
             if (nodes.Count == 0) errors.Add("Graph requires at least one node.");
 
             var validNodes = nodes.Where(x => x != null).ToList();

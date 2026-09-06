@@ -17,6 +17,8 @@ namespace PWManager.Domain.Models
         public long Revenue;
         public long Cost;
         public long NetIncome;
+        public long Attendance;
+        public long TicketPrice;
     }
 
     [Serializable]
@@ -35,5 +37,18 @@ namespace PWManager.Domain.Models
         public List<ResultChangeState> StoryChanges = new();
         public List<ResultChangeState> TitleChanges = new();
         public List<ResultChangeState> TournamentChanges = new();
+        public FanReactionResultState FanExpectation;
+        public FanReactionResultState FanSatisfaction;
+        public float FanExposure;
+        public List<WrestlerFanChangeState> FanResponseChanges = new();
+    }
+
+    [Serializable]
+    public sealed class WrestlerFanChangeState
+    {
+        public string WrestlerId;
+        public FanResponseState Mark;
+        public FanResponseState Casual;
+        public FanResponseState Hardcore;
     }
 }

@@ -13,7 +13,8 @@ MonoBehaviour:
   m_Name: staff_001_MedicalTeam
   m_EditorClassIdentifier: PWMANAGER.Data::PWManager.Data.Definitions.StaffDepartmentDefinition
   id: staff_001
-  displayName: "\uC758\uB8CC\uD300"
+  koreanName: "\uC758\uB8CC\uD300"
+  englishName: Medical Team
   DepartmentType: 0
   StartingLevel: 1
   UnlockPrestigeByLevel: 00000000000000002c0100000000000084030000000000000807000000000000800c000000000000

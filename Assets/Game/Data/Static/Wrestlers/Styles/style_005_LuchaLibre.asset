@@ -13,7 +13,8 @@ MonoBehaviour:
   m_Name: style_005_LuchaLibre
   m_EditorClassIdentifier: PWMANAGER.Data::PWManager.Data.Definitions.WrestlingStyleDefinition
   id: style_005
-  displayName: "\uB8E8\uCC28 \uB9AC\uBE0C\uB808"
+  koreanName: "\uB8E8\uCC28 \uB9AC\uBE0C\uB808"
+  englishName: Lucha Libre
   BrawlingWeight: 0.05
   PowerWeight: 0.05
   HighFlyingWeight: 0.5

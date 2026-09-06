@@ -13,7 +13,8 @@ MonoBehaviour:
   m_Name: style_001_Brawler
   m_EditorClassIdentifier: PWMANAGER.Data::PWManager.Data.Definitions.WrestlingStyleDefinition
   id: style_001
-  displayName: "\uBE0C\uB864\uB7EC"
+  koreanName: "\uBE0C\uB864\uB7EC"
+  englishName: Brawler
   BrawlingWeight: 0.55
   PowerWeight: 0.2
   HighFlyingWeight: 0.1

@@ -13,7 +13,8 @@ MonoBehaviour:
   m_Name: trait_011_Choker
   m_EditorClassIdentifier: PWMANAGER.Data::PWManager.Data.Definitions.TraitDefinition
   id: trait_011
-  displayName: "\uC0C8\uAC00\uC2B4"
+  koreanName: "\uC0C8\uAC00\uC2B4"
+  englishName: Choker
   Polarity: 1
   Description: "\uC911\uC694 \uACBD\uAE30\uC5D0\uC11C \uC720\uD6A8 \uACBD\uAE30 \uB2A5\uB825
     -1.0"

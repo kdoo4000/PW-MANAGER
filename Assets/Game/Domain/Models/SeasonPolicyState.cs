@@ -1,7 +1,15 @@
 using System;
+using System.Collections.Generic;
 
 namespace PWManager.Domain.Models
 {
+    [Serializable]
+    public sealed class PpvTitlePolicyState
+    {
+        public int Month;
+        public string Title;
+    }
+
     [Serializable]
     public sealed class SeasonPolicyState
     {
@@ -12,5 +20,7 @@ namespace PWManager.Domain.Models
         public PpvFrequency PpvFrequency;
         public string SignaturePpvScheduleId;
         public string RegularVenueContractId;
+        public string RegularShowName;
+        public List<PpvTitlePolicyState> PpvShowTitles = new();
     }
 }

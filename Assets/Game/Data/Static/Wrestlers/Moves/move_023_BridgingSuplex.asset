@@ -13,7 +13,8 @@ MonoBehaviour:
   m_Name: move_023_BridgingSuplex
   m_EditorClassIdentifier: PWMANAGER.Data::PWManager.Data.Definitions.MoveDefinition
   id: move_023
-  displayName: Bridging Suplex
+  koreanName: 브리징 수플렉스
+  englishName: Bridging Suplex
   BrawlingWeight: 0
   PowerWeight: 0.25
   TechnicalWeight: 0.75

@@ -210,17 +210,12 @@
                                         <ui:Label name="wp-mania" text="—"/>
                                     </ui:VisualElement>
                                     <ui:VisualElement class="wp-info-row">
-                                        <ui:Label text="라이트"/>
+                                        <ui:Label text="캐주얼"/>
                                         <ui:Label name="wp-light" text="—"/>
                                     </ui:VisualElement>
                                     <ui:VisualElement class="wp-info-row">
-                                        <ui:Label text="패밀리"/>
+                                        <ui:Label text="몰입형"/>
                                         <ui:Label name="wp-family" text="—"/>
-                                    </ui:VisualElement>
-                                    <ui:VisualElement class="wp-rule"/>
-                                    <ui:VisualElement class="wp-info-row">
-                                        <ui:Label text="전체 관심 강도"/>
-                                        <ui:Label name="wp-fan-total" text="— / 100" class="attention-color"/>
                                     </ui:VisualElement>
                                 </ui:VisualElement>
                             </ui:VisualElement>

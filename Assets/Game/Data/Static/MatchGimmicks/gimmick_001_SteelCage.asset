@@ -13,7 +13,8 @@ MonoBehaviour:
   m_Name: gimmick_001_SteelCage
   m_EditorClassIdentifier: PWMANAGER.Data::PWManager.Data.Definitions.MatchGimmickDefinition
   id: gimmick_001
-  displayName: Steel Cage
+  koreanName: "\uC2A4\uD2F8 \uCF00\uC774\uC9C0"
+  englishName: Steel Cage
   MinimumParticipants: 2
   MaximumParticipants: 6
   CompatibleMatchTypeIds:

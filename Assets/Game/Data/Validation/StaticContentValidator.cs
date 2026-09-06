@@ -131,7 +131,8 @@ namespace PWManager.Data.Validation
                 if (!EntityId.IsValidStaticId(definition.Id) || !definition.Id.StartsWith(prefix, StringComparison.Ordinal))
                     errors.Add($"Invalid static ID: {definition.Id}");
                 else if (!ids.Add(definition.Id)) errors.Add($"Duplicate static ID: {definition.Id}");
-                if (string.IsNullOrWhiteSpace(definition.DisplayName)) errors.Add($"Display name is required: {definition.Id}");
+                if (string.IsNullOrWhiteSpace(definition.KoreanName)) errors.Add($"Korean name is required: {definition.Id}");
+                if (string.IsNullOrWhiteSpace(definition.EnglishName)) errors.Add($"English name is required: {definition.Id}");
             }
         }
     }

@@ -13,7 +13,8 @@ MonoBehaviour:
   m_Name: trait_019_RoleModel
   m_EditorClassIdentifier: PWMANAGER.Data::PWManager.Data.Definitions.TraitDefinition
   id: trait_019
-  displayName: "\uBAA8\uBC94\uC0DD"
+  koreanName: "\uBAA8\uBC94\uC0DD"
+  englishName: Role Model
   Polarity: 0
   Description: "\uBD80\uC815\uC801 \uB77C\uCEE4\uB8F8 \uC774\uBCA4\uD2B8 \uBC1C\uC0DD
     \uD655\uB960 \uAC10\uC18C"

@@ -71,7 +71,8 @@ namespace PWManager.Tests
         {
             var graph = ScriptableObject.CreateInstance<PromoTemplateGraphAsset>();
             graph.TemplateId = "promo_template_test";
-            graph.DisplayName = "Test Promo";
+            graph.KoreanName = "테스트 프로모";
+            graph.EnglishName = "Test Promo";
             graph.Nodes.Add(new PromoGraphNodeData { Id = "start", Type = PromoGraphNodeType.Start, Title = "Start" });
             graph.Nodes.Add(new PromoGraphNodeData { Id = "outcome", Type = PromoGraphNodeType.Outcome, Title = "Outcome" });
             graph.Edges.Add(new PromoGraphEdgeData { Id = "edge", FromNodeId = "start", ToNodeId = "outcome" });

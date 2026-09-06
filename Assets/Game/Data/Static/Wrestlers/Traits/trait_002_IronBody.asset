@@ -13,7 +13,8 @@ MonoBehaviour:
   m_Name: trait_002_IronBody
   m_EditorClassIdentifier: PWMANAGER.Data::PWManager.Data.Definitions.TraitDefinition
   id: trait_002
-  displayName: "\uAC15\uCCA0\uBAB8"
+  koreanName: "\uAC15\uCCA0\uBAB8"
+  englishName: Iron Body
   Polarity: 0
   Description: "\uACBD\uAE30 \uC911 \uBD80\uC0C1 \uBC1C\uC0DD \uD655\uB960 20% \uAC10\uC18C"
   ConflictingTraitIds:

@@ -13,7 +13,8 @@ MonoBehaviour:
   m_Name: move_001_RunningKneeStrike
   m_EditorClassIdentifier: PWMANAGER.Data::PWManager.Data.Definitions.MoveDefinition
   id: move_001
-  displayName: Running Knee Strike
+  koreanName: "\uB7EC\uB2DD \uB2C8 \uC2A4\uD2B8\uB77C\uC774\uD06C"
+  englishName: Running Knee Strike
   BrawlingWeight: 0.7
   PowerWeight: 0
   TechnicalWeight: 0.3

@@ -33,10 +33,10 @@ namespace PWManager.Domain.Services
             if (save.ShowResults.Any(x => x?.ShowId == show.Id && x.ShowVersion == show.ShowVersion))
                 throw new InvalidOperationException("This show version has already been executed.");
 
-            var ticketUnitPrice = TicketPricingRules.GetReferencePrice(venueBaseTicketPrice, show.ShowType);
-            // ponytail: venue capacity is the temporary base demand until the box-office system supplies its own value.
+            var referencePrice = TicketPricingRules.GetReferencePrice(venueBaseTicketPrice, show.ShowType);
+            var ticketUnitPrice = TicketPricingRules.GetActualPrice(referencePrice, show.TicketPricePercent);
             var ticketSalesCount = TicketPricingRules.GetActualAttendance(
-                venueCapacity, ticketUnitPrice, ticketUnitPrice, venueCapacity, show.AttendanceVarianceBasisPoints);
+                FanAudienceService.BaseDemand(save, show, referencePrice), ticketUnitPrice, referencePrice, venueCapacity, show.AttendanceVarianceBasisPoints);
             var ticketRevenue = checked(ticketUnitPrice * ticketSalesCount);
 
             var issues = planningService.Validate(save, showId).Where(x => x.Severity == ShowValidationSeverity.Error).ToList();
@@ -90,11 +90,14 @@ namespace PWManager.Domain.Services
                 ShowEvaluation = CreateShowEvaluation(save, eventIds, matchResults, promoResults),
                 FinancialSettlement = new FinancialSettlementState
                 {
+                    Attendance = ticketSalesCount,
+                    TicketPrice = ticketUnitPrice,
                     Revenue = ticketRevenue,
                     Cost = show.EstimatedCost,
                     NetIncome = ticketRevenue - show.EstimatedCost
                 }
             };
+            FanAudienceService.Evaluate(save, show, showResult, matchResults, promoResults);
             save.MatchResults.AddRange(matchResults);
             save.PromoResults.AddRange(promoResults);
             save.ShowResults.Add(showResult);

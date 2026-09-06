@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Serialization;
 
 namespace PWManager.Data.Definitions
 {
@@ -38,7 +39,13 @@ namespace PWManager.Data.Definitions
     public sealed class PromoTemplateGraphAsset : ScriptableObject
     {
         public string TemplateId;
-        public string DisplayName;
+        [FormerlySerializedAs("DisplayName")] public string KoreanName;
+        public string EnglishName;
+        public string DisplayName
+        {
+            get => string.IsNullOrWhiteSpace(KoreanName) ? EnglishName : KoreanName;
+            set => KoreanName = value;
+        }
         public List<PromoGraphNodeData> Nodes = new();
         public List<PromoGraphEdgeData> Edges = new();
     }

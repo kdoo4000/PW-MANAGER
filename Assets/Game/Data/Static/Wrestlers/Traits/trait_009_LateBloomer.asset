@@ -13,7 +13,8 @@ MonoBehaviour:
   m_Name: trait_009_LateBloomer
   m_EditorClassIdentifier: PWMANAGER.Data::PWManager.Data.Definitions.TraitDefinition
   id: trait_009
-  displayName: "\uB2A6\uAC8C \uD540 \uAF43"
+  koreanName: "\uB2A6\uAC8C \uD540 \uAF43"
+  englishName: Late Bloomer
   Polarity: 2
   Description: "\uC80A\uC740 \uC2DC\uAE30 \uC131\uC7A5 \uB454\uD654, 30\uB300 \uC774\uD6C4
     \uC131\uC7A5 \uAC00\uB2A5 \uBC0F \uB178\uD654 \uB2A5\uB825 \uAC10\uC18C \uC5C6\uC74C"

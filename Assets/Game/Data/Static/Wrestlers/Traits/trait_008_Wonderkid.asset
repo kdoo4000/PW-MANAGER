@@ -13,7 +13,8 @@ MonoBehaviour:
   m_Name: trait_008_Wonderkid
   m_EditorClassIdentifier: PWMANAGER.Data::PWManager.Data.Definitions.TraitDefinition
   id: trait_008
-  displayName: "\uC6D0\uB354\uD0A4\uB4DC"
+  koreanName: "\uC6D0\uB354\uD0A4\uB4DC"
+  englishName: Wonderkid
   Polarity: 2
   Description: "\uC80A\uC740 \uC2DC\uAE30 \uC131\uC7A5 \uAC00\uC18D, 30\uB300 \uC774\uD6C4
     \uC131\uC7A5\uB960 \uAC10\uC18C\uC640 \uBE60\uB978 \uB178\uD654"

@@ -13,7 +13,8 @@ MonoBehaviour:
   m_Name: trait_015_SinglesSpecialist
   m_EditorClassIdentifier: PWMANAGER.Data::PWManager.Data.Definitions.TraitDefinition
   id: trait_015
-  displayName: "\uC2F1\uAE00 \uC120\uD638"
+  koreanName: "\uC2F1\uAE00 \uC120\uD638"
+  englishName: Singles Specialist
   Polarity: 2
   Description: "\uC2F1\uAE00 +0.5, \uD0DC\uADF8 -0.5"
   ConflictingTraitIds:

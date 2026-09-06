@@ -13,7 +13,8 @@ MonoBehaviour:
   m_Name: style_002_Powerhouse
   m_EditorClassIdentifier: PWMANAGER.Data::PWManager.Data.Definitions.WrestlingStyleDefinition
   id: style_002
-  displayName: "\uD30C\uC6CC\uD558\uC6B0\uC2A4"
+  koreanName: "\uD30C\uC6CC\uD558\uC6B0\uC2A4"
+  englishName: Powerhouse
   BrawlingWeight: 0.15
   PowerWeight: 0.55
   HighFlyingWeight: 0.05

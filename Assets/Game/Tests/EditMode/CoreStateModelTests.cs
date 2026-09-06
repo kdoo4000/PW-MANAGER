@@ -10,6 +10,95 @@ namespace PWManager.Tests
 {
     public sealed class CoreStateModelTests
     {
+        [TestCase(-100f, 0f, 100f)]
+        [TestCase(-40f, 30f, 40f)]
+        [TestCase(0f, 50f, 0f)]
+        [TestCase(40f, 70f, 40f)]
+        [TestCase(100f, 100f, 100f)]
+        public void LegacyFanReaction_ConvertsDirectionAndStrengthOnce(float oldValue, float preference, float interest)
+        {
+            var reaction = JsonUtility.FromJson<WrestlerFanReactionState>(
+                "{\"ManiaFanReaction\":" + oldValue.ToString(System.Globalization.CultureInfo.InvariantCulture) + "}");
+            Assert.That(reaction.HardcoreResponse.Preference, Is.EqualTo(preference));
+            Assert.That(reaction.HardcoreResponse.Interest, Is.EqualTo(interest));
+            reaction.Upgrade();
+            reaction.Hardcore = new FanResponseState { Preference = 50f, Interest = 90f };
+            reaction.Upgrade();
+            var restored = JsonUtility.FromJson<WrestlerFanReactionState>(JsonUtility.ToJson(reaction));
+            Assert.That(restored.HardcoreResponse.Preference, Is.EqualTo(50f));
+            Assert.That(restored.HardcoreResponse.Interest, Is.EqualTo(90f));
+            Assert.That(restored.ManiaFanReaction, Is.EqualTo(oldValue));
+            Assert.That(restored.Copy().HardcoreResponse.Interest, Is.EqualTo(90f));
+        }
+
+        [Test]
+        public void FanReaction_SaveLoadPreservesLegacyAndIndependentAxes()
+        {
+            var save = CreateValidSave();
+            var fan = save.Wrestlers[0].FanReaction;
+            fan.FamilyFanReaction = -80f;
+            fan.LightFanReaction = 40f;
+            fan.ManiaFanReaction = 100f;
+            var directory = System.IO.Path.Combine(System.IO.Path.GetTempPath(), "PWManagerTests", Guid.NewGuid().ToString("N"));
+            try
+            {
+                var service = new PWManager.Infrastructure.Save.SaveService(directory);
+                service.Save("fans", save);
+                var restored = service.Load("fans");
+                fan = restored.Wrestlers[0].FanReaction;
+                Assert.That(fan.UsesTwoAxes, Is.True);
+                Assert.That(fan.Mark.Preference, Is.EqualTo(10f));
+                Assert.That(fan.Mark.Interest, Is.EqualTo(80f));
+                Assert.That(fan.Casual.Preference, Is.EqualTo(70f));
+                Assert.That(fan.Hardcore.Interest, Is.EqualTo(100f));
+                fan.Mark = new FanResponseState { Preference = 50f, Interest = 90f };
+                service.Save("fans", restored);
+                Assert.That(service.Load("fans").Wrestlers[0].FanReaction.Mark.Interest, Is.EqualTo(90f));
+                Assert.That(service.LoadBackup("fans").Wrestlers[0].FanReaction.Mark.Preference, Is.EqualTo(10f));
+            }
+            finally
+            {
+                if (System.IO.Directory.Exists(directory)) System.IO.Directory.Delete(directory, true);
+            }
+        }
+
+        [TestCase(-1f)]
+        [TestCase(101f)]
+        [TestCase(float.NaN)]
+        [TestCase(float.PositiveInfinity)]
+        public void FanReaction_InvalidAxesAreRejected(float invalid)
+        {
+            var save = CreateValidSave();
+            save.Wrestlers[0].FanReaction.Upgrade();
+            save.Wrestlers[0].FanReaction.Mark.Preference = invalid;
+            save.Wrestlers[0].FanReaction.Casual.Interest = invalid;
+            var errors = GameSaveValidator.Validate(save);
+            Assert.That(errors, Has.Some.Contains("FanPreference"));
+            Assert.That(errors, Has.Some.Contains("FanInterest"));
+        }
+
+        [Test]
+        public void FanReaction_ProfileBindsBothAxesWithoutInventingOverallWeight()
+        {
+            var ui = new GameObject("Fan profile test");
+            ui.SetActive(false);
+            try
+            {
+                var controller = ui.AddComponent<PWManager.Presentation.WrestlerProfileController>();
+                var root = Resources.Load<UnityEngine.UIElements.VisualTreeAsset>("PWManagerUI/WrestlerProfile").CloneTree();
+                var flags = System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic;
+                typeof(PWManager.Presentation.WrestlerProfileController).GetField("root", flags).SetValue(controller, root);
+                var wrestler = CreateValidSave().Wrestlers[0];
+                wrestler.FanReaction.Upgrade();
+                wrestler.FanReaction.Mark = new FanResponseState { Preference = 50f, Interest = 90f };
+                typeof(PWManager.Presentation.WrestlerProfileController).GetMethod("Bind", flags).Invoke(controller, new object[] { wrestler });
+                Assert.That(UnityEngine.UIElements.UQueryExtensions.Q<UnityEngine.UIElements.Label>(root, "wp-family").text,
+                    Is.EqualTo("선호 50 · 관심 90"));
+                Assert.That(UnityEngine.UIElements.UQueryExtensions.Q<UnityEngine.UIElements.Label>(root, "wp-fan-total"), Is.Null);
+            }
+            finally { UnityEngine.Object.DestroyImmediate(ui); }
+        }
+
         [Test]
         public void ValidCoreState_PassesValidationAndJsonRoundTrip()
         {

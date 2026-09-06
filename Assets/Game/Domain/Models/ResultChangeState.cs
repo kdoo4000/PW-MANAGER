@@ -30,6 +30,7 @@ namespace PWManager.Domain.Models
     [Serializable]
     public sealed class FanReactionResultState
     {
+        public bool IsCalculated;
         public float Mania;
         public float Light;
         public float Family;

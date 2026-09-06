@@ -13,7 +13,8 @@ MonoBehaviour:
   m_Name: trait_014_TagSpecialist
   m_EditorClassIdentifier: PWMANAGER.Data::PWManager.Data.Definitions.TraitDefinition
   id: trait_014
-  displayName: "\uD0DC\uADF8 \uC120\uD638"
+  koreanName: "\uD0DC\uADF8 \uC120\uD638"
+  englishName: Tag Specialist
   Polarity: 2
   Description: "\uD0DC\uADF8 +0.5, \uC2F1\uAE00 -0.5"
   ConflictingTraitIds:

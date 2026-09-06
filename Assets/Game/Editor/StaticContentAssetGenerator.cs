@@ -33,6 +33,42 @@ namespace PWManager.Editor
             { "gimmick_003", "Tables" }, { "gimmick_004", "Hardcore" }
         };
 
+        private static readonly Dictionary<string, string> KoreanNames = new()
+        {
+            { "matchtype_001", "개인전" }, { "matchtype_002", "태그팀 경기" },
+            { "gimmick_000", "기본 경기" }, { "gimmick_001", "스틸 케이지" },
+            { "gimmick_002", "래더 매치" }, { "gimmick_003", "테이블 매치" }, { "gimmick_004", "하드코어" },
+            { "venue_001", "스튜디오" }, { "venue_002", "커뮤니티 체육관" },
+            { "venue_003", "소형 아레나" }, { "venue_004", "중형 아레나" },
+            { "venue_005", "대형 아레나" }, { "venue_006", "스타디움" },
+            { "move_001", "러닝 니 스트라이크" }, { "move_002", "디스커스 래리어트" },
+            { "move_003", "스피닝 백피스트" }, { "move_004", "스피어" },
+            { "move_005", "싯아웃 파워밤" }, { "move_006", "초크슬램" },
+            { "move_007", "스파인버스터" }, { "move_008", "파일드라이버" },
+            { "move_009", "저먼 수플렉스" }, { "move_010", "드래곤 수플렉스" },
+            { "move_011", "크로스페이스" }, { "move_012", "앵클 락" },
+            { "move_013", "프로그 스플래시" }, { "move_014", "문설트" },
+            { "move_015", "슈팅 스타 프레스" }, { "move_016", "450 스플래시" },
+            { "move_017", "스프링보드 커터" }, { "move_018", "다이빙 엘보 드롭" },
+            { "move_019", "토네이도 DDT" }, { "move_020", "슈퍼킥" },
+            { "move_021", "바이시클 킥" }, { "move_022", "데스 밸리 드라이버" },
+            { "move_023", "브리징 수플렉스" }, { "move_024", "코크스크루 센턴" }
+        };
+
+        private static readonly Dictionary<string, string> EnglishDisplayNames = new()
+        {
+            { "style_004", "High Flyer" }, { "style_005", "Lucha Libre" }, { "style_007", "All-Rounder" },
+            { "trait_002", "Iron Body" }, { "trait_003", "Fast Recovery" }, { "trait_004", "Slow Recovery" },
+            { "trait_005", "Fast Learner" }, { "trait_006", "Hard Worker" }, { "trait_009", "Late Bloomer" },
+            { "trait_010", "Clutch Performer" }, { "trait_013", "Wild Card" }, { "trait_014", "Tag Specialist" },
+            { "trait_015", "Singles Specialist" }, { "trait_019", "Role Model" },
+            { "staff_001", "Medical Team" }, { "staff_002", "Scouting Team" },
+            { "staff_003", "Promotion Team" }, { "staff_004", "Commentary Team" },
+            { "venue_002", "Community Gym" }, { "venue_003", "Small Arena" },
+            { "venue_004", "Medium Arena" }, { "venue_005", "Large Arena" },
+            { "matchtype_002", "Tag Team" }, { "gimmick_001", "Steel Cage" }
+        };
+
         [MenuItem("PW Manager/Generate Confirmed Static Content")]
         public static void Generate()
         {
@@ -331,10 +367,10 @@ namespace PWManager.Editor
 
         private static T Definition<T>(string folder, string id, string name) where T : StaticDefinition
         {
-            var englishName = EnglishAssetNames.TryGetValue(id, out var configuredName)
+            var assetFileName = EnglishAssetNames.TryGetValue(id, out var configuredName)
                 ? configuredName
                 : System.Text.RegularExpressions.Regex.Replace(name, "[^A-Za-z0-9]", string.Empty);
-            var desiredPath = folder + id + "_" + englishName + ".asset";
+            var desiredPath = folder + id + "_" + assetFileName + ".asset";
             var legacyPath = folder + id + ".asset";
             var value = AssetDatabase.LoadAssetAtPath<T>(desiredPath);
             if (value == null)
@@ -347,7 +383,10 @@ namespace PWManager.Editor
                 }
                 else value = LoadOrCreate<T>(desiredPath);
             }
-            value.SetEditorIdentity(id, name);
+            var koreanName = KoreanNames.TryGetValue(id, out var configuredKoreanName) ? configuredKoreanName : name;
+            var englishName = EnglishDisplayNames.TryGetValue(id, out var configuredEnglishName) ? configuredEnglishName :
+                EnglishAssetNames.TryGetValue(id, out var assetEnglishName) ? assetEnglishName : name;
+            value.SetEditorIdentity(id, koreanName, englishName);
             return value;
         }
 

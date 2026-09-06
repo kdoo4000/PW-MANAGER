@@ -13,7 +13,8 @@ MonoBehaviour:
   m_Name: move_008_Piledriver
   m_EditorClassIdentifier: PWMANAGER.Data::PWManager.Data.Definitions.MoveDefinition
   id: move_008
-  displayName: Piledriver
+  koreanName: 파일드라이버
+  englishName: Piledriver
   BrawlingWeight: 0
   PowerWeight: 0.45
   TechnicalWeight: 0.55

@@ -29,6 +29,14 @@ namespace PWManager.Domain.Services
             return RoundMoney(venueBaseTicketPrice * GetShowTypeMultiplier(showType));
         }
 
+        public static long GetActualPrice(long referencePrice, int percent)
+        {
+            if (percent == 0) percent = 100; // Absent in legacy saves.
+            if (percent < 60 || percent > 160) throw new ArgumentOutOfRangeException(nameof(percent));
+            var range = GetPlayerPriceRange(referencePrice);
+            return Math.Max(range.Minimum, Math.Min(range.Maximum, RoundMoney(referencePrice * percent / 100m)));
+        }
+
         public static (long Minimum, long Maximum) GetPlayerPriceRange(long referencePrice)
         {
             if (referencePrice <= 0) throw new ArgumentOutOfRangeException(nameof(referencePrice));
@@ -41,7 +49,8 @@ namespace PWManager.Domain.Services
             if (referencePrice <= 0) throw new ArgumentOutOfRangeException(nameof(referencePrice));
 
             var priceRatio = (decimal)actualPrice / referencePrice;
-            if (priceRatio < MinimumPlayerMultiplier || priceRatio > MaximumPlayerMultiplier)
+            var range = GetPlayerPriceRange(referencePrice);
+            if (actualPrice < range.Minimum || actualPrice > range.Maximum)
             {
                 throw new ArgumentOutOfRangeException(nameof(actualPrice));
             }

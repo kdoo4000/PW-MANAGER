@@ -13,7 +13,8 @@ MonoBehaviour:
   m_Name: move_009_GermanSuplex
   m_EditorClassIdentifier: PWMANAGER.Data::PWManager.Data.Definitions.MoveDefinition
   id: move_009
-  displayName: German Suplex
+  koreanName: 저먼 수플렉스
+  englishName: German Suplex
   BrawlingWeight: 0
   PowerWeight: 0.45
   TechnicalWeight: 0.55

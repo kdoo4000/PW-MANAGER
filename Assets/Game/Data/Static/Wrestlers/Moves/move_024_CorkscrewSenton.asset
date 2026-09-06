@@ -13,7 +13,8 @@ MonoBehaviour:
   m_Name: move_024_CorkscrewSenton
   m_EditorClassIdentifier: PWMANAGER.Data::PWManager.Data.Definitions.MoveDefinition
   id: move_024
-  displayName: Corkscrew Senton
+  koreanName: 코크스크루 센턴
+  englishName: Corkscrew Senton
   BrawlingWeight: 0
   PowerWeight: 0
   TechnicalWeight: 0.25

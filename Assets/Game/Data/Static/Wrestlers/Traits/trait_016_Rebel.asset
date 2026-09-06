@@ -13,7 +13,8 @@ MonoBehaviour:
   m_Name: trait_016_Rebel
   m_EditorClassIdentifier: PWMANAGER.Data::PWManager.Data.Definitions.TraitDefinition
   id: trait_016
-  displayName: "\uBC18\uD56D\uC544"
+  koreanName: "\uBC18\uD56D\uC544"
+  englishName: Rebel
   Polarity: 1
   Description: "\uBD88\uB9AC\uD55C \uC9C0\uC2DC\uC5D0 \uB530\uB978 \uBD88\uB9CC \uC99D\uAC00\uB7C9
     20% \uC0C1\uC2B9"

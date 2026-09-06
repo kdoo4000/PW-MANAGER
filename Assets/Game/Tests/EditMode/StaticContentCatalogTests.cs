@@ -31,7 +31,9 @@ namespace PWManager.Tests
             Assert.That(registry.Venues, Has.Count.EqualTo(6));
             Assert.That(registry.MatchTypes, Has.Count.EqualTo(2));
             Assert.That(registry.MatchGimmicks, Has.Count.EqualTo(5));
-            Assert.That(registry.MatchTypes["matchtype_001"].DisplayName, Is.EqualTo("Individual"));
+            Assert.That(registry.MatchTypes["matchtype_001"].KoreanName, Is.EqualTo("개인전"));
+            Assert.That(registry.MatchTypes["matchtype_001"].EnglishName, Is.EqualTo("Individual"));
+            Assert.That(registry.MatchTypes["matchtype_001"].DisplayName, Is.EqualTo("개인전"));
             Assert.That(registry.MatchTypes["matchtype_001"].MinimumParticipants, Is.EqualTo(2));
             Assert.That(registry.MatchTypes["matchtype_001"].MaximumParticipants, Is.EqualTo(6));
             Assert.That(registry.MatchTypes["matchtype_002"].MinimumParticipants, Is.EqualTo(4));
@@ -42,8 +44,9 @@ namespace PWManager.Tests
             Assert.That(registry.MatchTypes["matchtype_002"].MaximumMembersPerTeam, Is.EqualTo(4));
             Assert.That(registry.MatchTypes["matchtype_001"].ConditionCostMultiplier, Is.EqualTo(1f));
             Assert.That(registry.MatchTypes["matchtype_002"].ConditionCostMultiplier, Is.EqualTo(.8f));
-            Assert.That(registry.MatchGimmicks["gimmick_001"].DisplayName, Is.EqualTo("Steel Cage"));
-            Assert.That(registry.MatchGimmicks["gimmick_000"].DisplayName, Is.EqualTo("Standard"));
+            Assert.That(registry.MatchGimmicks["gimmick_001"].KoreanName, Is.EqualTo("스틸 케이지"));
+            Assert.That(registry.MatchGimmicks["gimmick_001"].EnglishName, Is.EqualTo("Steel Cage"));
+            Assert.That(registry.MatchGimmicks["gimmick_000"].DisplayName, Is.EqualTo("기본 경기"));
             Assert.That(registry.MatchGimmicks["gimmick_000"].MaximumParticipants, Is.EqualTo(8));
             Assert.That(registry.MatchGimmicks["gimmick_001"].AllowedSpecialFinishTypes, Does.Contain(PWManager.Domain.Models.MatchFinishType.Escape));
             Assert.That(registry.MatchGimmicks["gimmick_002"].PinfallRule, Is.EqualTo(PWManager.Domain.Services.MatchRuleOverride.Disabled));

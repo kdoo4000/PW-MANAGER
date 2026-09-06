@@ -11,8 +11,41 @@
             <ui:Label name="show-schedule-completed" text="완료 0" class="show-schedule-total"/>
         </ui:VisualElement>
     </ui:VisualElement>
-    <ui:ScrollView name="show-schedule-scroll" mode="Vertical" class="show-schedule-scroll">
-        <ui:VisualElement name="show-schedule-rows" class="show-schedule-rows"/>
-    </ui:ScrollView>
+    <ui:VisualElement class="show-schedule-columns">
+        <ui:VisualElement class="show-schedule-column regular">
+            <ui:VisualElement class="show-schedule-column-heading">
+                <ui:Label text="정규 쇼" class="show-schedule-column-title"/>
+                <ui:Button name="schedule-regular-title-edit" text="제목 설정" class="show-schedule-title-edit"/>
+            </ui:VisualElement>
+            <ui:ScrollView mode="Vertical" class="show-schedule-scroll">
+                <ui:VisualElement name="show-schedule-regular-rows" class="show-schedule-rows"/>
+            </ui:ScrollView>
+        </ui:VisualElement>
+        <ui:VisualElement class="show-schedule-column ppv">
+            <ui:VisualElement class="show-schedule-column-heading">
+                <ui:Label text="PPV" class="show-schedule-column-title"/>
+                <ui:Button name="schedule-ppv-title-edit" text="제목 설정" class="show-schedule-title-edit"/>
+            </ui:VisualElement>
+            <ui:ScrollView mode="Vertical" class="show-schedule-scroll">
+                <ui:VisualElement name="show-schedule-ppv-rows" class="show-schedule-rows"/>
+            </ui:ScrollView>
+        </ui:VisualElement>
+    </ui:VisualElement>
+    <ui:VisualElement name="schedule-title-overlay" class="schedule-title-overlay hidden">
+        <ui:VisualElement class="schedule-title-dialog">
+            <ui:VisualElement class="schedule-title-heading">
+                <ui:Label name="schedule-title-dialog-title" text="쇼 제목 설정" class="schedule-title-dialog-title"/>
+                <ui:Button name="schedule-title-close" text="×" class="schedule-title-close"/>
+            </ui:VisualElement>
+            <ui:ScrollView mode="Vertical" class="schedule-title-scroll">
+                <ui:VisualElement name="schedule-title-fields" class="schedule-title-fields"/>
+            </ui:ScrollView>
+            <ui:Label name="schedule-title-message" text="" class="schedule-title-message"/>
+            <ui:VisualElement class="schedule-title-footer">
+                <ui:Button name="schedule-title-cancel" text="취소" class="schedule-title-cancel"/>
+                <ui:Button name="schedule-title-save" text="저장" class="schedule-title-save"/>
+            </ui:VisualElement>
+        </ui:VisualElement>
+    </ui:VisualElement>
 </ui:VisualElement>
 </ui:UXML>

@@ -13,7 +13,8 @@ MonoBehaviour:
   m_Name: move_004_Spear
   m_EditorClassIdentifier: PWMANAGER.Data::PWManager.Data.Definitions.MoveDefinition
   id: move_004
-  displayName: Spear
+  koreanName: 스피어
+  englishName: Spear
   BrawlingWeight: 0.45
   PowerWeight: 0.55
   TechnicalWeight: 0

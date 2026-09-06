@@ -13,7 +13,8 @@ MonoBehaviour:
   m_Name: StableRecruitment
   m_EditorClassIdentifier: PWMANAGER.Data::PWManager.Data.Definitions.PromoTemplateGraphAsset
   TemplateId: promo_stable_recruitment
-  DisplayName: Stable Recruitment
+  KoreanName: 스테이블 영입
+  EnglishName: Stable Recruitment
   Nodes:
   - Id: start
     Type: 0

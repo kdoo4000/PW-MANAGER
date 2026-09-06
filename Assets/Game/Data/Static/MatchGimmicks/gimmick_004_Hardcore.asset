@@ -13,7 +13,8 @@ MonoBehaviour:
   m_Name: gimmick_004_Hardcore
   m_EditorClassIdentifier: PWMANAGER.Data::PWManager.Data.Definitions.MatchGimmickDefinition
   id: gimmick_004
-  displayName: Hardcore
+  koreanName: "\uD558\uB4DC\uCF54\uC5B4"
+  englishName: Hardcore
   MinimumParticipants: 2
   MaximumParticipants: 6
   CompatibleMatchTypeIds:

@@ -39,6 +39,8 @@ namespace PWManager.Domain.Models
         public int WorldSeed;
         public GameDate CurrentDate;
         public PromotionState Promotion;
+        public PlayerCharacterState Player;
+        public List<LocalizedNameState> SystemNames;
         public List<WrestlerState> Wrestlers;
         public List<TagTeamState> TagTeams;
         public List<ManagerState> Managers;
@@ -61,6 +63,7 @@ namespace PWManager.Domain.Models
         public GameSave()
         {
             Wrestlers = new List<WrestlerState>();
+            SystemNames = PWManager.Domain.Models.SystemNames.CreateDefaults();
             TagTeams = new List<TagTeamState>();
             Managers = new List<ManagerState>();
             Contracts = new List<ContractState>();

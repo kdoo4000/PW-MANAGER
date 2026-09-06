@@ -13,7 +13,8 @@ MonoBehaviour:
   m_Name: trait_003_FastRecovery
   m_EditorClassIdentifier: PWMANAGER.Data::PWManager.Data.Definitions.TraitDefinition
   id: trait_003
-  displayName: "\uBE60\uB978 \uD68C\uBCF5"
+  koreanName: "\uBE60\uB978 \uD68C\uBCF5"
+  englishName: Fast Recovery
   Polarity: 0
   Description: "\uCCB4\uB825 \uBC0F \uBD80\uC0C1 \uD68C\uBCF5 \uAE30\uAC04 25% \uAC10\uC18C"
   ConflictingTraitIds:

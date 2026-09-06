@@ -13,7 +13,8 @@ MonoBehaviour:
   m_Name: venue_001_Studio
   m_EditorClassIdentifier: PWMANAGER.Data::PWManager.Data.Definitions.VenueDefinition
   id: venue_001
-  displayName: Studio
+  koreanName: "\uC2A4\uD29C\uB514\uC624"
+  englishName: Studio
   Scale: 0
   Capacity: 100
   RequiredPrestige: 0

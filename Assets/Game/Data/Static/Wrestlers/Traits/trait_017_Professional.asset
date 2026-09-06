@@ -13,7 +13,8 @@ MonoBehaviour:
   m_Name: trait_017_Professional
   m_EditorClassIdentifier: PWMANAGER.Data::PWManager.Data.Definitions.TraitDefinition
   id: trait_017
-  displayName: "\uD504\uB85C\uD398\uC154\uB110"
+  koreanName: "\uD504\uB85C\uD398\uC154\uB110"
+  englishName: Professional
   Polarity: 0
   Description: "\uC5C5\uBB34\uC0C1 \uBD88\uB9AC\uD55C \uC9C0\uC2DC\uB85C \uC778\uD55C
     \uBD88\uB9CC \uC99D\uAC00 \uBC29\uC9C0"

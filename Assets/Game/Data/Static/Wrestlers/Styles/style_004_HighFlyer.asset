@@ -13,7 +13,8 @@ MonoBehaviour:
   m_Name: style_004_HighFlyer
   m_EditorClassIdentifier: PWMANAGER.Data::PWManager.Data.Definitions.WrestlingStyleDefinition
   id: style_004
-  displayName: "\uD558\uC774\uD50C\uB77C\uC774\uC5B4"
+  koreanName: "\uD558\uC774\uD50C\uB77C\uC774\uC5B4"
+  englishName: High Flyer
   BrawlingWeight: 0.1
   PowerWeight: 0.05
   HighFlyingWeight: 0.55

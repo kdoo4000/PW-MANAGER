@@ -13,7 +13,8 @@ MonoBehaviour:
   m_Name: staff_002_ScoutTeam
   m_EditorClassIdentifier: PWMANAGER.Data::PWManager.Data.Definitions.StaffDepartmentDefinition
   id: staff_002
-  displayName: "\uC2A4\uCE74\uC6B0\uD2B8\uD300"
+  koreanName: "\uC2A4\uCE74\uC6B0\uD2B8\uD300"
+  englishName: Scouting Team
   DepartmentType: 1
   StartingLevel: 1
   UnlockPrestigeByLevel: 0000000000000000fa00000000000000ee020000000000004006000000000000b80b000000000000

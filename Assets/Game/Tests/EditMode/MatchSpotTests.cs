@@ -178,7 +178,7 @@ namespace PWManager.Tests
             var result = save.MatchResults.Single();
             Assert.That(result.WasStoppedBySpot, Is.True);
             Assert.That(result.ActualMatchDuration, Is.LessThan(result.PlannedDuration));
-            Assert.That(result.SimulationBeats.Last().Detail, Does.Contain("중단"));
+            Assert.That(result.SimulationBeats.Last().Detail, Does.StartWith(result.SpotResults.Last().ScriptedMoment));
             Assert.That(result.SimulationBeats.Any(x => x.BeatType == MatchBeatType.Finish), Is.False);
         }
 
@@ -221,7 +221,7 @@ namespace PWManager.Tests
                 var host = window.rootVisualElement;
                 host.style.width = 700;
                 host.style.height = 700;
-                host.styleSheets.Add(Resources.Load<StyleSheet>("PWManagerUI/Dashboard"));
+                host.styleSheets.Add(UnityEditor.AssetDatabase.LoadAssetAtPath<StyleSheet>("Assets/Game/Presentation/Resources/PWManagerUI/Dashboard.uss"));
                 host.styleSheets.Add(Resources.Load<StyleSheet>("PWManagerUI/PWManagerTheme"));
                 _ = new MatchSpotEditor(host, Save(), Plan("spot_001"), new GameDate(2026, 9, 3));
                 yield return null;

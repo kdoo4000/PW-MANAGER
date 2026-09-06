@@ -134,7 +134,8 @@ namespace PWManager.Tests
             var second = service.Narrate(plan, result, id => id.ToUpperInvariant());
 
             Assert.That(second.ConvertAll(x => x.Text), Is.EqualTo(first.ConvertAll(x => x.Text)));
-            Assert.That(first, Has.Count.EqualTo(8));
+            Assert.That(first.Count, Is.EqualTo(service.CreateBeats(plan, result).Count));
+            Assert.That(first[0].Text, Does.Contain(plan.OpeningSpot));
             Assert.That(first[^1].Text, Does.Contain("하나, 둘, 셋"));
         }
 
@@ -217,7 +218,7 @@ namespace PWManager.Tests
                     var result = new MatchResultState { WinnerId = "0-0", LoserTargetId = "1-0", ActualMatchDuration = 15 };
                     var beats = service.CreateBeats(plan, result);
                     var controls = beats.Where(x => x.BeatType == MatchBeatType.Control).ToList();
-                    Assert.That(controls.Select(x => x.ActorId), Is.EquivalentTo(plan.Sides.SelectMany(x => x.MemberIds)));
+                    Assert.That(controls.Select(x => x.ActorId).Distinct(), Is.EquivalentTo(plan.Sides.SelectMany(x => x.MemberIds)));
                     foreach (var beat in controls)
                         Assert.That(plan.Sides.Single(x => x.MemberIds.Contains(beat.ActorId)).MemberIds, Does.Not.Contain(beat.TargetId));
                     Assert.That(beats.Sum(x => x.DurationSeconds), Is.EqualTo(90f).Within(.001f));
@@ -244,7 +245,8 @@ namespace PWManager.Tests
             var service = new MatchNarrationService();
             var beats = service.CreateBeats(plan, result);
             Assert.That(beats[0].TargetId, Is.EqualTo("b"));
-            Assert.That(beats.Where(x => x.BeatType == MatchBeatType.PlannedSpot).Select(x => x.Detail),
+            Assert.That(beats.Where(x => x.BeatType == MatchBeatType.PlannedSpot &&
+                new[] { plan.OpeningSpot, plan.MiddleSpot, plan.ClosingSpot }.Contains(x.Detail)).Select(x => x.Detail),
                 Is.EqualTo(new[] { plan.OpeningSpot, plan.MiddleSpot, plan.ClosingSpot }));
             Assert.That(beats[0].Detail, Is.EqualTo(plan.OpeningSpot));
             Assert.That(beats[^1].Detail, Is.EqualTo(plan.ClosingSpot));

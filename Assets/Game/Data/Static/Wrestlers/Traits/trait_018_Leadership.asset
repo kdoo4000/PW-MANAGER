@@ -13,7 +13,8 @@ MonoBehaviour:
   m_Name: trait_018_Leadership
   m_EditorClassIdentifier: PWMANAGER.Data::PWManager.Data.Definitions.TraitDefinition
   id: trait_018
-  displayName: "\uB9AC\uB354\uC2ED"
+  koreanName: "\uB9AC\uB354\uC2ED"
+  englishName: Leadership
   Polarity: 2
   Description: "\uB9CC\uC871\uB3C4\uC640 \uB77C\uCEE4\uB8F8 \uC0AC\uAC74\uC774 \uC8FC\uBCC0
     \uC120\uC218\uC5D0\uAC8C \uC601\uD5A5"

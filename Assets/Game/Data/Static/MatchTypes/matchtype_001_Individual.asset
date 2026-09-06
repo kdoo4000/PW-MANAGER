@@ -13,7 +13,8 @@ MonoBehaviour:
   m_Name: matchtype_001_Individual
   m_EditorClassIdentifier: PWMANAGER.Data::PWManager.Data.Definitions.MatchTypeDefinition
   id: matchtype_001
-  displayName: Individual
+  koreanName: "\uAC1C\uC778\uC804"
+  englishName: Individual
   MinimumParticipants: 2
   MaximumParticipants: 6
   MinimumTeamCount: 0
