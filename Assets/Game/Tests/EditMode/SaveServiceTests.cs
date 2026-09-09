@@ -1,4 +1,5 @@
 using System;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Reflection;
@@ -34,6 +35,7 @@ namespace PWManager.Tests
         public void SaveAndLoad_PreservesValidState()
         {
             var save = CreateValidSave("First");
+            var initialUpdatedAtUtc = save.UpdatedAtUtc;
 
             service.Save("slot_1", save);
             var restored = service.Load("slot_1");
@@ -41,6 +43,8 @@ namespace PWManager.Tests
             Assert.That(restored.Promotion.Name, Is.EqualTo("First"));
             Assert.That(restored.Promotion.Abbreviation, Is.EqualTo("FIRST"));
             Assert.That(restored.SaveVersion, Is.EqualTo(GameSave.CurrentSaveVersion));
+            Assert.That(restored.UpdatedAtUtc, Is.Not.EqualTo(initialUpdatedAtUtc));
+            Assert.That(DateTime.Parse(restored.UpdatedAtUtc, null, DateTimeStyles.RoundtripKind).Kind, Is.EqualTo(DateTimeKind.Utc));
         }
 
         [Test]
@@ -82,6 +86,7 @@ namespace PWManager.Tests
         {
             var path = Path.Combine(directory, "slot_1.json");
             var save = CreateValidSave("Legacy");
+            save.SaveVersion = 0;
             save.MatchPlans.Add(new MatchPlanState { Id = GameEntityId.CreateRuntimeId(), MatchTypeId = "matchtype_003" });
             Directory.CreateDirectory(directory);
             File.WriteAllText(path, UnityEngine.JsonUtility.ToJson(save));

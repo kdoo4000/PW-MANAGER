@@ -1,5 +1,5 @@
 ﻿<Solution>
-  <Project Path="PWMANAGER.Domain.Tests.csproj" />
+  <Project Path="PWMANAGER.EditMode.Tests.csproj" />
   <Project Path="PWMANAGER.Domain.csproj" />
   <Project Path="PWMANAGER.Data.csproj" />
   <Project Path="Assembly-CSharp-firstpass.csproj" />
