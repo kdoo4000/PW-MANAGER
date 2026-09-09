@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: move_011_Crossface
   m_EditorClassIdentifier: PWMANAGER.Data::PWManager.Data.Definitions.MoveDefinition
   id: move_011
-  koreanName: 크로스페이스
+  koreanName: "\uD06C\uB85C\uC2A4\uD398\uC774\uC2A4"
   englishName: Crossface
   BrawlingWeight: 0.15
   PowerWeight: 0

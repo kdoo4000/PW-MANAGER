@@ -10,6 +10,19 @@
     --pw-text-muted: #918c84;
     --pw-accent: #d9b45b;
     --pw-accent-deep: #8f2f2d;
+    --pw-panel: rgba(20, 21, 24, 0.66);
+    --pw-inner: rgba(20, 21, 24, 0.42);
+    --pw-row: rgba(20, 21, 24, 0.28);
+    --pw-row-alt: rgba(20, 21, 24, 0.34);
+    --pw-row-hover: rgba(20, 21, 24, 0.52);
+    --pw-selected: rgba(217, 180, 91, 0.16);
+    --pw-unread: rgba(23, 43, 64, 0.72);
+    --pw-unread-hover: rgba(29, 53, 77, 0.82);
+    --pw-state-blue: #68b8ff;
+    --pw-state-green: #73d39a;
+    --pw-state-red: #e15761;
+    --pw-state-purple: #c7a5ff;
+    --pw-soft-border: rgba(217, 214, 207, 0.14);
 }
 
 * {
@@ -138,25 +151,23 @@ Button, TextField, DropdownField,
 .nav, .wp-nav, .tab, .wp-tab, .wp-choice,
 .small-button, .primary-button, .wp-small-button, .wp-primary-button,
 .setup-button, .title-button, .venue-card {
-    transition-duration: 0.12s;
-}
-
-.nav:hover, .wp-nav:hover, .tab:hover, .wp-tab:hover, .wp-choice:hover,
-.small-button:hover, .primary-button:hover, .wp-small-button:hover,
-.wp-primary-button:hover, .setup-button:hover, .title-button:hover, .venue-card:hover {
-    scale: 1.015 1.015;
-}
-
-.nav:active, .wp-nav:active, .tab:active, .wp-tab:active, .wp-choice:active,
-.small-button:active, .primary-button:active, .wp-small-button:active,
-.wp-primary-button:active, .setup-button:active, .title-button:active, .venue-card:active {
-    scale: 0.985 0.985;
+    transition-duration: 0.15s;
 }
 
 .nav.active, .wp-nav.active, .tab.active-tab, .wp-tab.active, .wp-choice.selected {
     background-color: #302719;
     border-color: var(--pw-accent);
     color: var(--pw-text-strong);
+}
+
+.sidebar > .nav,
+.wp-sidebar > .wp-nav {
+    background-color: var(--pw-surface);
+}
+
+.sidebar > .nav:hover,
+.wp-sidebar > .wp-nav:hover {
+    background-color: #1a1b1f;
 }
 
 .sidebar > .nav.active,

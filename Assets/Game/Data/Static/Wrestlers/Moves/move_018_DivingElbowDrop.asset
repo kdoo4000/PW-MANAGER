@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: move_018_DivingElbowDrop
   m_EditorClassIdentifier: PWMANAGER.Data::PWManager.Data.Definitions.MoveDefinition
   id: move_018
-  koreanName: 다이빙 엘보 드롭
+  koreanName: "\uB2E4\uC774\uBE59 \uC5D8\uBCF4 \uB4DC\uB86D"
   englishName: Diving Elbow Drop
   BrawlingWeight: 0.45
   PowerWeight: 0

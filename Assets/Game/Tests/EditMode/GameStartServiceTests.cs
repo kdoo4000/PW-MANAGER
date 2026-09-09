@@ -58,12 +58,14 @@ namespace PWManager.Tests
             Assert.That(save.Schedules.Count(x => x.ShowType != ScheduledShowType.Regular), Is.EqualTo(4));
             Assert.That(save.SeasonPolicy.PpvShowTitles, Has.Count.EqualTo(4));
             Assert.That(save.SeasonPolicy.PpvShowTitles.Select(x => x.Title), Is.Unique);
+            Assert.That(save.SeasonPolicy.RegularShowDurationMinutes, Is.EqualTo(120));
+            Assert.That(save.SeasonPolicy.PpvShowTitles, Has.All.Property(nameof(PpvTitlePolicyState.DurationMinutes)).EqualTo(120));
             Assert.That(save.Schedules, Has.All.Matches<ScheduleState>(x => x.Status == ScheduleStatus.Confirmed));
             Assert.That(save.Shows, Has.Count.EqualTo(save.Schedules.Count));
             Assert.That(save.Shows.Select(x => x.ScheduleId), Is.EquivalentTo(save.Schedules.Select(x => x.Id)));
             Assert.That(save.Shows, Has.All.Matches<ShowState>(x =>
                 x.Status == ShowStatus.Draft && x.DurationLimit == 120 &&
-                x.VenueContractId == save.VenueContracts[0].Id && x.EstimatedCost == 10000));
+                x.VenueContractId == save.VenueContracts[0].Id && x.EstimatedCost == 20000));
             Assert.That(save.Shows, Has.All.Matches<ShowState>(x => x.Name.StartsWith("TW ", StringComparison.Ordinal)));
             Assert.That(save.Promotion.CalculateCurrentCash(save.Transactions), Is.EqualTo(92000));
             Assert.That(save.Wrestlers, Has.All.Property(nameof(WrestlerState.PromotionId)).EqualTo(save.Promotion.Id));
@@ -164,12 +166,13 @@ namespace PWManager.Tests
             Assert.That(save.Player.Name, Is.EqualTo("김 선수"));
             Assert.That(save.Player.BirthDate, Is.EqualTo(new GameDate(1994, 6, 1)));
             Assert.That(save.Player.Gender, Is.EqualTo(WrestlerGender.Female));
-            Assert.That(save.Player.MatchAbility, Is.EqualTo(10));
-            Assert.That(save.Player.PromoAbility, Is.EqualTo(14));
+            Assert.That(save.Player.MatchAbility, Is.EqualTo(12.5f));
+            Assert.That(save.Player.PromoAbility, Is.EqualTo(16.5f));
             Assert.That(save.Promotion.Audience.TotalFollowers, Is.EqualTo(5000));
-            Assert.That(save.Wrestlers.Single(x => x.Id == save.Player.WrestlerId).Attributes.Charisma, Is.EqualTo(16));
+            Assert.That(save.Wrestlers.Single(x => x.Id == save.Player.WrestlerId).Attributes.Charisma, Is.EqualTo(17.6857f).Within(.001f));
             Assert.That(save.Wrestlers.Single(x => x.Id == save.Player.WrestlerId).Identity.Gender, Is.EqualTo(WrestlerGender.Female));
-            Assert.That(save.Wrestlers.Single(x => x.Id == save.Player.WrestlerId).Attributes.Technical, Is.EqualTo(9));
+            Assert.That(save.Wrestlers.Single(x => x.Id == save.Player.WrestlerId).Attributes.Technical, Is.EqualTo(11.2f).Within(.001f));
+            Assert.That(WrestlerOverallCalculator.Match(save.Wrestlers.Single(x => x.Id == save.Player.WrestlerId)), Is.EqualTo(12.5f).Within(.001f));
             Assert.That(GameSaveValidator.Validate(save), Is.Empty);
         }
 
@@ -193,9 +196,9 @@ namespace PWManager.Tests
             var save = new GameStartService().CreateInitialSave(request);
 
             Assert.That(save.Player.MatchAbility, Is.Zero);
-            Assert.That(save.Player.PromoAbility, Is.EqualTo(10));
+            Assert.That(save.Player.PromoAbility, Is.EqualTo(13));
             Assert.That(save.Player.WrestlerId, Is.Null.Or.Empty);
-            Assert.That(save.Managers.Single(x => x.Id == save.Player.ManagerId).Attributes.ManagerOverall, Is.EqualTo(10));
+            Assert.That(save.Managers.Single(x => x.Id == save.Player.ManagerId).Attributes.ManagerOverall, Is.EqualTo(13));
             Assert.That(GameSaveValidator.Validate(save), Is.Empty);
         }
 

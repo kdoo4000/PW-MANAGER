@@ -149,24 +149,14 @@ namespace PWManager.Presentation
             promotionAbbreviation.RegisterValueChangedCallback(_ => RefreshSummary());
             playerName.RegisterValueChangedCallback(_ => RefreshSummary());
             playerRole.RegisterValueChangedCallback(_ => { RefreshStyleChoices(); RefreshPlayerAbilities(); RefreshSummary(); });
-            playerGender.RegisterValueChangedCallback(_ => ApplyPhysicalLimits());
+            playerGender.RegisterValueChangedCallback(_ => { RefreshStyleChoices(); RefreshPlayerAbilities(); });
             playerReputation.RegisterValueChangedCallback(_ => RefreshSummary());
             playerReputation.RegisterValueChangedCallback(_ => RefreshPlayerAbilities());
             playerWrestlingType.RegisterValueChangedCallback(_ => { RefreshPlayerAbilities(); RefreshSummary(); });
             playerWrestlingStyle.RegisterValueChangedCallback(_ => RefreshPlayerAbilities());
             playerBirthDate.isReadOnly = true;
             playerBirthDate.RegisterCallback<ClickEvent>(_ => ToggleBirthDateCalendar());
-            playerHeight.RegisterValueChangedCallback(evt =>
-            {
-                var range = PlayerCharacterRules.HeightRange(SelectedPlayerGender());
-                playerHeight.SetValueWithoutNotify(Mathf.Clamp(evt.newValue, range.Min, range.Max));
-                RefreshStyleChoices(); RefreshPlayerAbilities();
-            });
-            playerWeight.RegisterValueChangedCallback(evt =>
-            {
-                var range = PlayerCharacterRules.WeightRange(SelectedPlayerGender());
-                playerWeight.SetValueWithoutNotify(Mathf.Clamp(evt.newValue, range.Min, range.Max));
-            });
+            playerHeight.RegisterValueChangedCallback(_ => { RefreshStyleChoices(); RefreshPlayerAbilities(); });
             calendarYear.RegisterValueChangedCallback(_ => ChangeCalendarPeriod());
             calendarMonth.RegisterValueChangedCallback(_ => ChangeCalendarPeriod());
             regularFrequency.RegisterValueChangedCallback(_ => RefreshSummary());
@@ -282,7 +272,11 @@ namespace PWManager.Presentation
                 var age = birthDate.AgeOn(new GameDate(2026, 6, 1));
                 if (age < 18 || age > 70) return Fail("게임 시작일 기준 만 18~70세만 설정할 수 있습니다.");
                 if (!PlayerCharacterRules.IsPhysicalProfileValid(SelectedPlayerGender(), playerHeight.value, playerWeight.value))
-                    return Fail("성별에 맞는 키와 몸무게 범위를 확인해 주세요.");
+                {
+                    var height = PlayerCharacterRules.HeightRange(SelectedPlayerGender());
+                    var weight = PlayerCharacterRules.WeightRange(SelectedPlayerGender());
+                    return Fail($"{GenderChoices[playerGender.index]}은 키 {height.Min}~{height.Max}cm, 몸무게 {weight.Min}~{weight.Max}kg 범위로 입력해 주세요.");
+                }
             }
             if (step == 1)
             {
@@ -400,8 +394,9 @@ namespace PWManager.Presentation
             label.AddToClassList(grade switch
             {
                 "SS" => "grade-ss", "S+" => "grade-splus", "S" => "grade-s", "A+" => "grade-aplus",
-                "A" => "grade-a", "B+" => "grade-bplus", "B" => "grade-b", "C" => "grade-c",
-                "D" => "grade-d", _ => "grade-e"
+                "A" => "grade-a", "B+" => "grade-bplus", "B" => "grade-b", "C+" => "grade-cplus", "C" => "grade-c",
+                "D+" => "grade-dplus", "D" => "grade-d", "E+" => "grade-eplus", "E" => "grade-e",
+                "F+" => "grade-fplus", "F" => "grade-f", "G+" => "grade-gplus", _ => "grade-g"
             });
             row.Add(label);
         }
@@ -441,7 +436,7 @@ namespace PWManager.Presentation
                 stats.AddToClassList("venue-card-stats");
                 AddVenueStat(stats, "필요 위상", current.RequiredPrestige.ToString("N0"));
                 AddVenueStat(stats, "해금 비용", Money(current.UnlockCost));
-                AddVenueStat(stats, "쇼당 제작비", Money(current.ProductionCost));
+                AddVenueStat(stats, "시간당 제작비", Money(current.ProductionCost));
                 AddVenueStat(stats, "기준 티켓", Money(current.BaseTicketPrice));
                 card.Add(stats);
 
@@ -512,7 +507,7 @@ namespace PWManager.Presentation
             var selected = candidates.Where(x => selectedWrestlerIds.Contains(x.Id)).ToList();
             var signing = selected.Sum(x => ContractOfferFor(x).SigningBonus);
             var monthly = selected.Sum(x => ContractOfferFor(x).MonthlySalary);
-            var showCost = selectedVenue == null ? 0 : selectedVenue.ProductionCost * RegularShowCount();
+            var showCost = selectedVenue == null ? 0 : selectedVenue.ProductionCost * 2 * RegularShowCount();
             Ui<Label>("summary-promotion").text = $"{promotionName.value?.Trim()?.ToUpperInvariant()} · {promotionAbbreviation.value?.Trim()?.ToUpperInvariant()}";
             Ui<Label>("summary-player").text = $"{playerName.value?.Trim()} · {ReputationChoices[Mathf.Max(0, playerReputation.index)]}";
             Ui<Label>("summary-roster").text = $"{selectedWrestlerIds.Count}명";
@@ -534,7 +529,7 @@ namespace PWManager.Presentation
             var build = PlayerCharacterRules.Build((PlayerCareerRole)playerRole.index, (PlayerReputation)playerReputation.index, (PlayerWrestlingType)playerWrestlingType.index, styleId);
             if (playerRole.index == 0)
             {
-                AddAbilityColumn(box, WrestlerProfileController.MatchAbilities(build.Attributes));
+                AddAbilityColumn(box, WrestlerProfileController.MatchAbilities(build.Attributes), styleId);
             }
             AddAbilityColumn(box, WrestlerProfileController.PromoAbilities(build.Attributes));
             var summary = Ui<VisualElement>("player-ability-summary"); summary.Clear(); summary.EnableInClassList("manager-only", playerRole.index != 0);
@@ -563,29 +558,27 @@ namespace PWManager.Presentation
 
         private WrestlerGender SelectedPlayerGender() => playerGender?.index == 1 ? WrestlerGender.Female : WrestlerGender.Male;
 
-        private void ApplyPhysicalLimits()
-        {
-            var height = PlayerCharacterRules.HeightRange(SelectedPlayerGender());
-            var weight = PlayerCharacterRules.WeightRange(SelectedPlayerGender());
-            playerHeight.SetValueWithoutNotify(Mathf.Clamp(playerHeight.value, height.Min, height.Max));
-            playerWeight.SetValueWithoutNotify(Mathf.Clamp(playerWeight.value, weight.Min, weight.Max));
-            Ui<Label>("player-height-label").text = $"키(cm, {height.Min}~{height.Max})";
-            Ui<Label>("player-weight-label").text = $"몸무게(kg, {weight.Min}~{weight.Max})";
-            RefreshStyleChoices();
-            RefreshPlayerAbilities();
-        }
-
         private string SelectedPlayerStyleId() => playerWrestlingStyle != null && playerWrestlingStyle.index >= 0 && playerWrestlingStyle.index < availableWrestlingStyleIds.Count
             ? availableWrestlingStyleIds[playerWrestlingStyle.index]
             : "style_007";
 
-        private static void AddAbilityColumn(VisualElement parent, IEnumerable<(string Name, float Value)> abilities)
+        private static void AddAbilityColumn(VisualElement parent, IEnumerable<(string Name, float Value)> abilities, string styleId = null)
         {
             var column = new VisualElement(); column.AddToClassList("wp-ability-column");
             var index = 0;
             foreach (var ability in abilities)
             {
                 WrestlerProfileController.AddAbility(column, ability.Name, ability.Value, index++ % 2 == 1 ? "alt" : null);
+            }
+            if (!string.IsNullOrEmpty(styleId))
+            {
+                var priorities = WrestlerOverallCalculator.MatchStylePriorities(styleId);
+                foreach (var row in column.Children())
+                {
+                    var label = row.Q<Label>(className: "wp-ability-label")?.text;
+                    if (priorities.Primary.Contains(label)) row.AddToClassList("style-priority-1");
+                    else if (priorities.Secondary.Contains(label)) row.AddToClassList("style-priority-2");
+                }
             }
             parent.Add(column);
         }
@@ -615,7 +608,7 @@ namespace PWManager.Presentation
             AddReviewRow(review, "즉시 지급액", $"선수 계약금 {Money(signing)}");
             AddReviewRow(review, "월간 / 시즌 고정비", $"{Money(monthly)} / {Money(monthly * 12)}");
             AddReviewRow(review, "시즌 운영", $"정규 쇼 {regularFrequency.value} · PPV {ppvFrequency.value}");
-            AddReviewRow(review, "홈 경기장", $"{selectedVenue.DisplayName} · 회당 {Money(selectedVenue.ProductionCost)} · 정규 쇼 예상 {Money(selectedVenue.ProductionCost * RegularShowCount())}");
+            AddReviewRow(review, "홈 경기장", $"{selectedVenue.DisplayName} · 시간당 {Money(selectedVenue.ProductionCost)} · 정규 쇼 예상 {Money(selectedVenue.ProductionCost * 2 * RegularShowCount())}");
             AddReviewRow(review, "계약 후 잔여 현금", Money(InitialCash - signing));
         }
 

@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: move_017_SpringboardCutter
   m_EditorClassIdentifier: PWMANAGER.Data::PWManager.Data.Definitions.MoveDefinition
   id: move_017
-  koreanName: 스프링보드 커터
+  koreanName: "\uC2A4\uD504\uB9C1\uBCF4\uB4DC \uCEE4\uD130"
   englishName: Springboard Cutter
   BrawlingWeight: 0
   PowerWeight: 0

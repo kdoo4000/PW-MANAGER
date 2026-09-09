@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: move_015_ShootingStarPress
   m_EditorClassIdentifier: PWMANAGER.Data::PWManager.Data.Definitions.MoveDefinition
   id: move_015
-  koreanName: 슈팅 스타 프레스
+  koreanName: "\uC288\uD305 \uC2A4\uD0C0 \uD504\uB808\uC2A4"
   englishName: Shooting Star Press
   BrawlingWeight: 0
   PowerWeight: 0

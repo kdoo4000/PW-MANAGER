@@ -1,0 +1,27 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: df182ec7edf12ff46983a31ef3259ae4, type: 3}
+  m_Name: scoutlevel_005_Lv5
+  m_EditorClassIdentifier: PWMANAGER.Data::PWManager.Data.Definitions.ScoutTeamLevelDefinition
+  id: scoutlevel_005
+  koreanName: "\uC2A4\uCE74\uC6B0\uD2B8\uD300 Lv.5"
+  englishName: Scout Team Lv.5
+  Level: 5
+  RequiredPrestige: 20000
+  UpgradeCost: 1000000
+  EffectDescription: "\uD6C4\uBCF4 15\uBA85 \xB7 \uBAA8\uB4E0 \uC815\uBCF4 \uC815\uD655\uD788
+    \uACF5\uAC1C"
+  CandidateCount: 15
+  KnowledgeLevel: 4
+  ExactValueChance: 1
+  ValueErrorRange: 0
+  HighTierCandidateRate: 0.35

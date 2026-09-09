@@ -197,6 +197,7 @@ GameObject:
   m_Component:
   - component: {fileID: 52686708}
   - component: {fileID: 52686709}
+  - component: {fileID: 52686710}
   m_Layer: 0
   m_Name: Show Editor UI
   m_TagString: Untagged
@@ -232,6 +233,98 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: PWMANAGER.Presentation::PWManager.Presentation.DashboardViewHost
   viewAsset: {fileID: 9197481963319205126, guid: 4139ce88c2b14449a845453311a94a4e, type: 3}
+--- !u!114 &52686710
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 52686707}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 19102, guid: 0000000000000000e000000000000000, type: 0}
+  m_Name: 
+  m_EditorClassIdentifier: UnityEngine.dll::UnityEngine.UIElements.UIDocument
+  m_PanelSettings: {fileID: 11400000, guid: 284e273c204023d4891020b789ddea4d, type: 2}
+  m_ParentUI: {fileID: 1996190646}
+  sourceAsset: {fileID: 9197481963319205126, guid: 4139ce88c2b14449a845453311a94a4e, type: 3}
+  m_SortingOrder: 0
+  m_Position: 0
+  m_WorldSpaceSizeMode: 1
+  m_WorldSpaceWidth: 1920
+  m_WorldSpaceHeight: 1080
+  m_PivotReferenceSize: 0
+  m_Pivot: 0
+  m_WorldSpaceCollider: {fileID: 0}
+--- !u!1 &117040635
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 117040636}
+  - component: {fileID: 117040638}
+  - component: {fileID: 117040637}
+  m_Layer: 0
+  m_Name: Facilities UI
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &117040636
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 117040635}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 1996190647}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &117040637
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 117040635}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 19102, guid: 0000000000000000e000000000000000, type: 0}
+  m_Name: 
+  m_EditorClassIdentifier: UnityEngine.dll::UnityEngine.UIElements.UIDocument
+  m_PanelSettings: {fileID: 11400000, guid: 284e273c204023d4891020b789ddea4d, type: 2}
+  m_ParentUI: {fileID: 1996190646}
+  sourceAsset: {fileID: 9197481963319205126, guid: 7644eb6c4538e344eb3d8b8240610d02, type: 3}
+  m_SortingOrder: 0
+  m_Position: 0
+  m_WorldSpaceSizeMode: 1
+  m_WorldSpaceWidth: 1920
+  m_WorldSpaceHeight: 1080
+  m_PivotReferenceSize: 0
+  m_Pivot: 0
+  m_WorldSpaceCollider: {fileID: 0}
+--- !u!114 &117040638
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 117040635}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5eedf52a9fa34d5888d9d46d252f9d18, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: PWMANAGER.Presentation::PWManager.Presentation.DashboardViewHost
+  viewAsset: {fileID: 9197481963319205126, guid: 7644eb6c4538e344eb3d8b8240610d02, type: 3}
 --- !u!1 &326760966
 GameObject:
   m_ObjectHideFlags: 0
@@ -388,6 +481,7 @@ GameObject:
   m_Component:
   - component: {fileID: 895919790}
   - component: {fileID: 895919791}
+  - component: {fileID: 895919792}
   m_Layer: 0
   m_Name: Roster UI
   m_TagString: Untagged
@@ -423,6 +517,29 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: PWMANAGER.Presentation::PWManager.Presentation.DashboardViewHost
   viewAsset: {fileID: 9197481963319205126, guid: 286aa9d7bc7c47d2ad89150d428128e7, type: 3}
+--- !u!114 &895919792
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 895919789}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 19102, guid: 0000000000000000e000000000000000, type: 0}
+  m_Name: 
+  m_EditorClassIdentifier: UnityEngine.dll::UnityEngine.UIElements.UIDocument
+  m_PanelSettings: {fileID: 11400000, guid: 284e273c204023d4891020b789ddea4d, type: 2}
+  m_ParentUI: {fileID: 1996190646}
+  sourceAsset: {fileID: 9197481963319205126, guid: 286aa9d7bc7c47d2ad89150d428128e7, type: 3}
+  m_SortingOrder: 0
+  m_Position: 0
+  m_WorldSpaceSizeMode: 1
+  m_WorldSpaceWidth: 1920
+  m_WorldSpaceHeight: 1080
+  m_PivotReferenceSize: 0
+  m_Pivot: 0
+  m_WorldSpaceCollider: {fileID: 0}
 --- !u!1 &1190216194
 GameObject:
   m_ObjectHideFlags: 0
@@ -433,6 +550,7 @@ GameObject:
   m_Component:
   - component: {fileID: 1190216195}
   - component: {fileID: 1190216196}
+  - component: {fileID: 1190216197}
   m_Layer: 0
   m_Name: Inbox UI
   m_TagString: Untagged
@@ -468,6 +586,29 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: PWMANAGER.Presentation::PWManager.Presentation.DashboardViewHost
   viewAsset: {fileID: 9197481963319205126, guid: 9d192c9c2acc45ed99d28ba25bd54e80, type: 3}
+--- !u!114 &1190216197
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1190216194}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 19102, guid: 0000000000000000e000000000000000, type: 0}
+  m_Name: 
+  m_EditorClassIdentifier: UnityEngine.dll::UnityEngine.UIElements.UIDocument
+  m_PanelSettings: {fileID: 11400000, guid: 284e273c204023d4891020b789ddea4d, type: 2}
+  m_ParentUI: {fileID: 1996190646}
+  sourceAsset: {fileID: 9197481963319205126, guid: 9d192c9c2acc45ed99d28ba25bd54e80, type: 3}
+  m_SortingOrder: 0
+  m_Position: 0
+  m_WorldSpaceSizeMode: 1
+  m_WorldSpaceWidth: 1920
+  m_WorldSpaceHeight: 1080
+  m_PivotReferenceSize: 0
+  m_Pivot: 0
+  m_WorldSpaceCollider: {fileID: 0}
 --- !u!1 &1319865138
 GameObject:
   m_ObjectHideFlags: 0
@@ -546,6 +687,7 @@ GameObject:
   m_Component:
   - component: {fileID: 1582432244}
   - component: {fileID: 1582432245}
+  - component: {fileID: 1582432246}
   m_Layer: 0
   m_Name: Overview UI
   m_TagString: Untagged
@@ -581,6 +723,29 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: PWMANAGER.Presentation::PWManager.Presentation.DashboardViewHost
   viewAsset: {fileID: 9197481963319205126, guid: d8a82cfa93914bbf943110e17a191201, type: 3}
+--- !u!114 &1582432246
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1582432243}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 19102, guid: 0000000000000000e000000000000000, type: 0}
+  m_Name: 
+  m_EditorClassIdentifier: UnityEngine.dll::UnityEngine.UIElements.UIDocument
+  m_PanelSettings: {fileID: 11400000, guid: 284e273c204023d4891020b789ddea4d, type: 2}
+  m_ParentUI: {fileID: 1996190646}
+  sourceAsset: {fileID: 9197481963319205126, guid: d8a82cfa93914bbf943110e17a191201, type: 3}
+  m_SortingOrder: 0
+  m_Position: 0
+  m_WorldSpaceSizeMode: 1
+  m_WorldSpaceWidth: 1920
+  m_WorldSpaceHeight: 1080
+  m_PivotReferenceSize: 0
+  m_Pivot: 0
+  m_WorldSpaceCollider: {fileID: 0}
 --- !u!1 &1598774568
 GameObject:
   m_ObjectHideFlags: 0
@@ -728,6 +893,7 @@ GameObject:
   m_Component:
   - component: {fileID: 1607205833}
   - component: {fileID: 1607205834}
+  - component: {fileID: 1607205835}
   m_Layer: 0
   m_Name: Schedule UI
   m_TagString: Untagged
@@ -763,6 +929,29 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: PWMANAGER.Presentation::PWManager.Presentation.DashboardViewHost
   viewAsset: {fileID: 9197481963319205126, guid: 8dc71fefbdca4bd0b79acf6b0bd09165, type: 3}
+--- !u!114 &1607205835
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1607205832}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 19102, guid: 0000000000000000e000000000000000, type: 0}
+  m_Name: 
+  m_EditorClassIdentifier: UnityEngine.dll::UnityEngine.UIElements.UIDocument
+  m_PanelSettings: {fileID: 11400000, guid: 284e273c204023d4891020b789ddea4d, type: 2}
+  m_ParentUI: {fileID: 1996190646}
+  sourceAsset: {fileID: 9197481963319205126, guid: 8dc71fefbdca4bd0b79acf6b0bd09165, type: 3}
+  m_SortingOrder: 0
+  m_Position: 0
+  m_WorldSpaceSizeMode: 1
+  m_WorldSpaceWidth: 1920
+  m_WorldSpaceHeight: 1080
+  m_PivotReferenceSize: 0
+  m_Pivot: 0
+  m_WorldSpaceCollider: {fileID: 0}
 --- !u!1 &1963452719
 GameObject:
   m_ObjectHideFlags: 0
@@ -773,6 +962,7 @@ GameObject:
   m_Component:
   - component: {fileID: 1963452720}
   - component: {fileID: 1963452721}
+  - component: {fileID: 1963452722}
   m_Layer: 0
   m_Name: Show Planning UI
   m_TagString: Untagged
@@ -808,6 +998,29 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: PWMANAGER.Presentation::PWManager.Presentation.DashboardViewHost
   viewAsset: {fileID: 9197481963319205126, guid: c0198b1e0a254c4286a5f2acfcd3075b, type: 3}
+--- !u!114 &1963452722
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1963452719}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 19102, guid: 0000000000000000e000000000000000, type: 0}
+  m_Name: 
+  m_EditorClassIdentifier: UnityEngine.dll::UnityEngine.UIElements.UIDocument
+  m_PanelSettings: {fileID: 11400000, guid: 284e273c204023d4891020b789ddea4d, type: 2}
+  m_ParentUI: {fileID: 1996190646}
+  sourceAsset: {fileID: 9197481963319205126, guid: c0198b1e0a254c4286a5f2acfcd3075b, type: 3}
+  m_SortingOrder: 0
+  m_Position: 0
+  m_WorldSpaceSizeMode: 1
+  m_WorldSpaceWidth: 1920
+  m_WorldSpaceHeight: 1080
+  m_PivotReferenceSize: 0
+  m_Pivot: 0
+  m_WorldSpaceCollider: {fileID: 0}
 --- !u!1 &1996190644
 GameObject:
   m_ObjectHideFlags: 0
@@ -881,6 +1094,7 @@ Transform:
   - {fileID: 52686708}
   - {fileID: 1190216195}
   - {fileID: 1963452720}
+  - {fileID: 117040636}
   m_Father: {fileID: 326760968}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &2100000000

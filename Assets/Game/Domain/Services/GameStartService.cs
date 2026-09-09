@@ -112,7 +112,6 @@ namespace PWManager.Domain.Services
             {
                 Id = createId(), VenueId = request.RegularVenueId,
                 ContractType = VenueContractType.RegularSeason,
-                StartDate = StartDate, EndDate = SeasonEndDate,
                 ProductionCost = request.RegularVenueProductionCost,
                 Status = VenueContractStatus.Reserved
             };
@@ -129,9 +128,10 @@ namespace PWManager.Domain.Services
             });
             save.SeasonPolicy = scheduleResult.Policy;
             save.SeasonPolicy.RegularShowName = "정규 쇼";
+            save.SeasonPolicy.RegularShowDurationMinutes = 120;
             save.SeasonPolicy.PpvShowTitles = scheduleResult.Schedules
                 .Where(x => x.ShowType != ScheduledShowType.Regular)
-                .Select(x => new PpvTitlePolicyState { Month = x.Date.Month, Title = $"{x.Date.Month}월 PPV" }).ToList();
+                .Select(x => new PpvTitlePolicyState { Month = x.Date.Month, Title = $"{x.Date.Month}월 PPV", DurationMinutes = 120 }).ToList();
             save.Schedules.AddRange(scheduleResult.Schedules);
             save.Promotion.SeasonPolicyId = save.SeasonPolicy.Id;
             AddInitialShowDrafts(save, venueContract.Id);
@@ -148,9 +148,13 @@ namespace PWManager.Domain.Services
         private void AddInitialShowDrafts(GameSave save, string venueContractId)
         {
             var regularSequence = 0;
+            var venue = save.VenueContracts.Single(x => x.Id == venueContractId);
             foreach (var schedule in save.Schedules.OrderBy(x => x.Date))
             {
                 if (schedule.ShowType == ScheduledShowType.Regular) regularSequence++;
+                var duration = schedule.ShowType == ScheduledShowType.Regular
+                    ? save.SeasonPolicy.RegularShowDurationMinutes
+                    : save.SeasonPolicy.PpvShowTitles.Single(x => x.Month == schedule.Date.Month).DurationMinutes;
                 save.Shows.Add(new ShowState
                 {
                     Id = createId(),
@@ -163,8 +167,8 @@ namespace PWManager.Domain.Services
                     ShowType = schedule.ShowType,
                     Date = schedule.Date,
                     VenueContractId = venueContractId,
-                    DurationLimit = 120,
-                    EstimatedCost = save.VenueContracts.Single(x => x.Id == venueContractId).ProductionCost,
+                    DurationLimit = duration,
+                    EstimatedCost = venue.CalculateProductionCost(duration),
                     Status = ShowStatus.Draft
                 });
             }
@@ -244,7 +248,7 @@ namespace PWManager.Domain.Services
             {
                 Identity = new WrestlerIdentityState
                 {
-                    Id = createId(), LegalName = name, RingName = name, Background = WrestlerBackground.OtherPromotion,
+                    Id = createId(), LegalName = name, RingName = name, Background = WrestlerBackground.Veteran,
                     Gender = request.PlayerGender, BirthDate = request.PlayerBirthDate, CreatedDate = StartDate,
                     HeightCm = request.PlayerHeightCm, WeightKg = request.PlayerWeightKg,
                     BodyType = WrestlerBodyType.Balanced, CareerYears = 10

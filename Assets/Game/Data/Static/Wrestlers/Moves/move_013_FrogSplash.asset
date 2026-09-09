@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: move_013_FrogSplash
   m_EditorClassIdentifier: PWMANAGER.Data::PWManager.Data.Definitions.MoveDefinition
   id: move_013
-  koreanName: 프로그 스플래시
+  koreanName: "\uD504\uB85C\uADF8 \uC2A4\uD50C\uB798\uC2DC"
   englishName: Frog Splash
   BrawlingWeight: 0
   PowerWeight: 0

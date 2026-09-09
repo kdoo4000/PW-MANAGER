@@ -9,7 +9,11 @@ namespace PWManager.Data.Definitions
         public List<string> MaleGivenNames = new();
         public List<string> FemaleGivenNames = new();
         public List<string> FamilyNames = new();
-        public List<string> Nicknames = new();
-        public List<string> SingleWordRingNames = new();
+        public List<string> KoreanMaleGivenNames = new();
+        public List<string> KoreanFemaleGivenNames = new();
+        public List<string> KoreanFamilyNames = new();
+        public List<string> JapaneseMaleGivenNames = new();
+        public List<string> JapaneseFemaleGivenNames = new();
+        public List<string> JapaneseFamilyNames = new();
     }
 }

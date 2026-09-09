@@ -46,6 +46,8 @@ namespace PWManager.Domain.Models
         public List<ManagerState> Managers;
         public List<ContractState> Contracts;
         public List<StaffDepartmentState> StaffDepartments;
+        public List<ScoutAssignmentState> ScoutAssignments;
+        public List<ScoutCandidateState> ScoutCandidates;
         public List<VenueContractState> VenueContracts;
         public SeasonPolicyState SeasonPolicy;
         public List<ScheduleState> Schedules;
@@ -68,6 +70,8 @@ namespace PWManager.Domain.Models
             Managers = new List<ManagerState>();
             Contracts = new List<ContractState>();
             StaffDepartments = new List<StaffDepartmentState>();
+            ScoutAssignments = new List<ScoutAssignmentState>();
+            ScoutCandidates = new List<ScoutCandidateState>();
             VenueContracts = new List<VenueContractState>();
             Schedules = new List<ScheduleState>();
             Shows = new List<ShowState>();

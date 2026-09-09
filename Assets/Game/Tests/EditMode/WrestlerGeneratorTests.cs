@@ -25,6 +25,7 @@ namespace PWManager.Tests
 
         [TestCase(1)]
         [TestCase(42)]
+        [TestCase(12345)]
         [TestCase(20260819)]
         [TestCase(9090)]
         public void InitialCandidates_MeetConfirmedCompositionRules(int seed)
@@ -44,6 +45,7 @@ namespace PWManager.Tests
             var candidate = CreateGenerator(17).GenerateCandidate(WrestlerGender.Female, createdDate);
 
             Assert.That(candidate.Identity.RingName, Is.EqualTo(candidate.Identity.LegalName));
+            Assert.That(candidate.Identity.Nickname, Is.Null.Or.Empty);
             Assert.That(DaysBetween(createdDate, candidate.Identity.ExpiryDate.Value), Is.EqualTo(364));
             Assert.That(candidate.Presentation.SignatureMoveIds, Has.Count.EqualTo(1));
             Assert.That(candidate.Presentation.FinisherMoveIds, Has.Count.EqualTo(1));
@@ -79,6 +81,27 @@ namespace PWManager.Tests
         }
 
         [Test]
+        public void CandidateNames_DoNotMixKoreanOrJapanesePools()
+        {
+            var names = content.Catalog.NamePool;
+            var koreanGiven = names.KoreanMaleGivenNames.Concat(names.KoreanFemaleGivenNames).ToHashSet();
+            var japaneseGiven = names.JapaneseMaleGivenNames.Concat(names.JapaneseFemaleGivenNames).ToHashSet();
+            var koreanCount = 0;
+            var japaneseCount = 0;
+            var generator = CreateGenerator(31415);
+
+            for (var i = 0; i < 200; i++)
+            {
+                var parts = generator.GenerateCandidate(i % 2 == 0 ? WrestlerGender.Male : WrestlerGender.Female, new GameDate(2026, 1, 1)).Identity.LegalName.Split(' ');
+                if (names.KoreanFamilyNames.Contains(parts[^1])) { Assert.That(koreanGiven, Does.Contain(parts[0])); koreanCount++; }
+                if (names.JapaneseFamilyNames.Contains(parts[^1])) { Assert.That(japaneseGiven, Does.Contain(parts[0])); japaneseCount++; }
+            }
+
+            Assert.That(koreanCount, Is.GreaterThan(0));
+            Assert.That(japaneseCount, Is.GreaterThan(0));
+        }
+
+        [Test]
         public void GeneratedAttributes_StayInRangeAndNearTheirTargets()
         {
             var generator = CreateGenerator(99);
@@ -87,8 +110,8 @@ namespace PWManager.Tests
                 var candidate = generator.GenerateCandidate(i % 2 == 0 ? WrestlerGender.Male : WrestlerGender.Female, new GameDate(2026, 1, 1));
                 var values = MatchValues(candidate).Concat(PromoValues(candidate)).ToArray();
                 Assert.That(values, Has.All.InRange(1f, 20f));
-                Assert.That(WrestlerOverallCalculator.MatchTotal(candidate.Attributes), Is.LessThanOrEqualTo(candidate.Growth.MatchPotentialCap * 10f));
-                Assert.That(WrestlerOverallCalculator.PromoTotal(candidate.Attributes), Is.LessThanOrEqualTo(candidate.Growth.PromoPotentialCap * 7f));
+                Assert.That(WrestlerOverallCalculator.Match(candidate), Is.LessThanOrEqualTo(candidate.Growth.MatchPotentialCap + .01f));
+                Assert.That(WrestlerOverallCalculator.Promo(candidate.Attributes, KayfabeAlignment.Tweener, PromoDisposition.Balanced), Is.LessThanOrEqualTo(candidate.Growth.PromoPotentialCap + .01f));
             }
         }
 
@@ -101,13 +124,15 @@ namespace PWManager.Tests
         private static void AssertGroup(IReadOnlyCollection<WrestlerState> group)
         {
             Assert.That(group, Has.Count.EqualTo(12));
-            Assert.That(group.Min(x => WrestlerOverallCalculator.Match(x)), Is.GreaterThanOrEqualTo(7f));
-            Assert.That(group.Average(x => WrestlerOverallCalculator.Match(x)), Is.GreaterThanOrEqualTo(10f));
+            Assert.That(group.Select(x => WrestlerOverallCalculator.Match(x)), Has.All.InRange(7f, 15.01f));
+            Assert.That(group.Select(x => WrestlerOverallCalculator.Promo(x)), Has.All.InRange(7f, 15.01f));
+            Assert.That(group.Average(x => WrestlerOverallCalculator.Match(x)), Is.GreaterThanOrEqualTo(11f));
+            Assert.That(group.Average(x => WrestlerOverallCalculator.Promo(x)), Is.GreaterThanOrEqualTo(10f));
             Assert.That(group.Count(x => WrestlerOverallCalculator.Match(x) >= 10f), Is.GreaterThanOrEqualTo(3));
             Assert.That(group.Count(x => WrestlerOverallCalculator.Match(x) >= 14f), Is.GreaterThanOrEqualTo(1));
             Assert.That(group.Count(x => WrestlerOverallCalculator.Promo(x) >= 10f), Is.GreaterThanOrEqualTo(2));
             Assert.That(group.Count(x => x.Identity.Background == WrestlerBackground.Rookie), Is.GreaterThanOrEqualTo(3));
-            Assert.That(group.Count(x => x.Identity.Background == WrestlerBackground.OtherPromotion), Is.GreaterThanOrEqualTo(2));
+            Assert.That(group.Count(x => x.Identity.Background == WrestlerBackground.Veteran), Is.GreaterThanOrEqualTo(2));
             Assert.That(group.Count(x => x.Growth.MatchPotentialCap >= 12f), Is.GreaterThanOrEqualTo(2));
             Assert.That(group.Count(x => x.Growth.PromoPotentialCap >= 12f), Is.GreaterThanOrEqualTo(2));
             Assert.That(group.Select(x => x.Presentation.WrestlingStyleId).Distinct().ToList(), Has.Count.GreaterThanOrEqualTo(4));

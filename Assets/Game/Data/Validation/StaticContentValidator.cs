@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using PWManager.Data.Catalogs;
 using PWManager.Data.Definitions;
 using PWManager.Domain.Identifiers;
+using System.Linq;
 
 namespace PWManager.Data.Validation
 {
@@ -19,6 +20,10 @@ namespace PWManager.Data.Validation
             ValidateDefinitions(catalog.Moves, "move_", ids, errors);
             ValidateDefinitions(catalog.Venues, "venue_", ids, errors);
             ValidateDefinitions(catalog.StaffDepartments, "staff_", ids, errors);
+            ValidateDefinitions(catalog.MedicalTeamLevels, "medicallevel_", ids, errors);
+            ValidateDefinitions(catalog.ScoutTeamLevels, "scoutlevel_", ids, errors);
+            ValidateDefinitions(catalog.PromotionTeamLevels, "promotionlevel_", ids, errors);
+            ValidateDefinitions(catalog.CommentaryTeamLevels, "commentarylevel_", ids, errors);
             ValidateDefinitions(catalog.MatchTypes, "matchtype_", ids, errors);
             ValidateDefinitions(catalog.MatchGimmicks, "gimmick_", ids, errors);
 
@@ -41,6 +46,12 @@ namespace PWManager.Data.Validation
                 if (move.RequiredStat != MoveRequiredStat.None && (move.RequiredStatValue < 1 || move.RequiredStatValue > 20))
                     errors.Add($"Move required stat value must be 1-20: {move.Id}");
             }
+            ValidateTeamLevels(catalog.MedicalTeamLevels, "Medical", errors);
+            ValidateTeamLevels(catalog.ScoutTeamLevels, "Scout", errors);
+            ValidateTeamLevels(catalog.PromotionTeamLevels, "Promotion", errors);
+            ValidateTeamLevels(catalog.CommentaryTeamLevels, "Commentary", errors);
+            foreach (var level in catalog.ScoutTeamLevels ?? new())
+                if (level != null && level.CandidateCount < 1) errors.Add($"Scout level requires candidates: {level.Id}");
             foreach (var venue in catalog.Venues ?? new())
             {
                 if (venue == null) continue;
@@ -105,8 +116,12 @@ namespace PWManager.Data.Validation
             ValidateNames(names.MaleGivenNames, "male given names", errors);
             ValidateNames(names.FemaleGivenNames, "female given names", errors);
             ValidateNames(names.FamilyNames, "family names", errors);
-            ValidateNames(names.Nicknames, "nicknames", errors);
-            ValidateNames(names.SingleWordRingNames, "single-word ring names", errors);
+            ValidateNames(names.KoreanMaleGivenNames, "Korean male given names", errors);
+            ValidateNames(names.KoreanFemaleGivenNames, "Korean female given names", errors);
+            ValidateNames(names.KoreanFamilyNames, "Korean family names", errors);
+            ValidateNames(names.JapaneseMaleGivenNames, "Japanese male given names", errors);
+            ValidateNames(names.JapaneseFemaleGivenNames, "Japanese female given names", errors);
+            ValidateNames(names.JapaneseFamilyNames, "Japanese family names", errors);
         }
 
         private static void ValidateNames(IEnumerable<string> values, string name, List<string> errors)
@@ -134,6 +149,16 @@ namespace PWManager.Data.Validation
                 if (string.IsNullOrWhiteSpace(definition.KoreanName)) errors.Add($"Korean name is required: {definition.Id}");
                 if (string.IsNullOrWhiteSpace(definition.EnglishName)) errors.Add($"English name is required: {definition.Id}");
             }
+        }
+
+        private static void ValidateTeamLevels<T>(IEnumerable<T> levels, string team, List<string> errors) where T : StaffTeamLevelDefinition
+        {
+            var values = (levels ?? Array.Empty<T>()).Where(x => x != null).ToList();
+            if (values.Count == 0) return;
+            if (values.Count != 5 || values.Select(x => x.Level).Distinct().Count() != 5 || values.Any(x => x.Level < 1 || x.Level > 5))
+                errors.Add($"{team} team requires one definition for each level 1-5.");
+            foreach (var level in values)
+                if (level.RequiredPrestige < 0 || level.UpgradeCost < 0) errors.Add($"Staff level costs must be non-negative: {level.Id}");
         }
     }
 }

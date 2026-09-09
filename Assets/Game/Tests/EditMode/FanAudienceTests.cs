@@ -20,6 +20,20 @@ namespace PWManager.Tests
     public sealed class FanAudienceTests
     {
         [Test]
+        public void Dashboard_MountsExistingViewsInsideWorkspace()
+        {
+            var root = Resources.Load<VisualTreeAsset>("PWManagerUI/Dashboard").CloneTree();
+            var misplacedRoster = new VisualElement { name = "roster-content" };
+            root.Add(misplacedRoster);
+
+            DashboardViewHost.MountMissingViews(root);
+
+            var workspace = root.Q("dashboard-workspace");
+            Assert.That(misplacedRoster.parent, Is.Null);
+            Assert.That(workspace.Contains(root.Q("roster-content")), Is.True);
+        }
+
+        [Test]
         public void Dashboard_ShowsPromotionFollowersAndMeasuredSatisfaction()
         {
             var ui = new GameObject("Fan Display Test");

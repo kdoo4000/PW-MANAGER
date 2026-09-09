@@ -16,4 +16,3 @@ MonoBehaviour:
   InitialFemaleCandidateCount: 12
   CandidateRetentionWeeks: 52
   StyleChangeCooldownWeeks: 52
-  UseLegalNameAsRingName: 1

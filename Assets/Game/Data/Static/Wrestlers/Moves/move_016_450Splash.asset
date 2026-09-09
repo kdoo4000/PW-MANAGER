@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: move_016_450Splash
   m_EditorClassIdentifier: PWMANAGER.Data::PWManager.Data.Definitions.MoveDefinition
   id: move_016
-  koreanName: 450 스플래시
+  koreanName: "450 \uC2A4\uD50C\uB798\uC2DC"
   englishName: 450 Splash
   BrawlingWeight: 0
   PowerWeight: 0

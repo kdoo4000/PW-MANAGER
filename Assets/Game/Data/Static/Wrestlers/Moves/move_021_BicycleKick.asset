@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: move_021_BicycleKick
   m_EditorClassIdentifier: PWMANAGER.Data::PWManager.Data.Definitions.MoveDefinition
   id: move_021
-  koreanName: 바이시클 킥
+  koreanName: "\uBC14\uC774\uC2DC\uD074 \uD0A5"
   englishName: Bicycle Kick
   BrawlingWeight: 0.65
   PowerWeight: 0.35

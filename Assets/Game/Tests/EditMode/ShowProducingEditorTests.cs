@@ -71,7 +71,10 @@ namespace PWManager.Tests
                 Button Card(string id) => root.Q("show-editor-roster").Children().OfType<Button>().Single(x => (string)x.userData == id);
                 Set("save", save); Set("selectedShowId", show.Id); Set("selectedShowEventId", showEvent.Id);
                 Call("RenderShowPlanning");
-                Assert.That(root.Q<Label>("show-detail-position").text, Is.EqualTo("메인 이벤트"));
+                Assert.That(root.Q<Label>("show-detail-position").text, Is.EqualTo("메인"));
+                var timelineSubtitle = root.Q($"show-event-{showEvent.Id}").Q<Label>(className: "show-event-participants").text;
+                Assert.That(timelineSubtitle, Does.Contain("기본 경기"));
+                Assert.That(ids.Any(id => timelineSubtitle.Contains(WrestlerNameText.DisplayName(save.Wrestlers.First(x => x.Id == id)))), Is.False);
                 Assert.That(root.Q<Label>("show-detail-position").ClassListContains("show-panel-title"), Is.True);
                 Assert.That(root.Q<Label>("show-detail-duration").text, Is.EqualTo("20분"));
                 for (var i = 0; i < 3; i++) Call("ChangeSelectedEventDuration", 5);

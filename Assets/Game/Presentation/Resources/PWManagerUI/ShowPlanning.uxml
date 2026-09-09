@@ -1,6 +1,6 @@
 <ui:UXML xmlns:ui="UnityEngine.UIElements">
     <Style src="Dashboard.uss"/>
-<ui:VisualElement name="show-planning-content" class="show-planning-content hidden" style="display: none;">
+<ui:VisualElement name="show-planning-content" class="show-planning-content hidden">
     <ui:VisualElement class="show-planning-header">
         <ui:VisualElement class="show-heading-copy">
             <ui:Label name="show-plan-name" text="예정된 쇼 없음" class="show-plan-name"/>
@@ -37,16 +37,16 @@
     </ui:VisualElement>
     <ui:VisualElement class="show-planning-body">
         <ui:VisualElement class="show-timeline-panel show-plan-card">
-            <ui:VisualElement class="show-timeline-heading" style="margin-bottom: 0;">
+            <ui:VisualElement class="show-timeline-heading compact">
                 <ui:Label text="타임라인" class="show-timeline-title"/>
                 <ui:Label name="show-event-count" text="0개 세그먼트" class="show-panel-caption"/>
             </ui:VisualElement>
-            <ui:VisualElement class="show-summary-panel show-plan-card show-timeline-summary" style="margin-top: 12px;">
-                <ui:VisualElement class="show-duration-row" style="margin-top: 0;">
-                    <ui:Label name="show-duration-used" text="0분 사용" class="show-duration-value" style="margin-top: 2px; padding-top: 2px; margin-bottom: 4px;"/>
-                    <ui:Label name="show-duration-limit" text="총 0분" class="show-panel-caption" style="margin-top: 2px; padding-top: 2px; margin-bottom: 4px;"/>
+            <ui:VisualElement class="show-summary-panel show-plan-card show-timeline-summary separated">
+                <ui:VisualElement class="show-duration-row compact">
+                    <ui:Label name="show-duration-used" text="0분 사용" class="show-duration-value aligned"/>
+                    <ui:Label name="show-duration-limit" text="총 0분" class="show-panel-caption aligned"/>
                 </ui:VisualElement>
-                <ui:VisualElement class="show-duration-track" style="margin-bottom: 3px;">
+                <ui:VisualElement class="show-duration-track compact">
                     <ui:VisualElement name="show-duration-fill" class="show-duration-fill"/>
                 </ui:VisualElement>
             </ui:VisualElement>

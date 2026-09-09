@@ -19,6 +19,7 @@ namespace PWManager.Presentation
         private static DashboardController instance;
         private UIDocument document;
         private DashboardRosterController rosterController;
+        private DashboardFacilitiesController facilitiesController;
         private GameSave boundSave;
         private ShowPlanningController showPlanningController;
         private readonly List<NavigationEntry> navigationHistory = new();
@@ -61,8 +62,6 @@ namespace PWManager.Presentation
         {
             instance = this;
             document = GetComponent<UIDocument>();
-            foreach (var view in GetComponentsInChildren<DashboardViewHost>())
-                view.Mount(document.rootVisualElement);
             DashboardViewHost.MountMissingViews(document.rootVisualElement);
             showPlanningController = new ShowPlanningController(document.rootVisualElement);
             scheduleController = new DashboardScheduleController(document.rootVisualElement, showPlanningController.VenueName, id => ShowPlanningPage(id));
@@ -70,6 +69,7 @@ namespace PWManager.Presentation
             ApplyIcons();
             document.rootVisualElement.RegisterCallback<ClickEvent>(OnClick);
             rosterController = new DashboardRosterController(document.rootVisualElement);
+            facilitiesController = new DashboardFacilitiesController(document.rootVisualElement);
             BindClick("advance-time", AdvanceDay);
             SetupSaveLoadControls();
             DashboardSession.SaveChanged += Bind;
@@ -82,8 +82,6 @@ namespace PWManager.Presentation
 
         private void OnDisable()
         {
-            foreach (var view in GetComponentsInChildren<DashboardViewHost>())
-                view.Unmount();
             simulationPlayer?.Dispose();
             simulationPlayer = null;
             DashboardSession.SaveChanged -= Bind;
@@ -179,7 +177,7 @@ namespace PWManager.Presentation
         {
             if (instance == null) return;
             instance.ShowProfilePage();
-            instance.Set("dashboard-page-title", $"{wrestlerName} / 개요");
+            instance.document.rootVisualElement.Q<Label>("dashboard-page-title").text = $"{wrestlerName} / 개요";
             instance.RecordNavigation(new NavigationEntry(DashboardPage.WrestlerProfile, wrestlerId));
         }
         public static void ShowRosterShell() { if (instance == null) return; if (instance.navigationIndex > 0) instance.NavigateBack(); else instance.ShowPage(true); }
@@ -229,6 +227,7 @@ namespace PWManager.Presentation
             var notifications = document.rootVisualElement.Q<Button>("notifications"); if (notifications != null) notifications.text = $"알림  {tasks.Count}";
             rosterController.Render(boundSave);
             scheduleController.Render(boundSave);
+            facilitiesController.Render(boundSave);
             showPlanningController.Bind(boundSave, showTestMode);
         }
 
@@ -242,16 +241,19 @@ namespace PWManager.Presentation
             var profileContent = document.rootVisualElement.Q<VisualElement>("wrestler-profile-content");
             var scheduleContent = document.rootVisualElement.Q<VisualElement>("show-schedule-content");
             var showContent = document.rootVisualElement.Q<VisualElement>("show-planning-content");
+            var facilitiesContent = document.rootVisualElement.Q<VisualElement>("facilities-content");
             if (overview != null) overview.style.display = roster ? DisplayStyle.None : DisplayStyle.Flex;
             if (messageContent != null) messageContent.style.display = DisplayStyle.None;
             if (rosterContent != null) rosterContent.style.display = roster ? DisplayStyle.Flex : DisplayStyle.None;
             if (profileContent != null) profileContent.style.display = DisplayStyle.None;
             if (scheduleContent != null) scheduleContent.style.display = DisplayStyle.None;
             if (showContent != null) showContent.style.display = DisplayStyle.None;
+            if (facilitiesContent != null) facilitiesContent.style.display = DisplayStyle.None;
             document.rootVisualElement.Q<Button>("nav-home")?.EnableInClassList("active", !roster);
             document.rootVisualElement.Q<Button>("nav-message")?.EnableInClassList("active", false);
             document.rootVisualElement.Q<Button>("nav-roster")?.EnableInClassList("active", roster);
             document.rootVisualElement.Q<Button>("nav-show")?.EnableInClassList("active", false);
+            document.rootVisualElement.Q<Button>("nav-staff")?.EnableInClassList("active", false);
             Set("dashboard-page-title", roster ? "로스터 / 전체 선수" : showTestMode ? "쇼 결과" : "홈 / 개요");
             if (roster) rosterController.Render(boundSave);
             if (recordNavigation) RecordNavigation(new NavigationEntry(roster ? DashboardPage.Roster : DashboardPage.Home));
@@ -265,10 +267,12 @@ namespace PWManager.Presentation
             document.rootVisualElement.Q<VisualElement>("wrestler-profile-content").style.display = DisplayStyle.None;
             document.rootVisualElement.Q<VisualElement>("show-schedule-content").style.display = DisplayStyle.None;
             document.rootVisualElement.Q<VisualElement>("show-planning-content").style.display = DisplayStyle.None;
+            document.rootVisualElement.Q<VisualElement>("facilities-content").style.display = DisplayStyle.None;
             document.rootVisualElement.Q<Button>("nav-home")?.EnableInClassList("active", false);
             document.rootVisualElement.Q<Button>("nav-message")?.EnableInClassList("active", true);
             document.rootVisualElement.Q<Button>("nav-roster")?.EnableInClassList("active", false);
             document.rootVisualElement.Q<Button>("nav-show")?.EnableInClassList("active", false);
+            document.rootVisualElement.Q<Button>("nav-staff")?.EnableInClassList("active", false);
             Set("dashboard-page-title", "메시지 / 수신함");
             inboxController.Render();
             if (recordNavigation) RecordNavigation(new NavigationEntry(DashboardPage.Messages));
@@ -282,10 +286,12 @@ namespace PWManager.Presentation
             document.rootVisualElement.Q<VisualElement>("wrestler-profile-content").style.display = DisplayStyle.None;
             document.rootVisualElement.Q<VisualElement>("show-planning-content").style.display = DisplayStyle.None;
             document.rootVisualElement.Q<VisualElement>("show-schedule-content").style.display = DisplayStyle.Flex;
+            document.rootVisualElement.Q<VisualElement>("facilities-content").style.display = DisplayStyle.None;
             document.rootVisualElement.Q<Button>("nav-home")?.EnableInClassList("active", false);
             document.rootVisualElement.Q<Button>("nav-message")?.EnableInClassList("active", false);
             document.rootVisualElement.Q<Button>("nav-roster")?.EnableInClassList("active", false);
             document.rootVisualElement.Q<Button>("nav-show")?.EnableInClassList("active", true);
+            document.rootVisualElement.Q<Button>("nav-staff")?.EnableInClassList("active", false);
             Set("dashboard-page-title", "쇼 / 전체 일정");
             scheduleController.Render(boundSave);
             if (recordNavigation) RecordNavigation(new NavigationEntry(DashboardPage.ShowSchedule));
@@ -299,10 +305,12 @@ namespace PWManager.Presentation
             document.rootVisualElement.Q<VisualElement>("wrestler-profile-content").style.display = DisplayStyle.None;
             document.rootVisualElement.Q<VisualElement>("show-schedule-content").style.display = DisplayStyle.None;
             document.rootVisualElement.Q<VisualElement>("show-planning-content").style.display = DisplayStyle.Flex;
+            document.rootVisualElement.Q<VisualElement>("facilities-content").style.display = DisplayStyle.None;
             document.rootVisualElement.Q<Button>("nav-home")?.EnableInClassList("active", false);
             document.rootVisualElement.Q<Button>("nav-message")?.EnableInClassList("active", false);
             document.rootVisualElement.Q<Button>("nav-roster")?.EnableInClassList("active", false);
             document.rootVisualElement.Q<Button>("nav-show")?.EnableInClassList("active", true);
+            document.rootVisualElement.Q<Button>("nav-staff")?.EnableInClassList("active", false);
             var show = showPlanningController.Show(showId, showTestMode);
             Set("dashboard-page-title", show == null ? "쇼 / 쇼 기획" : $"쇼 / {(string.IsNullOrWhiteSpace(show.Name) ? DashboardText.ShowName(show.ShowType) : show.Name)}");
             if (recordNavigation) RecordNavigation(new NavigationEntry(DashboardPage.ShowPlanning, showPlanningController.SelectedShowId));
@@ -323,16 +331,35 @@ namespace PWManager.Presentation
             var profileContent = document.rootVisualElement.Q<VisualElement>("wrestler-profile-content");
             var scheduleContent = document.rootVisualElement.Q<VisualElement>("show-schedule-content");
             var showContent = document.rootVisualElement.Q<VisualElement>("show-planning-content");
+            var facilitiesContent = document.rootVisualElement.Q<VisualElement>("facilities-content");
             if (overview != null) overview.style.display = DisplayStyle.None;
             if (messageContent != null) messageContent.style.display = DisplayStyle.None;
             if (rosterContent != null) rosterContent.style.display = DisplayStyle.None;
             if (profileContent != null) profileContent.style.display = DisplayStyle.Flex;
             if (scheduleContent != null) scheduleContent.style.display = DisplayStyle.None;
             if (showContent != null) showContent.style.display = DisplayStyle.None;
+            if (facilitiesContent != null) facilitiesContent.style.display = DisplayStyle.None;
             document.rootVisualElement.Q<Button>("nav-home")?.EnableInClassList("active", false);
             document.rootVisualElement.Q<Button>("nav-message")?.EnableInClassList("active", false);
             document.rootVisualElement.Q<Button>("nav-roster")?.EnableInClassList("active", true);
             document.rootVisualElement.Q<Button>("nav-show")?.EnableInClassList("active", false);
+            document.rootVisualElement.Q<Button>("nav-staff")?.EnableInClassList("active", false);
+        }
+
+        private void ShowFacilitiesPage(bool recordNavigation = true)
+        {
+            foreach (var name in new[] { "overview-content", "message-content", "roster-content", "wrestler-profile-content", "show-schedule-content", "show-planning-content" })
+            {
+                var content = document.rootVisualElement.Q<VisualElement>(name);
+                if (content != null) content.style.display = DisplayStyle.None;
+            }
+            var facilities = document.rootVisualElement.Q<VisualElement>("facilities-content");
+            if (facilities != null) facilities.style.display = DisplayStyle.Flex;
+            foreach (var name in new[] { "nav-home", "nav-message", "nav-roster", "nav-show", "nav-staff" })
+                document.rootVisualElement.Q<Button>(name)?.EnableInClassList("active", name == "nav-staff");
+            Set("dashboard-page-title", "시설·스태프");
+            facilitiesController.Render(boundSave);
+            if (recordNavigation) RecordNavigation(new NavigationEntry(DashboardPage.Facilities));
         }
 
         private void RecordNavigation(NavigationEntry entry)
@@ -383,6 +410,7 @@ namespace PWManager.Presentation
                     case DashboardPage.Roster: ShowPage(true, false); break;
                     case DashboardPage.ShowSchedule: ShowSchedulePage(false); break;
                     case DashboardPage.ShowPlanning: ShowPlanningPage(entry.ContextId, false); break;
+                    case DashboardPage.Facilities: ShowFacilitiesPage(false); break;
                     case DashboardPage.WrestlerProfile:
                     {
                         var wrestler = boundSave?.Wrestlers?.FirstOrDefault(x => x?.Id == entry.ContextId);
@@ -712,9 +740,10 @@ namespace PWManager.Presentation
             if (button.name == "nav-message") { WrestlerProfileController.CloseOpenProfile(false); ShowMessagesPage(); evt.StopPropagation(); return; }
             if (button.name == "nav-roster") { WrestlerProfileController.CloseOpenProfile(false); ShowPage(true); evt.StopPropagation(); return; }
             if (button.name == "nav-show") { WrestlerProfileController.CloseOpenProfile(false); ShowSchedulePage(); evt.StopPropagation(); return; }
+            if (button.name == "nav-staff") { WrestlerProfileController.CloseOpenProfile(false); ShowFacilitiesPage(); evt.StopPropagation(); return; }
             Debug.Log($"Dashboard action selected: {button.name}");
         }
-        private enum DashboardPage { Home, Messages, Roster, WrestlerProfile, ShowSchedule, ShowPlanning }
+        private enum DashboardPage { Home, Messages, Roster, WrestlerProfile, ShowSchedule, ShowPlanning, Facilities }
         private sealed class NavigationEntry
         {
             public readonly DashboardPage Page;

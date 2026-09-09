@@ -13,6 +13,8 @@ namespace PWManager.Presentation
         private readonly Func<ShowState, string> venueName;
         private readonly Action<string> openShow;
         private readonly Dictionary<int, TextField> ppvTitleFields = new();
+        private readonly Dictionary<int, IntegerField> ppvDurationFields = new();
+        private IntegerField regularDurationField;
         private GameSave save;
         private bool editingRegularTitles;
 
@@ -69,16 +71,20 @@ namespace PWManager.Presentation
         {
             editingRegularTitles = regular;
             ppvTitleFields.Clear();
+            ppvDurationFields.Clear();
             var fields = root.Q<VisualElement>("schedule-title-fields");
             fields.Clear();
             Set("schedule-title-message", string.Empty);
-            Set("schedule-title-dialog-title", regular ? "정규 쇼 제목 설정" : "PPV 제목 설정");
+            Set("schedule-title-dialog-title", regular ? "정규 쇼 설정" : "PPV 설정");
             if (regular)
             {
+                var row = new VisualElement(); row.AddToClassList("schedule-title-row");
                 var field = new TextField("정규 쇼 제목") { name = "schedule-regular-title-field" };
                 field.AddToClassList("schedule-title-field");
                 field.SetValueWithoutNotify(string.IsNullOrWhiteSpace(save.SeasonPolicy?.RegularShowName) ? "정규 쇼" : save.SeasonPolicy.RegularShowName);
-                fields.Add(field);
+                row.Add(field);
+                regularDurationField = AddDurationControl(row, save.SeasonPolicy.RegularShowDurationMinutes);
+                fields.Add(row);
             }
             else
             {
@@ -87,11 +93,16 @@ namespace PWManager.Presentation
                     .OrderBy(x => x.Date.Year).ThenBy(x => x.Date.Month).ThenBy(x => x.Date.Day)
                     .Select(x => x.Date.Month).Distinct())
                 {
+                    var row = new VisualElement(); row.AddToClassList("schedule-title-row");
+                    var policy = save.SeasonPolicy.PpvShowTitles.FirstOrDefault(x => x.Month == month);
                     var field = new TextField($"{month}월");
                     field.AddToClassList("schedule-title-field");
-                    field.SetValueWithoutNotify(save.SeasonPolicy.PpvShowTitles.FirstOrDefault(x => x.Month == month)?.Title ?? $"{month}월 PPV");
+                    field.SetValueWithoutNotify(policy?.Title ?? $"{month}월 PPV");
                     ppvTitleFields[month] = field;
-                    fields.Add(field);
+                    row.Add(field);
+                    var duration = AddDurationControl(row, policy?.DurationMinutes ?? 120);
+                    ppvDurationFields[month] = duration;
+                    fields.Add(row);
                 }
             }
             var overlay = root.Q<VisualElement>("schedule-title-overlay");
@@ -105,7 +116,9 @@ namespace PWManager.Presentation
             {
                 var title = root.Q<TextField>("schedule-regular-title-field")?.value?.Trim();
                 if (string.IsNullOrEmpty(title)) { Set("schedule-title-message", "제목을 입력하세요"); return; }
+                if (!ValidDuration(regularDurationField.value)) { Set("schedule-title-message", "시간은 60분 단위로 입력하세요"); return; }
                 save.SeasonPolicy.RegularShowName = title;
+                save.SeasonPolicy.RegularShowDurationMinutes = regularDurationField.value;
             }
             else
             {
@@ -113,7 +126,9 @@ namespace PWManager.Presentation
                 if (titles.Values.Any(string.IsNullOrEmpty)) { Set("schedule-title-message", "모든 PPV 제목을 입력하세요"); return; }
                 if (titles.Values.Distinct(StringComparer.OrdinalIgnoreCase).Count() != titles.Count)
                 { Set("schedule-title-message", "PPV 제목은 같은 시즌 안에서 서로 달라야 합니다"); return; }
-                save.SeasonPolicy.PpvShowTitles = titles.Select(x => new PpvTitlePolicyState { Month = x.Key, Title = x.Value }).ToList();
+                if (ppvDurationFields.Values.Any(x => !ValidDuration(x.value))) { Set("schedule-title-message", "시간은 60분 단위로 입력하세요"); return; }
+                save.SeasonPolicy.PpvShowTitles = titles.Select(x => new PpvTitlePolicyState
+                    { Month = x.Key, Title = x.Value, DurationMinutes = ppvDurationFields[x.Key].value }).ToList();
             }
             var shows = save.Shows.Where(x => x != null && (x.ShowType == ScheduledShowType.Regular) == editingRegularTitles)
                 .OrderBy(x => x.Date.Year).ThenBy(x => x.Date.Month).ThenBy(x => x.Date.Day).ToList();
@@ -124,6 +139,11 @@ namespace PWManager.Presentation
                     : save.SeasonPolicy.PpvShowTitles.Single(x => x.Month == shows[index].Date.Month).Title;
                 shows[index].Name = ShowNamingRules.Compose(save.Promotion.Abbreviation, title, shows[index].ShowType,
                     editingRegularTitles ? index + 1 : 0, shows[index].Date.Year);
+                shows[index].DurationLimit = editingRegularTitles
+                    ? save.SeasonPolicy.RegularShowDurationMinutes
+                    : save.SeasonPolicy.PpvShowTitles.Single(x => x.Month == shows[index].Date.Month).DurationMinutes;
+                var venue = save.VenueContracts.Single(x => x.Id == shows[index].VenueContractId);
+                shows[index].EstimatedCost = venue.CalculateProductionCost(shows[index].DurationLimit);
             }
             DashboardSession.PersistActive();
             Render(save);
@@ -131,6 +151,24 @@ namespace PWManager.Presentation
         }
 
         private void CloseTitleEditor() => root.Q<VisualElement>("schedule-title-overlay")?.AddToClassList("hidden");
+        private static bool ValidDuration(int value) => value > 0 && value % 60 == 0;
+        private static IntegerField AddDurationControl(VisualElement row, int value)
+        {
+            var control = new VisualElement(); control.AddToClassList("schedule-duration-control");
+            var caption = new Label("시간"); caption.AddToClassList("schedule-duration-caption"); control.Add(caption);
+            var decrease = new Button { text = "−", tooltip = "60분 줄이기" }; decrease.AddToClassList("schedule-duration-step"); control.Add(decrease);
+            var field = new IntegerField { isReadOnly = true };
+            field.AddToClassList("schedule-duration-field");
+            field.SetValueWithoutNotify(value > 0 ? value : 120);
+            control.Add(field);
+            var unit = new Label("분"); unit.AddToClassList("schedule-duration-unit"); control.Add(unit);
+            var increase = new Button { text = "+", tooltip = "60분 늘리기" }; increase.AddToClassList("schedule-duration-step"); control.Add(increase);
+            decrease.clicked += () => { field.SetValueWithoutNotify(Math.Max(60, field.value - 60)); decrease.SetEnabled(field.value > 60); };
+            increase.clicked += () => { field.SetValueWithoutNotify(field.value + 60); decrease.SetEnabled(true); };
+            decrease.SetEnabled(field.value > 60);
+            row.Add(control);
+            return field;
+        }
         private static void AddMetric(VisualElement row, string label, string value)
         {
             var metric = new VisualElement(); metric.AddToClassList("show-schedule-metric");

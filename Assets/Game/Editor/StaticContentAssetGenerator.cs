@@ -78,6 +78,11 @@ namespace PWManager.Editor
             Directory.CreateDirectory(Root + "/Wrestlers/Names");
             Directory.CreateDirectory(Root + "/Venues");
             Directory.CreateDirectory(Root + "/Staff");
+            AssetDatabase.DeleteAsset(Root + "/Staff/Levels");
+            Directory.CreateDirectory(Root + "/Staff/MedicalTeam");
+            Directory.CreateDirectory(Root + "/Staff/ScoutTeam");
+            Directory.CreateDirectory(Root + "/Staff/PromotionTeam");
+            Directory.CreateDirectory(Root + "/Staff/CommentaryTeam");
             Directory.CreateDirectory(Root + "/MatchTypes");
             Directory.CreateDirectory(Root + "/MatchGimmicks");
             Directory.CreateDirectory("Assets/Game/Data/Balance");
@@ -87,6 +92,10 @@ namespace PWManager.Editor
             var moves = CreateMoves();
             var venues = CreateVenues();
             var staff = CreateStaff();
+            var medicalLevels = CreateMedicalLevels();
+            var scoutLevels = CreateScoutLevels();
+            var promotionLevels = CreatePromotionLevels();
+            var commentaryLevels = CreateCommentaryLevels();
             var matchTypes = CreateMatchTypes();
             var matchGimmicks = CreateMatchGimmicks();
             var catalog = LoadOrCreate<StaticContentCatalog>(Root + "/GameStaticContentCatalog.asset");
@@ -97,13 +106,17 @@ namespace PWManager.Editor
             catalog.Traits = traits;
             catalog.Moves = moves;
             catalog.StaffDepartments = staff;
+            catalog.MedicalTeamLevels = medicalLevels;
+            catalog.ScoutTeamLevels = scoutLevels;
+            catalog.PromotionTeamLevels = promotionLevels;
+            catalog.CommentaryTeamLevels = commentaryLevels;
             catalog.MatchTypes = matchTypes;
             catalog.MatchGimmicks = matchGimmicks;
             catalog.Venues = venues;
             EditorUtility.SetDirty(catalog);
             AssetDatabase.SaveAssets();
             AssetDatabase.Refresh();
-            Debug.Log($"Generated confirmed static content: {styles.Count} styles, {traits.Count} traits, {moves.Count} moves, {venues.Count} venues, {staff.Count} staff departments, {matchTypes.Count} match types, {matchGimmicks.Count} match gimmicks.");
+            Debug.Log($"Generated confirmed static content: {styles.Count} styles, {traits.Count} traits, {moves.Count} moves, {venues.Count} venues, {staff.Count} staff departments, {medicalLevels.Count + scoutLevels.Count + promotionLevels.Count + commentaryLevels.Count} team levels, {matchTypes.Count} match types, {matchGimmicks.Count} match gimmicks.");
         }
 
         private static void PopulatePrototypeNames(NamePoolDefinition names)
@@ -132,16 +145,12 @@ namespace PWManager.Editor
                 "Kendrick", "Langley", "Maddox", "Nash", "Ortega", "Prescott", "Ramsey", "Shepherd", "Thornton", "Underwood",
                 "Vaughn", "Walker", "York", "Zimmerman", "Blackwood", "Carver", "Drake", "Emerson", "Ford", "Holland"
             });
-            AddMissing(names.Nicknames, new[]
-            {
-                "The Ace", "The Anvil", "The Comet", "The Outlaw", "The Phantom",
-                "The Prodigy", "The Rebel", "The Sentinel", "The Storm", "The Titan"
-            });
-            AddMissing(names.SingleWordRingNames, new[]
-            {
-                "Blaze", "Cipher", "Fury", "Havoc", "Nova",
-                "Onyx", "Riot", "Tempest", "Valkyrie", "Vortex"
-            });
+            AddMissing(names.KoreanMaleGivenNames, new[] { "Min-jun", "Seo-jun", "Ji-hoon" });
+            AddMissing(names.KoreanFemaleGivenNames, new[] { "Seo-yeon", "Ji-woo", "Ha-eun" });
+            AddMissing(names.KoreanFamilyNames, new[] { "Kim", "Lee", "Park" });
+            AddMissing(names.JapaneseMaleGivenNames, new[] { "Haruto", "Ren", "Kaito" });
+            AddMissing(names.JapaneseFemaleGivenNames, new[] { "Yui", "Aoi", "Sakura" });
+            AddMissing(names.JapaneseFamilyNames, new[] { "Sato", "Suzuki", "Tanaka" });
             EditorUtility.SetDirty(names);
         }
 
@@ -196,10 +205,38 @@ namespace PWManager.Editor
 
         private static List<StaffDepartmentDefinition> CreateStaff() => new()
         {
-            Staff("staff_001", "의료팀", StaffDepartmentType.Medical, 1, 0, 300, 900, 1800, 3200),
-            Staff("staff_002", "스카우트팀", StaffDepartmentType.Scout, 1, 0, 250, 750, 1600, 3000),
-            Staff("staff_003", "홍보팀", StaffDepartmentType.Promotion, 1, 0, 500, 1300, 2500, 4200),
-            Staff("staff_004", "해설진", StaffDepartmentType.Commentary, 0, 1200, 2200, 3400, 4800, 6500)
+            Staff("staff_001", "의료팀", StaffDepartmentType.Medical, 1),
+            Staff("staff_002", "스카우트팀", StaffDepartmentType.Scout, 1),
+            Staff("staff_003", "홍보팀", StaffDepartmentType.Promotion, 1),
+            Staff("staff_004", "해설진", StaffDepartmentType.Commentary, 0)
+        };
+
+        private static List<MedicalTeamLevelDefinition> CreateMedicalLevels() => new()
+        {
+            MedicalLevel(1, 0, 0, "기본 부상 회복 및 악화 방지", 1f, 1f), MedicalLevel(2, 300, 10_000, "회복 기간 5% 감소 · 악화 확률 10% 감소", .95f, .90f),
+            MedicalLevel(3, 2_500, 50_000, "회복 기간 10% 감소 · 악화 확률 20% 감소", .90f, .80f), MedicalLevel(4, 5_500, 250_000, "회복 기간 15% 감소 · 악화 확률 30% 감소", .85f, .70f),
+            MedicalLevel(5, 20_000, 1_000_000, "회복 기간 20% 감소 · 악화 확률 40% 감소", .80f, .60f)
+        };
+
+        private static List<ScoutTeamLevelDefinition> CreateScoutLevels() => new()
+        {
+            ScoutLevel(1, 0, 0, "후보 6명 · 종합 능력 추정", 6, 1, 0f, 2f, .05f), ScoutLevel(2, 300, 10_000, "후보 8명 · 성장 2단계 추정", 8, 2, 0f, 1.5f, .10f),
+            ScoutLevel(3, 2_500, 50_000, "후보 10명 · 등급 정확도 60%", 10, 3, .60f, 1f, .15f), ScoutLevel(4, 5_500, 250_000, "후보 12명 · 등급 정확도 85%", 12, 4, .85f, .5f, .25f),
+            ScoutLevel(5, 20_000, 1_000_000, "후보 15명 · 모든 정보 정확히 공개", 15, 4, 1f, 0, .35f)
+        };
+
+        private static List<PromotionTeamLevelDefinition> CreatePromotionLevels() => new()
+        {
+            PromotionLevel(1, 0, 0, "기본 티켓 수요와 팬 증가", 1f, 1f), PromotionLevel(2, 300, 10_000, "티켓 수요 5% · 팬 증가 3% 향상", 1.05f, 1.03f),
+            PromotionLevel(3, 2_500, 50_000, "티켓 수요 10% · 팬 증가 6% 향상", 1.10f, 1.06f), PromotionLevel(4, 5_500, 250_000, "티켓 수요 15% · 팬 증가 9% 향상", 1.15f, 1.09f),
+            PromotionLevel(5, 20_000, 1_000_000, "티켓 수요 20% · 팬 증가 12% 향상", 1.20f, 1.12f)
+        };
+
+        private static List<CommentaryTeamLevelDefinition> CreateCommentaryLevels() => new()
+        {
+            CommentaryLevel(1, 1_000, 25_000, "현장 반응 2% · 방송 반응 3% 향상", 1.02f, 1.03f), CommentaryLevel(2, 2_500, 100_000, "현장 반응 4% · 방송 반응 6% 향상", 1.04f, 1.06f),
+            CommentaryLevel(3, 11_000, 500_000, "현장 반응 6% · 방송 반응 9% 향상", 1.06f, 1.09f), CommentaryLevel(4, 20_000, 2_000_000, "현장 반응 8% · 방송 반응 12% 향상", 1.08f, 1.12f),
+            CommentaryLevel(5, 34_000, 8_000_000, "현장 반응 10% · 방송 반응 15% 향상", 1.10f, 1.15f)
         };
 
         private static List<MatchTypeDefinition> CreateMatchTypes() => new()
@@ -276,12 +313,12 @@ namespace PWManager.Editor
 
         private static List<VenueDefinition> CreateVenues() => new()
         {
-            Venue("venue_001", "Studio", VenueScale.Studio, 100, 0, 0, 500, 20),
-            Venue("venue_002", "Community Gym", VenueScale.CommunityGym, 500, 0, 0, 4000, 30),
-            Venue("venue_003", "Small Arena", VenueScale.SmallArena, 3000, 1000, 300000, 60000, 50),
-            Venue("venue_004", "Medium Arena", VenueScale.MediumArena, 8000, 5500, 1500000, 250000, 75),
-            Venue("venue_005", "Large Arena", VenueScale.LargeArena, 20000, 20000, 6000000, 1000000, 110),
-            Venue("venue_006", "Stadium", VenueScale.Stadium, 70000, 55000, 30000000, 5000000, 150)
+            Venue("venue_001", "Studio", VenueScale.Studio, 100, 0, 0, 250, 20),
+            Venue("venue_002", "Community Gym", VenueScale.CommunityGym, 500, 0, 0, 2000, 30),
+            Venue("venue_003", "Small Arena", VenueScale.SmallArena, 3000, 1000, 300000, 20000, 50),
+            Venue("venue_004", "Medium Arena", VenueScale.MediumArena, 8000, 5500, 1500000, 80000, 75),
+            Venue("venue_005", "Large Arena", VenueScale.LargeArena, 20000, 20000, 6000000, 250000, 110),
+            Venue("venue_006", "Stadium", VenueScale.Stadium, 70000, 55000, 30000000, 1000000, 150)
         };
 
         private static List<MoveDefinition> CreateMoves() => new()
@@ -327,11 +364,22 @@ namespace PWManager.Editor
             value.Polarity = polarity; value.Description = description; value.ConflictingTraitIds.Clear(); EditorUtility.SetDirty(value); return value;
         }
 
-        private static StaffDepartmentDefinition Staff(string id, string name, StaffDepartmentType type, int start, params long[] unlocks)
+        private static StaffDepartmentDefinition Staff(string id, string name, StaffDepartmentType type, int start)
         {
             var value = Definition<StaffDepartmentDefinition>(Root + "/Staff/", id, name);
-            value.DepartmentType = type; value.StartingLevel = start; value.UnlockPrestigeByLevel = new List<long>(unlocks); EditorUtility.SetDirty(value); return value;
+            value.DepartmentType = type; value.StartingLevel = start; EditorUtility.SetDirty(value); return value;
         }
+
+        private static MedicalTeamLevelDefinition MedicalLevel(int level, long prestige, long cost, string effect, float recovery, float aggravation)
+        { var value = TeamLevel<MedicalTeamLevelDefinition>("MedicalTeam", "medicallevel_", "의료팀", "Medical Team", level, prestige, cost, effect); value.RecoveryDurationMultiplier = recovery; value.InjuryAggravationMultiplier = aggravation; EditorUtility.SetDirty(value); return value; }
+        private static ScoutTeamLevelDefinition ScoutLevel(int level, long prestige, long cost, string effect, int candidates, int knowledge, float exact, float error, float highTier)
+        { var value = TeamLevel<ScoutTeamLevelDefinition>("ScoutTeam", "scoutlevel_", "스카우트팀", "Scout Team", level, prestige, cost, effect); value.CandidateCount = candidates; value.KnowledgeLevel = knowledge; value.ExactValueChance = exact; value.ValueErrorRange = error; value.HighTierCandidateRate = highTier; EditorUtility.SetDirty(value); return value; }
+        private static PromotionTeamLevelDefinition PromotionLevel(int level, long prestige, long cost, string effect, float ticket, float fans)
+        { var value = TeamLevel<PromotionTeamLevelDefinition>("PromotionTeam", "promotionlevel_", "홍보팀", "Promotion Team", level, prestige, cost, effect); value.TicketDemandMultiplier = ticket; value.PositiveFanGainMultiplier = fans; EditorUtility.SetDirty(value); return value; }
+        private static CommentaryTeamLevelDefinition CommentaryLevel(int level, long prestige, long cost, string effect, float live, float broadcast)
+        { var value = TeamLevel<CommentaryTeamLevelDefinition>("CommentaryTeam", "commentarylevel_", "해설진", "Commentary Team", level, prestige, cost, effect); value.LiveAudienceReactionMultiplier = live; value.BroadcastAudienceReactionMultiplier = broadcast; EditorUtility.SetDirty(value); return value; }
+        private static T TeamLevel<T>(string folder, string prefix, string korean, string english, int level, long prestige, long cost, string effect) where T : StaffTeamLevelDefinition
+        { var id = $"{prefix}{level:000}"; var value = LoadOrCreate<T>($"{Root}/Staff/{folder}/{id}_Lv{level}.asset"); value.SetEditorIdentity(id, $"{korean} Lv.{level}", $"{english} Lv.{level}"); value.Level = level; value.RequiredPrestige = prestige; value.UpgradeCost = cost; value.EffectDescription = effect; return value; }
 
         private static MoveDefinition Move(string id, string name, float brawling, float power,
             float technical, float highFlying, float execution, MoveSellingDifficulty selling,

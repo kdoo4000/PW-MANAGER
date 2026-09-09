@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: move_006_Chokeslam
   m_EditorClassIdentifier: PWMANAGER.Data::PWManager.Data.Definitions.MoveDefinition
   id: move_006
-  koreanName: 초크슬램
+  koreanName: "\uCD08\uD06C\uC2AC\uB7A8"
   englishName: Chokeslam
   BrawlingWeight: 0.15
   PowerWeight: 0.85

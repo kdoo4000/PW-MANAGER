@@ -59,6 +59,7 @@ namespace PWManager.Presentation
                 row.EnableInClassList("required", item.Priority == InboxPriority.Required && item.Status is InboxMessageStatus.Unread or InboxMessageStatus.Read);
                 row.EnableInClassList("important", item.Priority == InboxPriority.Important);
                 var avatar = new Label(string.IsNullOrWhiteSpace(item.Sender) ? "?" : item.Sender.Trim().Substring(0, 1)); avatar.AddToClassList("message-avatar"); row.Add(avatar);
+                if (item.Status == InboxMessageStatus.Unread) { var dot = new VisualElement(); dot.AddToClassList("message-unread-dot"); row.Add(dot); }
                 var copy = new VisualElement(); copy.AddToClassList("message-row-copy");
                 var top = new VisualElement(); top.AddToClassList("message-row-top");
                 var sender = WrestlerNameText.Create(item.Sender, save?.Wrestlers); sender.AddToClassList("message-sender"); top.Add(sender); copy.Add(top);

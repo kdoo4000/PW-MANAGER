@@ -14,6 +14,10 @@ namespace PWManager.Data.Loading
         public IReadOnlyDictionary<string, MoveDefinition> Moves { get; }
         public IReadOnlyDictionary<string, VenueDefinition> Venues { get; }
         public IReadOnlyDictionary<string, StaffDepartmentDefinition> StaffDepartments { get; }
+        public IReadOnlyDictionary<string, MedicalTeamLevelDefinition> MedicalTeamLevels { get; }
+        public IReadOnlyDictionary<string, ScoutTeamLevelDefinition> ScoutTeamLevels { get; }
+        public IReadOnlyDictionary<string, PromotionTeamLevelDefinition> PromotionTeamLevels { get; }
+        public IReadOnlyDictionary<string, CommentaryTeamLevelDefinition> CommentaryTeamLevels { get; }
         public IReadOnlyDictionary<string, MatchTypeDefinition> MatchTypes { get; }
         public IReadOnlyDictionary<string, MatchGimmickDefinition> MatchGimmicks { get; }
 
@@ -27,6 +31,10 @@ namespace PWManager.Data.Loading
             Moves = Index(catalog.Moves);
             Venues = Index(catalog.Venues);
             StaffDepartments = Index(catalog.StaffDepartments);
+            MedicalTeamLevels = Index(catalog.MedicalTeamLevels);
+            ScoutTeamLevels = Index(catalog.ScoutTeamLevels);
+            PromotionTeamLevels = Index(catalog.PromotionTeamLevels);
+            CommentaryTeamLevels = Index(catalog.CommentaryTeamLevels);
             MatchTypes = Index(catalog.MatchTypes);
             MatchGimmicks = Index(catalog.MatchGimmicks);
         }

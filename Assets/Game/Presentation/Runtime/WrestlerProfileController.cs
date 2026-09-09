@@ -12,7 +12,7 @@ namespace PWManager.Presentation
     [RequireComponent(typeof(UIDocument))]
     public sealed class WrestlerProfileController : MonoBehaviour
     {
-        private static readonly string[] Palette = { "grade-ss", "grade-splus", "grade-s", "grade-aplus", "grade-a", "grade-bplus", "grade-b", "grade-c", "grade-d", "grade-e", "status-main", "status-mid", "status-jobber", "status-rookie", "role-face", "role-heel", "role-tweener", "state-good", "state-warn", "state-high", "state-danger", "momentum-low", "momentum-cool", "momentum-mid", "momentum-hot", "momentum-peak" };
+        private static readonly string[] Palette = { "grade-ss", "grade-splus", "grade-s", "grade-aplus", "grade-a", "grade-bplus", "grade-b", "grade-cplus", "grade-c", "grade-dplus", "grade-d", "grade-eplus", "grade-e", "grade-fplus", "grade-f", "grade-gplus", "grade-g", "status-main", "status-mid", "status-jobber", "status-rookie", "role-face", "role-heel", "role-tweener", "state-good", "state-warn", "state-high", "state-danger", "momentum-low", "momentum-cool", "momentum-mid", "momentum-hot", "momentum-peak" };
         private static WrestlerProfileController instance;
         private VisualElement root;
         private VisualElement standaloneRoot;
@@ -188,7 +188,7 @@ namespace PWManager.Presentation
 
             Set("wp-promotion", save?.Promotion?.GetDisplayAbbreviation() ?? "PW"); Set("wp-breadcrumb", $"{id.RingName} / 개요"); Set("wp-date", Date(date));
             Set("wp-cash", save?.Promotion == null ? "—" : $"${save.Promotion.CalculateCurrentCash(save.Transactions):N0}"); var next = save?.Schedules?.Where(x => x != null && x.Date.CompareTo(date) >= 0).OrderBy(x => x.Date).FirstOrDefault(); Set("wp-next-show", next == null ? "예정 없음" : Date(next.Date));
-            Set("wp-name", id.RingName); Set("wp-nickname", string.IsNullOrWhiteSpace(id.Nickname) ? id.LegalName : $"‘{id.Nickname}’"); Set("wp-initials", Initials(id.RingName)); Set("wp-status-title", card.Label);
+            root.Q<Label>("wp-name").text = id.RingName; Set("wp-nickname", string.IsNullOrWhiteSpace(id.Nickname) ? id.LegalName : $"‘{id.Nickname}’"); Set("wp-initials", Initials(id.RingName)); Set("wp-status-title", card.Label);
             Set("wp-legal-name", id.LegalName); Set("wp-gender", id.Gender == WrestlerGender.Male ? "남성" : "여성"); Set("wp-height", $"{id.HeightCm} cm"); Set("wp-weight", $"{id.WeightKg} kg"); Set("wp-age", $"{Age(id.BirthDate, date)}세"); Set("wp-career", $"{id.CareerYears}년"); Set("wp-background", Background(id.Background)); Set("wp-current-style", StyleName(previewStyleId)); Set("wp-tag", string.IsNullOrWhiteSpace(roster.ActiveTagTeamId) ? "없음" : roster.ActiveTagTeamId); Set("wp-stable", string.IsNullOrWhiteSpace(roster.ActiveStableId) ? "없음" : roster.ActiveStableId);
             Set("wp-card-status", card.Label); Set("wp-role", Alignment(roster.Alignment)); Set("wp-contract-end", contract == null ? "계약 없음" : Date(contract.EndDate)); Set("wp-salary", contract == null ? "—" : $"${contract.MonthlySalary / 4:N0}"); Set("wp-last-match", roster.LastMatchDate.HasValue ? Date(roster.LastMatchDate.Value) : "기록 없음");
             var moves = Resources.Load<StaticContentCatalog>("PWManagerRuntime/GameStaticContentCatalog")?.Moves;
@@ -206,8 +206,9 @@ namespace PWManager.Presentation
             Set("wp-matches", Math.Max(status.OfficialMatchCount, results.Count).ToString()); Set("wp-wins", wins.ToString()); Set("wp-draws", draws.ToString()); Set("wp-losses", losses.ToString()); Set("wp-recent-result", results.Count == 0 ? "기록 없음" : wins > 0 ? "승리" : "패배");
             Set("wp-championships", "0"); Set("wp-world-championships", "0"); Set("wp-win-streak", winStreak.ToString());
             Class("wp-status-title", card.ClassName); Class("wp-card-status", card.ClassName); Class("wp-role", $"role-{roster.Alignment.ToString().ToLowerInvariant()}"); Class("wp-condition", ConditionClass(condition)); Class("wp-satisfaction", StateClass(100f - c.Satisfaction)); Class("wp-injury", c.InjuryStatus == InjuryStatus.None ? "state-good" : "state-danger"); Class("wp-momentum", MomentumClass(momentum));
-            Abilities("wp-match-abilities", MatchAbilities(a));
-            Abilities("wp-promo-abilities", PromoAbilities(a));
+            var matchAbilities = MatchAbilities(a); var promoAbilities = PromoAbilities(a); var abilityRows = Math.Max(matchAbilities.Length, promoAbilities.Length);
+            Abilities("wp-match-abilities", matchAbilities, abilityRows);
+            Abilities("wp-promo-abilities", promoAbilities, abilityRows);
             SetGrade("wp-match-potential", g.MatchPotentialCap); SetGrade("wp-promo-potential", g.PromoPotentialCap);
             RenderStyleChoices();
             RenderPromoChoices();
@@ -297,9 +298,10 @@ namespace PWManager.Presentation
             ApplyPromoStyleEmphasis();
         }
 
-        private void Abilities(string targetId, (string Name, float Value)[] values)
+        private void Abilities(string targetId, (string Name, float Value)[] values, int rowCount)
         {
             var target = root.Q<VisualElement>(targetId); if (target == null) return; target.Clear(); for (var i = 0; i < values.Length; i++) AddAbility(target, values[i].Name, values[i].Value, i % 2 == 1 ? "alt" : null);
+            while (target.childCount < rowCount) { var spacer = new VisualElement(); spacer.AddToClassList("wp-ability-row"); spacer.AddToClassList("wp-ability-spacer"); target.Add(spacer); }
         }
         internal static void AddAbility(VisualElement target, string title, float value, string extra)
         {
@@ -330,21 +332,12 @@ namespace PWManager.Presentation
                 row.RemoveFromClassList("style-priority-2");
             }
 
-            var priorities = previewStyleId switch
-            {
-                "style_001" => (new[] { "브롤링" }, new[] { "파워" }),
-                "style_002" => (new[] { "파워" }, new[] { "테크니컬" }),
-                "style_003" => (new[] { "테크니컬" }, new[] { "하이플라잉" }),
-                "style_004" => (new[] { "하이플라잉" }, new[] { "테크니컬" }),
-                "style_005" => (new[] { "하이플라잉" }, new[] { "테크니컬" }),
-                "style_006" => (new[] { "파워" }, new[] { "브롤링" }),
-                _ => (Array.Empty<string>(), new[] { "브롤링", "파워", "하이플라잉", "테크니컬" })
-            };
+            var priorities = WrestlerOverallCalculator.MatchStylePriorities(previewStyleId);
             foreach (var row in target.Children())
             {
                 var label = row.Q<Label>(className: "wp-ability-label")?.text;
-                if (priorities.Item1.Contains(label)) row.AddToClassList("style-priority-1");
-                else if (priorities.Item2.Contains(label)) row.AddToClassList("style-priority-2");
+                if (priorities.Primary.Contains(label)) row.AddToClassList("style-priority-1");
+                else if (priorities.Secondary.Contains(label)) row.AddToClassList("style-priority-2");
             }
         }
         private void ApplyPromoStyleEmphasis()
@@ -372,7 +365,7 @@ namespace PWManager.Presentation
         private static string Alignment(KayfabeAlignment v) => v == KayfabeAlignment.Face ? "페이스" : v == KayfabeAlignment.Heel ? "힐" : "트위너";
         private static string Availability(WrestlerAvailability v) => v == WrestlerAvailability.Available ? "정상" : v == WrestlerAvailability.Limited ? "제한" : v == WrestlerAvailability.MatchUnavailable ? "경기 불가" : "활동 불가";
         private static string Injury(InjuryStatus v) => v == InjuryStatus.None ? "없음" : v == InjuryStatus.Minor ? "경상" : v == InjuryStatus.Moderate ? "부상" : "중상";
-        private static string Background(WrestlerBackground v) => v == WrestlerBackground.Rookie ? "신인" : v == WrestlerBackground.Athlete ? "스포츠" : v == WrestlerBackground.Entertainer ? "연예계" : "타 단체";
+        private static string Background(WrestlerBackground v) => v == WrestlerBackground.Rookie ? "신인" : v == WrestlerBackground.Athlete ? "스포츠" : v == WrestlerBackground.Entertainer ? "연예계" : "베테랑";
         private static string StyleName(string id) => id switch { "style_001" => "브롤러", "style_002" => "파워하우스", "style_003" => "테크니션", "style_004" => "하이플라이어", "style_005" => "루차 리브레", "style_006" => "자이언트", _ => "올라운더" };
         private static string StateClass(float v) => v < 30 ? "state-good" : v < 60 ? "state-warn" : v < 80 ? "state-high" : "state-danger";
         private static string ConditionClass(float v) => v < 40 ? "state-danger" : v < 60 ? "state-high" : v < 80 ? "state-warn" : "state-good";

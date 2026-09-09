@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: move_003_SpinningBackfist
   m_EditorClassIdentifier: PWMANAGER.Data::PWManager.Data.Definitions.MoveDefinition
   id: move_003
-  koreanName: 스피닝 백피스트
+  koreanName: "\uC2A4\uD53C\uB2DD \uBC31\uD53C\uC2A4\uD2B8"
   englishName: Spinning Backfist
   BrawlingWeight: 0.85
   PowerWeight: 0

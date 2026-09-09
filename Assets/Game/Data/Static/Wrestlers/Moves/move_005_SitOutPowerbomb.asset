@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: move_005_SitOutPowerbomb
   m_EditorClassIdentifier: PWMANAGER.Data::PWManager.Data.Definitions.MoveDefinition
   id: move_005
-  koreanName: 싯아웃 파워밤
+  koreanName: "\uC2EF\uC544\uC6C3 \uD30C\uC6CC\uBC24"
   englishName: Sit-Out Powerbomb
   BrawlingWeight: 0
   PowerWeight: 0.75

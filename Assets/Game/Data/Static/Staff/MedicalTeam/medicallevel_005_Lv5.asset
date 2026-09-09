@@ -1,0 +1,24 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5c5b87ce47fbcd94783899b33153282f, type: 3}
+  m_Name: medicallevel_005_Lv5
+  m_EditorClassIdentifier: PWMANAGER.Data::PWManager.Data.Definitions.MedicalTeamLevelDefinition
+  id: medicallevel_005
+  koreanName: "\uC758\uB8CC\uD300 Lv.5"
+  englishName: Medical Team Lv.5
+  Level: 5
+  RequiredPrestige: 20000
+  UpgradeCost: 1000000
+  EffectDescription: "\uD68C\uBCF5 \uAE30\uAC04 20% \uAC10\uC18C \xB7 \uC545\uD654
+    \uD655\uB960 40% \uAC10\uC18C"
+  RecoveryDurationMultiplier: 0.8
+  InjuryAggravationMultiplier: 0.6

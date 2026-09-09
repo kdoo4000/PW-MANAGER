@@ -38,25 +38,13 @@
                                     </ui:VisualElement>
                                 </ui:VisualElement>
                                 <ui:VisualElement class="player-field">
-                                    <ui:Label name="player-height-label" text="키(cm, 165~220)" class="field-label"/>
+                                    <ui:Label text="키(cm)" class="field-label"/>
                                     <ui:IntegerField name="player-height" value="180" class="promotion-input"/>
                                 </ui:VisualElement>
                                 <ui:VisualElement class="player-field player-field-last">
-                                    <ui:Label name="player-weight-label" text="몸무게(kg, 55~220)" class="field-label"/>
+                                    <ui:Label text="몸무게(kg)" class="field-label"/>
                                     <ui:IntegerField name="player-weight" value="90" class="promotion-input"/>
                                 </ui:VisualElement>
-                            </ui:VisualElement>
-                            <ui:VisualElement name="birth-date-calendar" class="birth-date-calendar hidden">
-                                <ui:VisualElement class="calendar-header">
-                                    <ui:Button name="calendar-previous" text="‹" class="calendar-nav"/>
-                                    <ui:DropdownField name="calendar-year" class="calendar-period"/>
-                                    <ui:DropdownField name="calendar-month" class="calendar-period calendar-month"/>
-                                    <ui:Button name="calendar-next" text="›" class="calendar-nav"/>
-                                </ui:VisualElement>
-                                <ui:VisualElement class="calendar-weekdays">
-                                    <ui:Label text="일"/><ui:Label text="월"/><ui:Label text="화"/><ui:Label text="수"/><ui:Label text="목"/><ui:Label text="금"/><ui:Label text="토"/>
-                                </ui:VisualElement>
-                                <ui:VisualElement name="calendar-days" class="calendar-days"/>
                             </ui:VisualElement>
                         </ui:VisualElement>
                         <ui:VisualElement class="appearance-card">
@@ -69,6 +57,18 @@
                                 </ui:VisualElement>
                                 <ui:VisualElement class="appearance-editor"/>
                             </ui:VisualElement>
+                        </ui:VisualElement>
+                        <ui:VisualElement name="birth-date-calendar" class="birth-date-calendar hidden">
+                            <ui:VisualElement class="calendar-header">
+                                <ui:Button name="calendar-previous" text="‹" class="calendar-nav"/>
+                                <ui:DropdownField name="calendar-year" class="calendar-period"/>
+                                <ui:DropdownField name="calendar-month" class="calendar-period calendar-month"/>
+                                <ui:Button name="calendar-next" text="›" class="calendar-nav"/>
+                            </ui:VisualElement>
+                            <ui:VisualElement class="calendar-weekdays">
+                                <ui:Label text="일"/><ui:Label text="월"/><ui:Label text="화"/><ui:Label text="수"/><ui:Label text="목"/><ui:Label text="금"/><ui:Label text="토"/>
+                            </ui:VisualElement>
+                            <ui:VisualElement name="calendar-days" class="calendar-days"/>
                         </ui:VisualElement>
                     </ui:VisualElement>
                     <ui:VisualElement name="wizard-step-1" class="wizard-step player-step hidden">

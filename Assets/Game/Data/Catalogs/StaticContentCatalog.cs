@@ -14,6 +14,10 @@ namespace PWManager.Data.Catalogs
         public List<MoveDefinition> Moves = new();
         public List<VenueDefinition> Venues = new();
         public List<StaffDepartmentDefinition> StaffDepartments = new();
+        public List<MedicalTeamLevelDefinition> MedicalTeamLevels = new();
+        public List<ScoutTeamLevelDefinition> ScoutTeamLevels = new();
+        public List<PromotionTeamLevelDefinition> PromotionTeamLevels = new();
+        public List<CommentaryTeamLevelDefinition> CommentaryTeamLevels = new();
         public List<MatchTypeDefinition> MatchTypes = new();
         public List<MatchGimmickDefinition> MatchGimmicks = new();
     }

@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: move_014_Moonsault
   m_EditorClassIdentifier: PWMANAGER.Data::PWManager.Data.Definitions.MoveDefinition
   id: move_014
-  koreanName: 문설트
+  koreanName: "\uBB38\uC124\uD2B8"
   englishName: Moonsault
   BrawlingWeight: 0
   PowerWeight: 0

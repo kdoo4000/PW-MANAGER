@@ -26,6 +26,8 @@ namespace PWManager.Tests
             Assert.That(save.Managers, Is.Empty);
             Assert.That(save.Contracts, Is.Empty);
             Assert.That(save.StaffDepartments, Is.Empty);
+            Assert.That(save.ScoutAssignments, Is.Empty);
+            Assert.That(save.ScoutCandidates, Is.Empty);
             Assert.That(save.VenueContracts, Is.Empty);
             Assert.That(save.SeasonPolicy, Is.Null);
             Assert.That(save.Schedules, Is.Empty);
