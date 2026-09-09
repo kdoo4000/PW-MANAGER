@@ -1,4 +1,3 @@
-using System.Collections.Generic;
 using PWManager.Domain.Models;
 using UnityEngine;
 
@@ -9,6 +8,5 @@ namespace PWManager.Data.Definitions
     {
         public StaffDepartmentType DepartmentType;
         public int StartingLevel;
-        public List<long> UnlockPrestigeByLevel = new();
     }
 }

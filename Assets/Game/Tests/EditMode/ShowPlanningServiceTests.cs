@@ -17,6 +17,15 @@ namespace PWManager.Tests
         private const string CatalogPath = "Assets/Game/Data/Static/GameStaticContentCatalog.asset";
 
         [Test]
+        public void StadiumCost_UsesOneMillionPerHour()
+        {
+            var venue = new VenueContractState { VenueId = "venue_006", ProductionCost = 1000000 };
+
+            Assert.That(venue.CalculateProductionCost(240), Is.EqualTo(4000000));
+            Assert.That(venue.CalculateProductionCost(300), Is.EqualTo(5000000));
+        }
+
+        [Test]
         public void Confirm_ValidMatchAndPromo_ProducesCompleteSnapshot()
         {
             var save = CreateInitialSave();

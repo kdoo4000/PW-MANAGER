@@ -136,9 +136,12 @@ namespace PWManager.Presentation
                 type.EnableInClassList("promo", showEvent.EventType == ShowEventType.Promo); row.Add(type);
                 var copy = new VisualElement(); copy.AddToClassList("show-event-copy");
                 var title = WrestlerNameText.Create(ShowEventTitle(showEvent), save?.Wrestlers); title.AddToClassList("show-event-title"); copy.Add(title);
-                var cast = WrestlerNameText.Create(string.Join(" · ", ShowEventParticipantIds(showEvent).Select(WrestlerName)), save?.Wrestlers); cast.AddToClassList("show-event-participants"); copy.Add(cast); row.Add(copy);
+                var subtitle = showEvent.EventType == ShowEventType.Match
+                    ? ShowEventDescription(showEvent)
+                    : string.Join(" · ", ShowEventParticipantIds(showEvent).Select(WrestlerName));
+                var cast = WrestlerNameText.Create(subtitle, save?.Wrestlers); cast.AddToClassList("show-event-participants"); copy.Add(cast); row.Add(copy);
                 var duration = new Label($"{showEvent.PlannedDuration}분"); duration.AddToClassList("show-event-duration"); row.Add(duration);
-                var positionText = ordered.Count == 1 ? "오프닝 · 메인" : index == 0 ? "오프닝" : index == ordered.Count - 1 ? "메인 이벤트" : string.Empty;
+                var positionText = ordered.Count == 1 ? "오프닝 · 메인" : index == 0 ? "오프닝" : index == ordered.Count - 1 ? "메인" : string.Empty;
                 var position = new Label(positionText); position.AddToClassList("show-event-position-label"); row.Add(position);
                 var captured = showEvent.Id; row.AddManipulator(new Clickable(() => { selectedShowEventId = captured; RenderShowPlanning(); }));
                 if (IsShowEditable(show))
@@ -160,7 +163,9 @@ namespace PWManager.Presentation
             Set("show-duration-used", $"{used}분 사용"); Set("show-duration-limit", $"총 {(showTestMode ? used : show.DurationLimit)}분");
             Set("show-match-count", matchCount.ToString()); Set("show-promo-count", promoCount.ToString()); Set("show-participant-count", castCount.ToString());
             var percent = showTestMode ? (used > 0 ? 100f : 0f) : show.DurationLimit <= 0 ? 0 : Math.Min(100f, used * 100f / show.DurationLimit); Width("show-duration-fill", percent);
-            root.Q<VisualElement>("show-duration-fill")?.EnableInClassList("over", !showTestMode && used > show.DurationLimit);
+            var overDuration = !showTestMode && used > show.DurationLimit;
+            root.Q<VisualElement>("show-duration-fill")?.EnableInClassList("over", overDuration);
+            root.Q<Label>("show-duration-used")?.EnableInClassList("over", overDuration);
             Set("show-planning-notice", showTestMode ? string.Empty : used == show.DurationLimit ? "제한 시간에 맞게 편성되었습니다" : used < show.DurationLimit ? $"남은 편성 시간 {show.DurationLimit - used}분" : $"제한 시간을 {used - show.DurationLimit}분 초과했습니다");
             RenderShowDetail(show, ordered);
         }
@@ -971,7 +976,7 @@ namespace PWManager.Presentation
             else RenderMatchup(host, showEvent, editable);
             if (host.childCount == 0) { var empty = new Label("배정된 선수가 없습니다"); empty.AddToClassList("show-panel-caption"); host.Add(empty); }
             var index = ordered.IndexOf(showEvent);
-            var position = show.MainEventId == showEvent.Id ? "메인 이벤트" : show.OpeningEventId == showEvent.Id ? "오프닝" : $"{index + 1}번째 세그먼트";
+            var position = show.MainEventId == showEvent.Id ? "메인" : show.OpeningEventId == showEvent.Id ? "오프닝" : $"{index + 1}번째 세그먼트";
             Set("show-detail-duration", $"{showEvent.PlannedDuration}분");
             root.Q<Button>("show-duration-increase").SetEnabled(editable);
             root.Q<Button>("show-duration-decrease").SetEnabled(editable && showEvent.PlannedDuration > 5);
@@ -1156,7 +1161,7 @@ namespace PWManager.Presentation
                 .Select(x => string.Join(" & ", x.MemberIds.Where(id => !string.IsNullOrWhiteSpace(id)).Select(WrestlerName))).ToList();
             if (sides.Count > 1) return string.Join("  vs  ", sides);
             var names = (match.ParticipantIds ?? new List<string>()).Select(WrestlerName).ToList();
-            return names.Count > 0 ? string.Join("  vs  ", names) : "참가자 미정 경기";
+            return names.Count > 0 ? string.Join("  vs  ", names) : "미정";
         }
 
         private IEnumerable<string> ShowEventParticipantIds(ShowEventState showEvent)
@@ -1210,7 +1215,7 @@ namespace PWManager.Presentation
         private long Salary(WrestlerState wrestler) => save?.Contracts?.FirstOrDefault(x => x != null && x.PersonId == wrestler.Id && (x.Status == ContractStatus.Active || x.Status == ContractStatus.Expiring))?.MonthlySalary ?? 0;
         private int Age(WrestlerState wrestler) => wrestler.Identity.BirthDate.AgeOn(save?.CurrentDate ?? default);
         private static string StyleText(string id) => id switch { "style_001" => "브롤러", "style_002" => "파워하우스", "style_003" => "테크니션", "style_004" => "하이플라이어", "style_005" => "루차 리브레", "style_006" => "자이언트", _ => "올라운더" };
-        private static string GradeClass(string grade) => grade switch { "SS" => "grade-ss", "S+" => "grade-sp", "S" => "grade-s", "A+" => "grade-ap", "A" => "grade-a", "B+" => "grade-bp", "B" => "grade-b", "C" => "grade-c", "D" => "grade-d", _ => "grade-e" };
+        private static string GradeClass(string grade) => grade switch { "SS" => "grade-ss", "S+" => "grade-sp", "S" => "grade-s", "A+" => "grade-ap", "A" => "grade-a", "B+" => "grade-bp", "B" => "grade-b", "C+" => "grade-cp", "C" => "grade-c", "D+" => "grade-dp", "D" => "grade-d", "E+" => "grade-ep", "E" => "grade-e", "F+" => "grade-fp", "F" => "grade-f", "G+" => "grade-gp", _ => "grade-g" };
         private static string GenderText(WrestlerGender value) => value == WrestlerGender.Female ? "여성" : "남성";
         private static string MeterClass(float value, MeterKind kind) => kind switch { MeterKind.Momentum => value < 20 ? "meter-low" : value < 40 ? "meter-blue" : value < 50 ? "meter-cyan" : value < 80 ? "meter-orange" : "meter-gold", _ => value < 40 ? "meter-red" : value < 60 ? "meter-orange" : value < 80 ? "meter-yellow" : "meter-green" };
         private enum MeterKind { Momentum, Condition, Satisfaction }

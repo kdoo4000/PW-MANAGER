@@ -12,5 +12,8 @@ namespace PWManager.Domain.Models
         public GameDate EndDate;
         public long ProductionCost;
         public VenueContractStatus Status;
+
+        public long CalculateProductionCost(int durationMinutes) =>
+            (long)(ProductionCost * (decimal)durationMinutes / 60m);
     }
 }

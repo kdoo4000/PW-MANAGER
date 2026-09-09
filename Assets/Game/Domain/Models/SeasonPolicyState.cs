@@ -8,6 +8,7 @@ namespace PWManager.Domain.Models
     {
         public int Month;
         public string Title;
+        public int DurationMinutes = 120;
     }
 
     [Serializable]
@@ -21,6 +22,7 @@ namespace PWManager.Domain.Models
         public string SignaturePpvScheduleId;
         public string RegularVenueContractId;
         public string RegularShowName;
+        public int RegularShowDurationMinutes = 120;
         public List<PpvTitlePolicyState> PpvShowTitles = new();
     }
 }

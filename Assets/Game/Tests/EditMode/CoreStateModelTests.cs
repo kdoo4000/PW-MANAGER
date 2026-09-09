@@ -4,6 +4,7 @@ using PWManager.Domain.Models;
 using PWManager.Domain.Services;
 using PWManager.Domain.Validation;
 using UnityEngine;
+using UnityEngine.UIElements;
 using GameEntityId = PWManager.Domain.Identifiers.EntityId;
 
 namespace PWManager.Tests
@@ -95,6 +96,11 @@ namespace PWManager.Tests
                 Assert.That(UnityEngine.UIElements.UQueryExtensions.Q<UnityEngine.UIElements.Label>(root, "wp-family").text,
                     Is.EqualTo("선호 50 · 관심 90"));
                 Assert.That(UnityEngine.UIElements.UQueryExtensions.Q<UnityEngine.UIElements.Label>(root, "wp-fan-total"), Is.Null);
+                var matchAbilities = root.Q<UnityEngine.UIElements.VisualElement>("wp-match-abilities");
+                var promoAbilities = root.Q<UnityEngine.UIElements.VisualElement>("wp-promo-abilities");
+                Assert.That(matchAbilities.childCount, Is.EqualTo(10));
+                Assert.That(promoAbilities.childCount, Is.EqualTo(matchAbilities.childCount));
+                Assert.That(matchAbilities[9].Q<UnityEngine.UIElements.Label>(className: "wp-ability-label").text, Is.EqualTo("스태미나"));
             }
             finally { UnityEngine.Object.DestroyImmediate(ui); }
         }
@@ -115,6 +121,23 @@ namespace PWManager.Tests
             Assert.That(WrestlerOverallCalculator.Match(restored.Wrestlers[0]), Is.EqualTo(10f));
             Assert.That(restored.Contracts, Has.Count.EqualTo(1));
             Assert.That(restored.Transactions, Has.Count.EqualTo(1));
+        }
+
+        [Test]
+        public void PotentialCaps_UseWeightedOverallInsteadOfRawAttributeTotals()
+        {
+            var save = CreateValidSave();
+            var wrestler = save.Wrestlers[0];
+            wrestler.Attributes.HighFlying = 20f;
+            wrestler.Attributes.Comedy = 20f;
+            wrestler.Growth.MatchPotentialCap = 10.5f;
+            wrestler.Growth.PromoPotentialCap = 11f;
+
+            var errors = GameSaveValidator.Validate(save);
+
+            Assert.That(WrestlerOverallCalculator.MatchTotal(wrestler.Attributes), Is.GreaterThan(105f));
+            Assert.That(WrestlerOverallCalculator.PromoTotal(wrestler.Attributes), Is.GreaterThan(77f));
+            Assert.That(errors, Has.None.Contains("potential cap"));
         }
 
         [Test]

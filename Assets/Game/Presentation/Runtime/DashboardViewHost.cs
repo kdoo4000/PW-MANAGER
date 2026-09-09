@@ -14,9 +14,18 @@ namespace PWManager.Presentation
             foreach (var (asset, element) in new[] {
                 ("DashboardOverview", "overview-content"), ("DashboardRoster", "roster-content"),
                 ("DashboardSchedule", "show-schedule-content"), ("DashboardInbox", "message-content"),
+                ("DashboardFacilities", "facilities-content"),
                 ("ShowPlanning", "show-planning-content"), ("ShowEditor", "show-editor-overlay") })
-                if (root.Q(element) == null)
+            {
+                var view = root.Q(element);
+                if (view == null)
                     Resources.Load<VisualTreeAsset>("PWManagerUI/" + asset).CloneTree(workspace);
+                else if (!workspace.Contains(view))
+                {
+                    view.RemoveFromHierarchy();
+                    Resources.Load<VisualTreeAsset>("PWManagerUI/" + asset).CloneTree(workspace);
+                }
+            }
         }
 
         public void Mount(VisualElement root)

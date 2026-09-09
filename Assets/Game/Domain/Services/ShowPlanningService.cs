@@ -41,14 +41,11 @@ namespace PWManager.Domain.Services
                 throw new ArgumentException("Duration limit must be a positive multiple of five.", nameof(durationLimit));
             var venue = save.VenueContracts.SingleOrDefault(x => x?.Id == venueContractId)
                 ?? throw new ArgumentException("Venue contract was not found.", nameof(venueContractId));
-            if (venue.StartDate.CompareTo(schedule.Date) > 0 || venue.EndDate.CompareTo(schedule.Date) < 0)
-                throw new ArgumentException("Venue contract does not cover the show date.", nameof(venueContractId));
-
             var show = new ShowState
             {
                 Id = createId(), ScheduleId = schedule.Id, Name = name.Trim(), ShowType = schedule.ShowType,
                 Date = schedule.Date, VenueContractId = venue.Id, DurationLimit = durationLimit,
-                EstimatedCost = venue.ProductionCost, Status = ShowStatus.Draft
+                EstimatedCost = venue.CalculateProductionCost(durationLimit), Status = ShowStatus.Draft
             };
             save.Shows.Add(show);
             return show;

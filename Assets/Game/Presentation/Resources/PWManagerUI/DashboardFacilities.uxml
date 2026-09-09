@@ -1,0 +1,32 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements">
+    <Style src="Dashboard.uss"/>
+    <Style src="DashboardFacilities.uss"/>
+    <ui:VisualElement name="facilities-content" class="facilities-content hidden">
+        <ui:VisualElement class="tabs facilities-tabs">
+            <ui:Button name="facilities-tab-staff" text="스태프" class="tab active-tab"/>
+            <ui:Button name="facilities-tab-venues" text="시설" class="tab"/>
+        </ui:VisualElement>
+        <ui:VisualElement class="facilities-summary">
+            <ui:VisualElement class="facilities-summary-item">
+                <ui:Label text="현재 자금" class="eyebrow"/>
+                <ui:Label name="facilities-cash" text="—" class="facilities-summary-value green"/>
+            </ui:VisualElement>
+            <ui:VisualElement class="facilities-summary-item">
+                <ui:Label text="단체 위상" class="eyebrow"/>
+                <ui:Label name="facilities-prestige" text="—" class="facilities-summary-value"/>
+            </ui:VisualElement>
+            <ui:VisualElement class="facilities-summary-item facilities-summary-last">
+                <ui:Label name="facilities-summary-label" text="운영 부서" class="eyebrow"/>
+                <ui:Label name="facilities-summary-count" text="—" class="facilities-summary-value blue-text"/>
+            </ui:VisualElement>
+        </ui:VisualElement>
+        <ui:ScrollView mode="Vertical" class="facilities-scroll">
+            <ui:VisualElement name="facilities-staff-panel" class="facilities-panel">
+                <ui:VisualElement name="facilities-staff-grid" class="facilities-grid"/>
+            </ui:VisualElement>
+            <ui:VisualElement name="facilities-venues-panel" class="facilities-panel hidden">
+                <ui:VisualElement name="facilities-venue-grid" class="facilities-grid"/>
+            </ui:VisualElement>
+        </ui:ScrollView>
+    </ui:VisualElement>
+</ui:UXML>

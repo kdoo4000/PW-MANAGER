@@ -19,6 +19,6 @@ MonoBehaviour:
   Capacity: 100
   RequiredPrestige: 0
   UnlockCost: 0
-  ProductionCost: 500
+  ProductionCost: 250
   BaseTicketPrice: 20
   RegionId: region_001

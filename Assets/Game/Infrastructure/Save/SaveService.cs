@@ -149,8 +149,24 @@ namespace PWManager.Infrastructure.Save
             }
             save.PromoResults ??= new List<PromoResultState>();
             save.InboxMessages ??= new List<InboxMessageState>();
+            foreach (var venue in save.VenueContracts ?? new List<VenueContractState>())
+                if (venue != null) venue.ProductionCost = HourlyVenueCost(venue.VenueId, venue.ProductionCost);
+            save.ScoutAssignments ??= new List<ScoutAssignmentState>();
+            save.ScoutCandidates ??= new List<ScoutCandidateState>();
+            foreach (var candidate in save.ScoutCandidates.Where(x => x != null))
+            {
+                candidate.ValueEstimates ??= new List<ScoutValueEstimate>();
+                candidate.RevealedTraitIds ??= new List<string>();
+            }
             if (save.SeasonPolicy != null && string.IsNullOrEmpty(save.SeasonPolicy.Id))
                 save.SeasonPolicy = null;
+            if (save.SeasonPolicy != null)
+            {
+                if (save.SeasonPolicy.RegularShowDurationMinutes <= 0) save.SeasonPolicy.RegularShowDurationMinutes = 120;
+                save.SeasonPolicy.PpvShowTitles ??= new List<PpvTitlePolicyState>();
+                foreach (var policy in save.SeasonPolicy.PpvShowTitles.Where(x => x != null && x.DurationMinutes <= 0))
+                    policy.DurationMinutes = save.Shows.FirstOrDefault(x => x != null && x.ShowType != ScheduledShowType.Regular && x.Date.Month == policy.Month)?.DurationLimit ?? 120;
+            }
         }
 
         private static void NormalizePlayerBirthDate(GameSave save)
@@ -159,6 +175,17 @@ namespace PWManager.Infrastructure.Save
             save.Player.BirthDate = new GameDate(2026 - save.Player.Age, 6, 1);
             save.Player.Age = 0;
         }
+
+        private static long HourlyVenueCost(string venueId, long cost) => (venueId, cost) switch
+        {
+            ("venue_001", 500) => 250,
+            ("venue_002", 4000) => 2000,
+            ("venue_003", 60000) => 20000,
+            ("venue_004", 250000) => 80000,
+            ("venue_005", 1000000) => 250000,
+            ("venue_006", 5000000) => 1000000,
+            _ => cost
+        };
 
         private void MigrateToCurrentVersion(GameSave save)
         {

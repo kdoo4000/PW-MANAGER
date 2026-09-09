@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: move_012_AnkleLock
   m_EditorClassIdentifier: PWMANAGER.Data::PWManager.Data.Definitions.MoveDefinition
   id: move_012
-  koreanName: 앵클 락
+  koreanName: "\uC575\uD074 \uB77D"
   englishName: Ankle Lock
   BrawlingWeight: 0.1
   PowerWeight: 0

@@ -64,6 +64,7 @@ namespace PWManager.Tests
                     label.SendEvent(click);
                 }
                 Assert.That(root.Q<Label>("wp-name").text, Is.EqualTo(target.Identity.RingName));
+                Assert.That(root.Q<Label>("dashboard-page-title").text, Is.EqualTo($"{target.Identity.RingName} / 개요"));
                 Assert.That(editor.ClassListContains("hidden"), Is.True);
                 Assert.That(root.Q("wrestler-profile-content").style.display.value, Is.EqualTo(DisplayStyle.Flex));
                 typeof(DashboardController).GetMethod("NavigateBack", BindingFlags.Instance | BindingFlags.NonPublic).Invoke(dashboard, null);

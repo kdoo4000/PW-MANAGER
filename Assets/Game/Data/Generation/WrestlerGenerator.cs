@@ -11,6 +11,8 @@ namespace PWManager.Data.Generation
 {
     public sealed class WrestlerGenerator
     {
+        private enum MatchProfile { RingGeneral, Execution, Selling, Stamina, Specialty }
+
         private readonly StaticContentRegistry content;
         private readonly WrestlerGenerationConfig config;
         private readonly Random random;
@@ -38,7 +40,7 @@ namespace PWManager.Data.Generation
             var background = Pick(new[] { 35d, 20d, 15d, 30d }, new[]
             {
                 WrestlerBackground.Rookie, WrestlerBackground.Athlete,
-                WrestlerBackground.Entertainer, WrestlerBackground.OtherPromotion
+                WrestlerBackground.Entertainer, WrestlerBackground.Veteran
             });
             var age = GenerateAge(background);
             var careerYears = GenerateCareerYears(background, age);
@@ -52,13 +54,16 @@ namespace PWManager.Data.Generation
             var matchOverall = GenerateCurrentOverall(background, age, matchPotential, true);
             var promoOverall = GenerateCurrentOverall(background, age, promoPotential, false);
             var attributes = GenerateAttributes(matchOverall, promoOverall, matchArchetype, promoArchetype, bodyType);
+            var styleId = DetermineStyle(gender, height, attributes, matchArchetype);
+            AdjustMatchAttributes(attributes, styleId, matchOverall);
+            AdjustPromoAttributes(attributes, promoOverall);
             var legalName = GenerateLegalName(gender);
             var wrestler = new WrestlerState
             {
                 Identity = new WrestlerIdentityState
                 {
                     Id = createId(), LegalName = legalName,
-                    RingName = config.UseLegalNameAsRingName ? legalName : legalName,
+                    RingName = legalName,
                     Gender = gender, Background = background, BirthDate = GenerateBirthDate(createdDate, age),
                     CreatedDate = createdDate, ExpiryDate = new OptionalGameDate(AddDays(createdDate, config.CandidateRetentionWeeks * 7)),
                     HeightCm = height, WeightKg = weight, BodyType = bodyType, CareerYears = careerYears
@@ -72,7 +77,7 @@ namespace PWManager.Data.Generation
                     MatchArchetype = matchArchetype,
                     PromoArchetype = promoArchetype,
                     PromoDisposition = promoArchetype == PromoArchetype.Comedy ? PromoDisposition.Comic : promoArchetype == PromoArchetype.Balanced ? PromoDisposition.Balanced : PromoDisposition.Serious,
-                    WrestlingStyleId = DetermineStyle(gender, height, attributes, matchArchetype)
+                    WrestlingStyleId = styleId
                 }
             };
             wrestler.Status.IsRookie = background == WrestlerBackground.Rookie;
@@ -113,19 +118,22 @@ namespace PWManager.Data.Generation
             for (var attempt = 0; attempt < 500; attempt++)
             {
                 var candidate = GenerateCandidate(gender, date);
-                if (WrestlerOverallCalculator.Match(candidate) >= 7f) return candidate;
+                var match = WrestlerOverallCalculator.Match(candidate);
+                var promo = WrestlerOverallCalculator.Promo(candidate);
+                if (match is >= 7f and <= 15.01f && promo is >= 7f and <= 15.01f) return candidate;
             }
-            throw new InvalidOperationException($"Could not generate an initial {gender} candidate at D grade or higher.");
+            throw new InvalidOperationException($"Could not generate an initial {gender} candidate within the starting ability range.");
         }
 
         private static double GuaranteeScore(IReadOnlyCollection<WrestlerState> group)
         {
             return Math.Min(3, group.Count(x => WrestlerOverallCalculator.Match(x) >= 10f)) +
                    Math.Min(1, group.Count(x => WrestlerOverallCalculator.Match(x) >= 14f)) +
-                   Math.Min(10d, group.Average(x => WrestlerOverallCalculator.Match(x))) +
+                   Math.Min(11d, group.Average(x => WrestlerOverallCalculator.Match(x))) +
+                   Math.Min(10d, group.Average(x => WrestlerOverallCalculator.Promo(x))) +
                    Math.Min(2, group.Count(x => WrestlerOverallCalculator.Promo(x) >= 10f)) +
                    Math.Min(3, group.Count(x => x.Identity.Background == WrestlerBackground.Rookie)) +
-                   Math.Min(2, group.Count(x => x.Identity.Background == WrestlerBackground.OtherPromotion)) +
+                   Math.Min(2, group.Count(x => x.Identity.Background == WrestlerBackground.Veteran)) +
                    Math.Min(2, group.Count(x => x.Growth.MatchPotentialCap >= 12f)) +
                    Math.Min(2, group.Count(x => x.Growth.PromoPotentialCap >= 12f)) +
                    Math.Min(4, group.Select(x => x.Presentation.WrestlingStyleId).Distinct().Count());
@@ -133,13 +141,15 @@ namespace PWManager.Data.Generation
 
         private static bool MeetsInitialGuarantees(IReadOnlyCollection<WrestlerState> group)
         {
-            return group.All(x => WrestlerOverallCalculator.Match(x) >= 7f) &&
-                   group.Average(x => WrestlerOverallCalculator.Match(x)) >= 10f &&
+            return group.All(x => WrestlerOverallCalculator.Match(x) is >= 7f and <= 15.01f) &&
+                   group.All(x => WrestlerOverallCalculator.Promo(x) is >= 7f and <= 15.01f) &&
+                   group.Average(x => WrestlerOverallCalculator.Match(x)) >= 11f &&
+                   group.Average(x => WrestlerOverallCalculator.Promo(x)) >= 10f &&
                    group.Count(x => WrestlerOverallCalculator.Match(x) >= 10f) >= 3 &&
                    group.Count(x => WrestlerOverallCalculator.Match(x) >= 14f) >= 1 &&
                    group.Count(x => WrestlerOverallCalculator.Promo(x) >= 10f) >= 2 &&
                    group.Count(x => x.Identity.Background == WrestlerBackground.Rookie) >= 3 &&
-                   group.Count(x => x.Identity.Background == WrestlerBackground.OtherPromotion) >= 2 &&
+                   group.Count(x => x.Identity.Background == WrestlerBackground.Veteran) >= 2 &&
                    group.Count(x => x.Growth.MatchPotentialCap >= 12f) >= 2 &&
                    group.Count(x => x.Growth.PromoPotentialCap >= 12f) >= 2 &&
                    group.Select(x => x.Presentation.WrestlingStyleId).Distinct().Count() >= 4;
@@ -158,7 +168,7 @@ namespace PWManager.Data.Generation
                     var replacementName = GenerateLegalName(candidate.Identity.Gender);
                     if (!usedNames.Add(replacementName)) continue;
                     candidate.Identity.LegalName = replacementName;
-                    if (config.UseLegalNameAsRingName) candidate.Identity.RingName = replacementName;
+                    candidate.Identity.RingName = replacementName;
                     break;
                 }
             }
@@ -171,7 +181,7 @@ namespace PWManager.Data.Generation
                 WrestlerBackground.Rookie => TriangularInt(18, 21, 25),
                 WrestlerBackground.Athlete => TriangularInt(20, 24, 31),
                 WrestlerBackground.Entertainer => TriangularInt(20, 26, 35),
-                _ => TriangularInt(22, 30, 40)
+                _ => TriangularInt(23, 30, 40)
             };
         }
 
@@ -180,7 +190,7 @@ namespace PWManager.Data.Generation
             if (background == WrestlerBackground.Rookie) return 0;
             if (background is WrestlerBackground.Athlete or WrestlerBackground.Entertainer) return random.NextDouble() < .7 ? 0 : 1;
             var maximum = Math.Min(15, age - 18);
-            return TriangularInt(2, Math.Min(6, maximum), maximum);
+            return TriangularInt(5, Math.Min(8, maximum), maximum);
         }
 
         private int GenerateHeight(WrestlerGender gender)
@@ -287,7 +297,8 @@ namespace PWManager.Data.Generation
             return RoundTenth(Triangular(minimum, Math.Max(minimum, Math.Min(values.Item2, maximum)), maximum));
         }
 
-        private WrestlerAttributesState GenerateAttributes(float match, float promo, MatchArchetype matchType, PromoArchetype promoType, WrestlerBodyType body)
+        private WrestlerAttributesState GenerateAttributes(float match, float promo, MatchArchetype matchType,
+            PromoArchetype promoType, WrestlerBodyType body)
         {
             var matchMods = new[,]
             {
@@ -301,8 +312,14 @@ namespace PWManager.Data.Generation
                 {2,1,1,1.5,1.5,2.5,2,.5,-1},{.5,0,.5,3,-1.5,.5,.5,.5,-1},{.5,1,.5,-1.5,3,.5,.5,.5,-1},
                 {0,0,1,.5,0,3,-1,.5,-1}
             };
-            var m = GenerateNormalized(10, match, i => matchMods[i, (int)matchType] + BodyModifier(body, i));
-            var p = GenerateNormalized(7, promo, i => promoMods[i, (int)promoType]);
+            var profileMods = new[,]
+            {
+                {4d,0,0,0,0},{3,1,0,0,0},{0,2,0,0,0},{0,2,0,0,0},{0,2,0,0,0},
+                {0,2,0,0,0},{0,4,0,0,0},{0,0,0,0,4},{0,0,5,0,0},{0,0,0,5,0}
+            };
+            var profile = Pick(new[] { 20d, 25, 20, 20, 15 }, Enum.GetValues(typeof(MatchProfile)).Cast<MatchProfile>().ToArray());
+            var m = GenerateAttributes(10, match, i => matchMods[i, (int)matchType] + profileMods[i, (int)profile] + BodyModifier(body, i));
+            var p = GenerateAttributes(7, promo, i => promoMods[i, (int)promoType]);
             return new WrestlerAttributesState
             {
                 RingPsychology=m[0], RingImprovisation=m[1], Technical=m[2], Brawling=m[3], Power=m[4], HighFlying=m[5],
@@ -311,28 +328,45 @@ namespace PWManager.Data.Generation
             };
         }
 
-        private float[] GenerateNormalized(int count, float target, Func<int, double> modifier)
+        private float[] GenerateAttributes(int count, float target, Func<int, double> modifier)
         {
-            var values = new double[count];
-            for (var i = 0; i < count; i++) values[i] = target + modifier(i) + Range(-1.5, 1.5);
+            var modifiers = Enumerable.Range(0, count).Select(modifier).ToArray();
+            var modifierAverage = modifiers.Average();
+            var modifierScale = Math.Min(1, (target - 1) / 3);
+            var spread = Math.Min(1.5, target - 1);
+            return Enumerable.Range(0, count)
+                .Select(i => RoundHundredth(Math.Max(1, Math.Min(20,
+                    target + (modifiers[i] - modifierAverage) * modifierScale + Range(-spread, spread)))))
+                .ToArray();
+        }
+
+        private static void AdjustMatchAttributes(WrestlerAttributesState a, string styleId, float target)
+        {
             for (var pass = 0; pass < 5; pass++)
             {
-                var difference = target * count - values.Sum();
-                var adjustable = Enumerable.Range(0, count).Where(i => values[i] > 1 && values[i] < 20).ToArray();
-                if (adjustable.Length == 0) break;
-                foreach (var i in adjustable) values[i] += difference / adjustable.Length;
-                for (var i = 0; i < count; i++) values[i] = Math.Max(1, Math.Min(20, values[i]));
+                var shift = target - WrestlerOverallCalculator.Match(a, styleId);
+                if (Math.Abs(shift) < .01f) break;
+                a.RingPsychology = Shift(a.RingPsychology, shift); a.RingImprovisation = Shift(a.RingImprovisation, shift);
+                a.Technical = Shift(a.Technical, shift); a.Brawling = Shift(a.Brawling, shift);
+                a.Power = Shift(a.Power, shift); a.HighFlying = Shift(a.HighFlying, shift);
+                a.SpotWork = Shift(a.SpotWork, shift); a.SpecialtyMatches = Shift(a.SpecialtyMatches, shift);
+                a.Selling = Shift(a.Selling, shift); a.Stamina = Shift(a.Stamina, shift);
             }
-            var rounded = values.Select(x => RoundHundredth(x)).ToArray();
-            var maximumTotal = target * count;
-            var excess = rounded.Sum() - maximumTotal;
-            if (excess > 0)
-            {
-                var index = Array.IndexOf(rounded, rounded.Max());
-                rounded[index] = (float)Math.Floor(Math.Max(1, rounded[index] - excess) * 100d) / 100f;
-            }
-            return rounded;
         }
+
+        private static void AdjustPromoAttributes(WrestlerAttributesState a, float target)
+        {
+            for (var pass = 0; pass < 5; pass++)
+            {
+                var shift = target - WrestlerOverallCalculator.Promo(a, KayfabeAlignment.Tweener, PromoDisposition.Balanced);
+                if (Math.Abs(shift) < .01f) break;
+                a.Charisma = Shift(a.Charisma, shift); a.MicWork = Shift(a.MicWork, shift);
+                a.Improvisation = Shift(a.Improvisation, shift); a.Acting = Shift(a.Acting, shift);
+                a.FaceWork = Shift(a.FaceWork, shift); a.HeelWork = Shift(a.HeelWork, shift); a.Comedy = Shift(a.Comedy, shift);
+            }
+        }
+
+        private static float Shift(float value, float amount) => RoundHundredth(Math.Max(1, Math.Min(20, value + amount)));
 
         private static double BodyModifier(WrestlerBodyType body, int attribute) => body switch
         {
@@ -399,9 +433,17 @@ namespace PWManager.Data.Generation
 
         private string GenerateLegalName(WrestlerGender gender)
         {
-            var given = gender == WrestlerGender.Male ? content.Catalog.NamePool.MaleGivenNames : content.Catalog.NamePool.FemaleGivenNames;
-            return given[random.Next(given.Count)] + " " + content.Catalog.NamePool.FamilyNames[random.Next(content.Catalog.NamePool.FamilyNames.Count)];
+            var names = content.Catalog.NamePool;
+            return random.Next(10) switch
+            {
+                0 => CombineName(gender == WrestlerGender.Male ? names.KoreanMaleGivenNames : names.KoreanFemaleGivenNames, names.KoreanFamilyNames),
+                1 => CombineName(gender == WrestlerGender.Male ? names.JapaneseMaleGivenNames : names.JapaneseFemaleGivenNames, names.JapaneseFamilyNames),
+                _ => CombineName(gender == WrestlerGender.Male ? names.MaleGivenNames : names.FemaleGivenNames, names.FamilyNames)
+            };
         }
+
+        private string CombineName(IReadOnlyList<string> givenNames, IReadOnlyList<string> familyNames) =>
+            givenNames[random.Next(givenNames.Count)] + " " + familyNames[random.Next(familyNames.Count)];
 
         private int TriangularInt(int min, int mode, int max) => Clamp((int)Math.Round(Triangular(min, mode, max)), min, max);
         private double Triangular(double min, double mode, double max)

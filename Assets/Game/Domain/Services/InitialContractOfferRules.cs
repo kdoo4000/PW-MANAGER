@@ -25,7 +25,7 @@ namespace PWManager.Domain.Services
             var ability = WrestlerOverallCalculator.Match(wrestler) * 0.65f + WrestlerOverallCalculator.Promo(wrestler) * 0.35f;
             var experience = Math.Min(10, wrestler.Identity.CareerYears) * 35;
             var monthly = RoundToHundred(250 + ability * ability * 7 + experience);
-            var signingMultiplier = wrestler.Identity.Background == WrestlerBackground.OtherPromotion ? 3 : 2;
+            var signingMultiplier = wrestler.Identity.Background == WrestlerBackground.Veteran ? 3 : 2;
             return new InitialContractOffer(monthly * signingMultiplier, monthly, monthly * 4);
         }
 

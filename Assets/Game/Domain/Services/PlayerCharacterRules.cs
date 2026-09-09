@@ -1,4 +1,3 @@
-using System;
 using PWManager.Domain.Models;
 
 namespace PWManager.Domain.Services
@@ -29,7 +28,7 @@ namespace PWManager.Domain.Services
         {
             if (role == PlayerCareerRole.ProfessionalManager) type = PlayerWrestlingType.Balanced;
             styleId = string.IsNullOrEmpty(styleId) ? type == PlayerWrestlingType.Worker ? "style_003" : "style_007" : styleId;
-            var baseAbility = 6f + (int)reputation * 2f;
+            var baseAbility = 10f + (int)reputation * 1.5f;
             var match = role == PlayerCareerRole.WrestlerManager
                 ? baseAbility + (type == PlayerWrestlingType.Worker ? 2f : type == PlayerWrestlingType.Showman ? -2f : 0f)
                 : 0f;
@@ -37,23 +36,8 @@ namespace PWManager.Domain.Services
                 role == PlayerCareerRole.WrestlerManager && type == PlayerWrestlingType.Showman ? 2f : 0f);
             var a = new WrestlerAttributesState();
             if (role == PlayerCareerRole.WrestlerManager)
-            {
-                var typeMods = type == PlayerWrestlingType.Worker
-                    ? new[] { 2f, 1, 2, 0, 0, 0, 0, 0, 2, 1 }
-                    : type == PlayerWrestlingType.Showman ? new[] { 0f, 0, -1, 0, 0, 1, 2, 1, 0, 0 } : new float[10];
-                var styleMods = StyleModifiers(styleId);
-                a.RingPsychology = Stat(match, typeMods[0] + styleMods[0]); a.RingImprovisation = Stat(match, typeMods[1] + styleMods[1]);
-                a.Technical = Stat(match, typeMods[2] + styleMods[2]); a.Brawling = Stat(match, typeMods[3] + styleMods[3]);
-                a.Power = Stat(match, typeMods[4] + styleMods[4]); a.HighFlying = Stat(match, typeMods[5] + styleMods[5]);
-                a.SpotWork = Stat(match, typeMods[6] + styleMods[6]); a.SpecialtyMatches = Stat(match, typeMods[7] + styleMods[7]);
-                a.Selling = Stat(match, typeMods[8] + styleMods[8]); a.Stamina = Stat(match, typeMods[9] + styleMods[9]);
-            }
-            a.Charisma = Stat(promo, type == PlayerWrestlingType.Showman ? 2 : 0);
-            a.MicWork = Stat(promo, type == PlayerWrestlingType.Showman ? 1 : 0);
-            a.Improvisation = Stat(promo, type == PlayerWrestlingType.Worker ? 1 : 0);
-            a.Acting = Stat(promo, type == PlayerWrestlingType.Showman ? 2 : 0);
-            a.FaceWork = Stat(promo, 0); a.HeelWork = Stat(promo, 0);
-            a.Comedy = Stat(promo, type == PlayerWrestlingType.Showman ? 1 : 0);
+                a = MatchAttributes(match, MatchModifiers(type, styleId));
+            ApplyPromoAttributes(a, promo, PromoModifiers(type));
             return new PlayerCharacterBuild { MatchAbility = match, PromoAbility = promo, WrestlingStyleId = styleId, Attributes = a };
         }
 
@@ -63,17 +47,49 @@ namespace PWManager.Domain.Services
             PlayerReputation.National => 2500, PlayerReputation.Star => 5000, _ => 10000
         };
 
-        private static float Stat(float value, float modifier) => Math.Max(1f, Math.Min(20f, value + modifier));
-
-        private static float[] StyleModifiers(string styleId) => styleId switch
+        private static WrestlerAttributesState MatchAttributes(float value, float[] offsets) => new()
         {
-            "style_001" => new[] { 0f, 0, -1, 2, 1, -2, 0, 1, 1, 0 },
-            "style_002" => new[] { 0f, 0, -1, 0, 3, -2, 0, 0, 1, 0 },
-            "style_003" => new[] { 1f, 1, 3, -1, -1, 0, 0, 0, 1, 0 },
-            "style_004" => new[] { 0f, 0, 0, -1, -2, 3, 2, 0, 0, 1 },
-            "style_005" => new[] { 0f, 1, 2, -1, -2, 2, 2, 0, 0, 0 },
-            "style_006" => new[] { 0f, -1, -2, 1, 3, -3, 0, 1, 1, -1 },
+            RingPsychology = value + offsets[0], RingImprovisation = value + offsets[1], Technical = value + offsets[2],
+            Brawling = value + offsets[3], Power = value + offsets[4], HighFlying = value + offsets[5],
+            SpotWork = value + offsets[6], SpecialtyMatches = value + offsets[7], Selling = value + offsets[8], Stamina = value + offsets[9]
+        };
+
+        private static void ApplyPromoAttributes(WrestlerAttributesState a, float value, float[] offsets)
+        {
+            a.Charisma = value + offsets[0]; a.MicWork = value + offsets[1]; a.Improvisation = value + offsets[2];
+            a.Acting = value + offsets[3]; a.FaceWork = value + offsets[4]; a.HeelWork = value + offsets[5]; a.Comedy = value + offsets[6];
+        }
+
+        private static float[] MatchModifiers(PlayerWrestlingType type, string styleId) => (type, styleId) switch
+        {
+            (PlayerWrestlingType.Worker, "style_001") => new[] { .7f, -.3f, -.3f, .7f, -.3f, -3.3f, -1.3f, -.3f, 1.7f, -.3f },
+            (PlayerWrestlingType.Worker, "style_002") => new[] { .58f, -.42f, -.42f, -1.42f, 1.58f, -3.42f, -1.42f, -1.42f, 1.58f, -.42f },
+            (PlayerWrestlingType.Worker, "style_003") => new[] { .709677f, .064516f, 2f, -1.870968f, -1.870968f, -1.225806f, -1.225806f, -1.225806f, .709677f, -.580645f },
+            (PlayerWrestlingType.Worker, "style_004") => new[] { .28f, -.72f, .28f, -2.72f, -3.72f, 1.28f, .28f, -1.72f, .28f, .28f },
+            (PlayerWrestlingType.Worker, "style_005") => new[] { .113208f, .113208f, 2f, -2.716981f, -3.660377f, .113208f, .113208f, -1.773585f, .113208f, -.830189f },
+            (PlayerWrestlingType.Worker, "style_006") => new[] { .62f, -1.38f, -1.38f, -.38f, 1.62f, -4.38f, -1.38f, -.38f, 1.62f, -1.38f },
+            (PlayerWrestlingType.Worker, _) => new[] { 1.2f, .2f, 1.2f, -.8f, -.8f, -.8f, -.8f, -.8f, 1.2f, .2f },
+            (PlayerWrestlingType.Showman, "style_001") => new[] { -.86f, -.86f, -2.86f, 1.14f, .14f, -1.86f, 1.14f, 1.14f, .14f, -.86f },
+            (PlayerWrestlingType.Showman, "style_002") => new[] { -.84f, -.84f, -2.84f, -.84f, 2.16f, -1.84f, 1.16f, .16f, .16f, -.84f },
+            (PlayerWrestlingType.Showman, "style_003") => new[] { -.02f, -.02f, .98f, -2.02f, -2.02f, -.02f, .98f, -.02f, -.02f, -1.02f },
+            (PlayerWrestlingType.Showman, "style_004") => new[] { -1.28f, -1.28f, -2.28f, -2.28f, -3.28f, 2.72f, 2.72f, -.28f, -1.28f, -.28f },
+            (PlayerWrestlingType.Showman, "style_005") => new[] { -1.3f, -.3f, -.3f, -2.3f, -3.3f, 1.7f, 2.7f, -.3f, -1.3f, -1.3f },
+            (PlayerWrestlingType.Showman, "style_006") => new[] { -.9f, -1.9f, -3.9f, .1f, 2.1f, -2.9f, 1.1f, 1.1f, .1f, -1.9f },
+            (PlayerWrestlingType.Showman, _) => new[] { -.3f, -.3f, -1.3f, -.3f, -.3f, .7f, 1.7f, .7f, -.3f, -.3f },
+            (_, "style_001") => new[] { -.58f, -.58f, -1.58f, 1.42f, .42f, -2.58f, -.58f, .42f, .42f, -.58f },
+            (_, "style_002") => new[] { -.62f, -.62f, -1.62f, -.62f, 2.38f, -2.62f, -.62f, -.62f, .38f, -.62f },
+            (_, "style_003") => new[] { .14f, .14f, 2.14f, -1.86f, -1.86f, -.86f, -.86f, -.86f, .14f, -.86f },
+            (_, "style_004") => new[] { -.88f, -.88f, -.88f, -1.88f, -2.88f, 2.12f, 1.12f, -.88f, -.88f, .12f },
+            (_, "style_005") => new[] { -.96f, .04f, 1.04f, -1.96f, -2.96f, 1.04f, 1.04f, -.96f, -.96f, -.96f },
+            (_, "style_006") => new[] { -.66f, -1.66f, -2.66f, .34f, 2.34f, -3.66f, -.66f, .34f, .34f, -1.66f },
             _ => new float[10]
+        };
+
+        private static float[] PromoModifiers(PlayerWrestlingType type) => type switch
+        {
+            PlayerWrestlingType.Worker => new[] { -.142857f, -.142857f, .857143f, -.142857f, -.142857f, -.142857f, -.142857f },
+            PlayerWrestlingType.Showman => new[] { 1.185714f, .185714f, -.814286f, 1.185714f, -.814286f, -.814286f, .185714f },
+            _ => new float[7]
         };
     }
 }

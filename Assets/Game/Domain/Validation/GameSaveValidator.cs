@@ -9,7 +9,7 @@ namespace PWManager.Domain.Validation
 {
     public static class GameSaveValidator
     {
-        private const float AttributeTotalTolerance = .001f;
+        private const float AbilityTolerance = .01f;
 
         public static List<string> Validate(GameSave save)
         {
@@ -29,6 +29,7 @@ namespace PWManager.Domain.Validation
             ValidatePromotion(save.Promotion, errors);
             ValidateAudience(save, errors);
             ValidateWrestlers(save, errors);
+            ValidateScouting(save, errors);
             ValidateTagTeams(save, errors);
             ValidateManagers(save, errors);
             ValidateContracts(save, errors);
@@ -145,7 +146,6 @@ namespace PWManager.Domain.Validation
                 ValidateUniqueRuntimeId(contract.Id, "VenueContract", ids, errors);
                 venueIds.Add(contract.Id);
                 ValidateStaticId(contract.VenueId, "venue_", "VenueId", errors);
-                if (contract.StartDate.CompareTo(contract.EndDate) > 0) errors.Add($"Venue contract {contract.Id} starts after it ends.");
                 if (contract.ProductionCost < 0) errors.Add($"Venue contract {contract.Id} contains a negative production cost.");
             }
 
@@ -173,6 +173,11 @@ namespace PWManager.Domain.Validation
                 save.SeasonPolicy.EndDate.Year != save.SeasonPolicy.StartDate.Year + 1)
                 errors.Add("Season policy must run from June 1 through May 31 of the next year.");
             if (!venueIds.Contains(save.SeasonPolicy.RegularVenueContractId)) errors.Add("Season policy references a missing regular venue contract.");
+            if (save.SeasonPolicy.RegularShowDurationMinutes <= 0 || save.SeasonPolicy.RegularShowDurationMinutes % 60 != 0)
+                errors.Add("Regular show duration must be a positive multiple of 60 minutes.");
+            foreach (var ppv in save.SeasonPolicy.PpvShowTitles ?? new List<PpvTitlePolicyState>())
+                if (ppv == null || ppv.DurationMinutes <= 0 || ppv.DurationMinutes % 60 != 0)
+                    errors.Add("PPV duration must be a positive multiple of 60 minutes.");
             if (!string.IsNullOrEmpty(save.SeasonPolicy.SignaturePpvScheduleId) && !scheduleIds.Contains(save.SeasonPolicy.SignaturePpvScheduleId))
                 errors.Add("Season policy references a missing signature PPV schedule.");
         }
@@ -215,13 +220,17 @@ namespace PWManager.Domain.Validation
         private static void ValidateWrestlers(GameSave save, List<string> errors)
         {
             var ids = new HashSet<string>(StringComparer.Ordinal);
+            var candidateIds = new HashSet<string>((save.ScoutCandidates ?? new List<ScoutCandidateState>())
+                .Where(x => x != null).Select(x => x.WrestlerId), StringComparer.Ordinal);
             foreach (var wrestler in save.Wrestlers ?? new List<WrestlerState>())
             {
                 if (wrestler == null) { errors.Add("Wrestler cannot be null."); continue; }
                 if (!EntityId.IsValidRuntimeId(wrestler.Id)) errors.Add("Wrestler.Id must be a runtime GUID.");
                 else if (!ids.Add(wrestler.Id)) errors.Add($"Duplicate Wrestler.Id: {wrestler.Id}");
                 ValidateIdentity(wrestler, errors);
-                if (wrestler.PromotionId != save.Promotion.Id) errors.Add($"Wrestler {wrestler.Id} references another promotion.");
+                if (wrestler.PromotionId != save.Promotion.Id &&
+                    !(candidateIds.Contains(wrestler.Id) && wrestler.Roster.ActivityState == RosterActivityState.Inactive && string.IsNullOrEmpty(wrestler.PromotionId)))
+                    errors.Add($"Wrestler {wrestler.Id} references another promotion.");
                 ValidateAttributes(wrestler, errors);
                 ValidateRange(wrestler.Condition.Condition, 0, 100, "Condition", errors);
                 ValidateRange(wrestler.Condition.Satisfaction, 0, 100, "Satisfaction", errors);
@@ -239,6 +248,33 @@ namespace PWManager.Domain.Validation
                     }
                 }
                 ValidatePresentation(wrestler, errors);
+            }
+        }
+
+        private static void ValidateScouting(GameSave save, List<string> errors)
+        {
+            var wrestlerIds = new HashSet<string>((save.Wrestlers ?? new List<WrestlerState>()).Where(x => x != null).Select(x => x.Id), StringComparer.Ordinal);
+            var assignmentIds = new HashSet<string>(StringComparer.Ordinal);
+            foreach (var assignment in save.ScoutAssignments ?? new List<ScoutAssignmentState>())
+            {
+                if (assignment == null) { errors.Add("Scout assignment cannot be null."); continue; }
+                ValidateUniqueRuntimeId(assignment.Id, "ScoutAssignment", assignmentIds, errors);
+                if (assignment.StartDate.CompareTo(assignment.CompleteDate) > 0) errors.Add($"Scout assignment {assignment.Id} starts after it completes.");
+            }
+            var candidateIds = new HashSet<string>(StringComparer.Ordinal);
+            foreach (var candidate in save.ScoutCandidates ?? new List<ScoutCandidateState>())
+            {
+                if (candidate == null) { errors.Add("Scout candidate cannot be null."); continue; }
+                if (!candidateIds.Add(candidate.WrestlerId)) errors.Add($"Duplicate scout candidate: {candidate.WrestlerId}");
+                if (!wrestlerIds.Contains(candidate.WrestlerId)) errors.Add($"Scout candidate references a missing wrestler: {candidate.WrestlerId}");
+                if (!assignmentIds.Contains(candidate.AssignmentId)) errors.Add($"Scout candidate references a missing assignment: {candidate.AssignmentId}");
+                if (candidate.KnowledgeLevel < 1 || candidate.KnowledgeLevel > 4) errors.Add("Scout candidate KnowledgeLevel must be between 1 and 4.");
+                var estimates = candidate.ValueEstimates ?? new List<ScoutValueEstimate>();
+                if (estimates.Count > 0 && (estimates.Count != Enum.GetValues(typeof(ScoutValueType)).Length || estimates.Where(x => x != null).Select(x => x.Type).Distinct().Count() != estimates.Count))
+                    errors.Add($"Scout candidate estimates must contain every value once: {candidate.WrestlerId}");
+                foreach (var estimate in estimates)
+                    if (estimate == null || estimate.Minimum < 1f || estimate.Maximum > 20f || estimate.Minimum > estimate.Maximum)
+                        errors.Add($"Scout candidate estimate range is invalid: {candidate.WrestlerId}");
             }
         }
 
@@ -312,9 +348,9 @@ namespace PWManager.Domain.Validation
             foreach (var value in values) ValidateRange(value, 1, 20, "Wrestler attribute", errors);
             ValidateRange(wrestler.Growth.MatchPotentialCap, 1, 20, "MatchPotentialCap", errors);
             ValidateRange(wrestler.Growth.PromoPotentialCap, 1, 20, "PromoPotentialCap", errors);
-            if (WrestlerOverallCalculator.MatchTotal(wrestler.Attributes) > wrestler.Growth.MatchPotentialCap * 10f + AttributeTotalTolerance)
+            if (WrestlerOverallCalculator.Match(wrestler) > wrestler.Growth.MatchPotentialCap + AbilityTolerance)
                 errors.Add("Match attributes exceed the match potential cap.");
-            if (WrestlerOverallCalculator.PromoTotal(wrestler.Attributes) > wrestler.Growth.PromoPotentialCap * 7f + AttributeTotalTolerance)
+            if (WrestlerOverallCalculator.Promo(wrestler.Attributes, KayfabeAlignment.Tweener, PromoDisposition.Balanced) > wrestler.Growth.PromoPotentialCap + AbilityTolerance)
                 errors.Add("Promo attributes exceed the promo potential cap.");
         }
 

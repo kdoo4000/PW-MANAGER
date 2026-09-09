@@ -10,7 +10,7 @@ namespace PWManager.Tests
         public void Calculate_UsesAbilityExperienceAndBackground()
         {
             var rookie = Wrestler(10, 8, 0, WrestlerBackground.Rookie);
-            var veteran = Wrestler(14, 12, 8, WrestlerBackground.OtherPromotion);
+            var veteran = Wrestler(14, 12, 8, WrestlerBackground.Veteran);
 
             var rookieOffer = InitialContractOfferRules.Calculate(rookie);
             var veteranOffer = InitialContractOfferRules.Calculate(veteran);

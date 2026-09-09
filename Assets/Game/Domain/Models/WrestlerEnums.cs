@@ -1,7 +1,7 @@
 namespace PWManager.Domain.Models
 {
     public enum WrestlerGender { Male, Female }
-    public enum WrestlerBackground { Rookie, Athlete, Entertainer, OtherPromotion }
+    public enum WrestlerBackground { Rookie = 0, Athlete = 1, Entertainer = 2, Veteran = 3 }
     public enum WrestlerBodyType { Lightweight, Balanced, Muscular, Heavyweight, Giant }
     public enum MatchArchetype { Fundamentals, Brawler, Power, Technical, HighFlying, Spot, Balanced }
     public enum PromoArchetype { Charisma, Mic, Improvisation, Face, Heel, Comedy, Silent, Balanced, Weak }

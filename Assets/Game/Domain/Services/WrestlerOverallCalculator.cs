@@ -39,9 +39,26 @@ namespace PWManager.Domain.Services
             return (fixedTotal + a.FaceWork * roleWeight * faceRatio + a.HeelWork * roleWeight * (1f - faceRatio) + a.Comedy * comedyWeight) / 7f;
         }
 
-        public static string Grade(float value) => value >= 19f ? "SS" : value >= 18f ? "S+" : value >= 17f ? "S" :
-            value >= 16f ? "A+" : value >= 15f ? "A" : value >= 14f ? "B+" : value >= 13f ? "B" :
-            value >= 10f ? "C" : value >= 7f ? "D" : "E";
+        public static string Grade(float value)
+        {
+            value = (float)System.Math.Round(value, 2, System.MidpointRounding.AwayFromZero);
+            return value >= 19f ? "SS" : value >= 18f ? "S+" : value >= 17f ? "S" :
+                value >= 16f ? "A+" : value >= 15f ? "A" : value >= 14f ? "B+" : value >= 13f ? "B" :
+                value >= 12f ? "C+" : value >= 11f ? "C" : value >= 10f ? "D+" : value >= 9f ? "D" :
+                value >= 8f ? "E+" : value >= 7f ? "E" : value >= 6f ? "F+" : value >= 5f ? "F" :
+                value >= 4f ? "G+" : "G";
+        }
+
+        public static (string[] Primary, string[] Secondary) MatchStylePriorities(string styleId) => styleId switch
+        {
+            "style_001" => (new[] { "브롤링" }, new[] { "파워" }),
+            "style_002" => (new[] { "파워" }, new[] { "테크니컬" }),
+            "style_003" => (new[] { "테크니컬" }, new[] { "하이플라잉" }),
+            "style_004" => (new[] { "하이플라잉" }, new[] { "테크니컬" }),
+            "style_005" => (new[] { "하이플라잉" }, new[] { "테크니컬" }),
+            "style_006" => (new[] { "파워" }, new[] { "브롤링" }),
+            _ => (System.Array.Empty<string>(), new[] { "브롤링", "파워", "하이플라잉", "테크니컬" })
+        };
 
         private static (float Brawling, float Power, float HighFlying, float Technical) StyleWeights(string id) => id switch
         {

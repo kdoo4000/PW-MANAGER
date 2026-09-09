@@ -21,12 +21,21 @@ namespace PWManager.Tests
             Assert.That(registry.Styles, Has.Count.EqualTo(7));
             Assert.That(registry.Traits, Has.Count.EqualTo(21));
             Assert.That(registry.StaffDepartments, Has.Count.EqualTo(4));
+            Assert.That(registry.MedicalTeamLevels, Has.Count.EqualTo(5));
+            Assert.That(registry.ScoutTeamLevels, Has.Count.EqualTo(5));
+            Assert.That(registry.PromotionTeamLevels, Has.Count.EqualTo(5));
+            Assert.That(registry.CommentaryTeamLevels, Has.Count.EqualTo(5));
+            Assert.That(registry.ScoutTeamLevels["scoutlevel_005"].CandidateCount, Is.EqualTo(15));
+            Assert.That(registry.CommentaryTeamLevels["commentarylevel_005"].BroadcastAudienceReactionMultiplier, Is.EqualTo(1.15f));
             Assert.That(catalog.NamePool.MaleGivenNames, Has.Count.EqualTo(30));
             Assert.That(catalog.NamePool.FemaleGivenNames, Has.Count.EqualTo(30));
             Assert.That(catalog.NamePool.FamilyNames, Has.Count.EqualTo(50));
-            Assert.That(catalog.NamePool.Nicknames, Has.Count.EqualTo(10));
-            Assert.That(catalog.NamePool.SingleWordRingNames, Has.Count.EqualTo(10));
-            Assert.That(catalog.WrestlerGeneration.UseLegalNameAsRingName, Is.True);
+            Assert.That(catalog.NamePool.KoreanMaleGivenNames, Has.Count.EqualTo(3));
+            Assert.That(catalog.NamePool.KoreanFemaleGivenNames, Has.Count.EqualTo(3));
+            Assert.That(catalog.NamePool.KoreanFamilyNames, Has.Count.EqualTo(3));
+            Assert.That(catalog.NamePool.JapaneseMaleGivenNames, Has.Count.EqualTo(3));
+            Assert.That(catalog.NamePool.JapaneseFemaleGivenNames, Has.Count.EqualTo(3));
+            Assert.That(catalog.NamePool.JapaneseFamilyNames, Has.Count.EqualTo(3));
             Assert.That(registry.Moves, Has.Count.EqualTo(24));
             Assert.That(registry.Venues, Has.Count.EqualTo(6));
             Assert.That(registry.MatchTypes, Has.Count.EqualTo(2));
@@ -63,11 +72,11 @@ namespace PWManager.Tests
             var catalog = AssetDatabase.LoadAssetAtPath<StaticContentCatalog>(CatalogPath);
             var venues = new StaticContentRegistry(catalog).Venues;
 
-            Assert.That(venues["venue_001"].ProductionCost, Is.EqualTo(500));
+            Assert.That(venues["venue_001"].ProductionCost, Is.EqualTo(250));
             Assert.That(venues["venue_003"].UnlockCost, Is.EqualTo(300000));
-            Assert.That(venues["venue_005"].ProductionCost, Is.EqualTo(1000000));
+            Assert.That(venues["venue_005"].ProductionCost, Is.EqualTo(250000));
             Assert.That(venues["venue_006"].Capacity, Is.EqualTo(70000));
-            Assert.That(venues["venue_006"].ProductionCost, Is.EqualTo(5000000));
+            Assert.That(venues["venue_006"].ProductionCost, Is.EqualTo(1000000));
             Assert.That(venues["venue_006"].UnlockCost, Is.EqualTo(30000000));
         }
 

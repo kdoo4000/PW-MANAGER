@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: move_019_TornadoDDT
   m_EditorClassIdentifier: PWMANAGER.Data::PWManager.Data.Definitions.MoveDefinition
   id: move_019
-  koreanName: 토네이도 DDT
+  koreanName: "\uD1A0\uB124\uC774\uB3C4 DDT"
   englishName: Tornado DDT
   BrawlingWeight: 0
   PowerWeight: 0

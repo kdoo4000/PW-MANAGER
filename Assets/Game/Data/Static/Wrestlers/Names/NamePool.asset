@@ -125,25 +125,27 @@ MonoBehaviour:
   - Emerson
   - Ford
   - Holland
-  Nicknames:
-  - The Ace
-  - The Anvil
-  - The Comet
-  - The Outlaw
-  - The Phantom
-  - The Prodigy
-  - The Rebel
-  - The Sentinel
-  - The Storm
-  - The Titan
-  SingleWordRingNames:
-  - Blaze
-  - Cipher
-  - Fury
-  - Havoc
-  - Nova
-  - Onyx
-  - Riot
-  - Tempest
-  - Valkyrie
-  - Vortex
+  KoreanMaleGivenNames:
+  - Min-jun
+  - Seo-jun
+  - Ji-hoon
+  KoreanFemaleGivenNames:
+  - Seo-yeon
+  - Ji-woo
+  - Ha-eun
+  KoreanFamilyNames:
+  - Kim
+  - Lee
+  - Park
+  JapaneseMaleGivenNames:
+  - Haruto
+  - Ren
+  - Kaito
+  JapaneseFemaleGivenNames:
+  - Yui
+  - Aoi
+  - Sakura
+  JapaneseFamilyNames:
+  - Sato
+  - Suzuki
+  - Tanaka
