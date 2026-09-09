@@ -25,7 +25,8 @@ namespace PWManager.Infrastructure.Save
                 throw new ArgumentException("Save directory is required.", nameof(saveDirectory));
 
             this.saveDirectory = Path.GetFullPath(saveDirectory);
-            foreach (var migration in migrations ?? Array.Empty<ISaveMigration>())
+            migrations ??= new[] { new SaveVersion0To1Migration() };
+            foreach (var migration in migrations)
             {
                 if (migration == null) throw new ArgumentException("Migration cannot be null.", nameof(migrations));
                 if (migration.ToVersion != migration.FromVersion + 1)
@@ -44,6 +45,7 @@ namespace PWManager.Infrastructure.Save
 
             save.SystemNames = SystemNames.CreateDefaults();
             NormalizePlayerBirthDate(save);
+            save.UpdatedAtUtc = DateTime.UtcNow.ToString("O");
 
             var errors = GameSaveValidator.Validate(save);
             if (errors.Count > 0) throw new InvalidDataException(string.Join(Environment.NewLine, errors));
@@ -136,9 +138,6 @@ namespace PWManager.Infrastructure.Save
             save.TagTeams ??= new List<TagTeamState>();
             save.ShowEvents ??= new List<ShowEventState>();
             save.MatchPlans ??= new List<MatchPlanState>();
-            foreach (var match in save.MatchPlans)
-                if (match != null && match.MatchTypeId == "matchtype_003")
-                    match.MatchTypeId = "matchtype_001";
             save.PromoPlans ??= new List<PromoPlanState>();
             save.ShowResults ??= new List<ShowResultState>();
             save.MatchResults ??= new List<MatchResultState>();
@@ -189,7 +188,7 @@ namespace PWManager.Infrastructure.Save
 
         private void MigrateToCurrentVersion(GameSave save)
         {
-            if (save.SaveVersion < 1 || save.SaveVersion > GameSave.CurrentSaveVersion)
+            if (save.SaveVersion < 0 || save.SaveVersion > GameSave.CurrentSaveVersion)
                 throw new InvalidDataException($"Unsupported save version: {save.SaveVersion}.");
 
             while (save.SaveVersion < GameSave.CurrentSaveVersion)

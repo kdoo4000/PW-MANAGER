@@ -1,5 +1,5 @@
 {
-  "name": "PWMANAGER.Domain.Tests",
+  "name": "PWMANAGER.EditMode.Tests",
   "rootNamespace": "PWManager.Tests",
   "references": [
     "PWMANAGER.Domain",
