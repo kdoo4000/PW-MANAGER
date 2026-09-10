@@ -1,4 +1,6 @@
 using System.Collections.Generic;
+using SaintsField;
+using SaintsField.Playa;
 using UnityEngine;
 
 namespace PWManager.Data.Definitions
@@ -8,8 +10,8 @@ namespace PWManager.Data.Definitions
     [CreateAssetMenu(menuName = "PW Manager/Static/Trait")]
     public sealed class TraitDefinition : StaticDefinition
     {
-        public TraitPolarity Polarity;
-        [TextArea] public string Description;
-        public List<string> ConflictingTraitIds = new();
+        [EnumToggleButtons] public TraitPolarity Polarity;
+        [ResizableTextArea] public string Description;
+        [ListDrawerSettings] public List<string> ConflictingTraitIds = new();
     }
 }

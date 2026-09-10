@@ -55,7 +55,7 @@ namespace PWManager.Data.Generation
                 var definition = Level(ScoutLevel(save));
                 for (var i = 0; i < definition.CandidateCount; i++)
                 {
-                    var wrestler = Generate(assignment.SearchConditions, save.CurrentDate);
+                    var wrestler = Generate(assignment.SearchConditions, save.CurrentDate, save.Promotion?.PromotionPrestige ?? 0);
                     save.Wrestlers.Add(wrestler);
                     var candidate = new ScoutCandidateState
                     {
@@ -84,16 +84,39 @@ namespace PWManager.Data.Generation
             return save.Wrestlers.RemoveAll(x => x != null && expiredIds.Contains(x.Id));
         }
 
-        private WrestlerState Generate(ScoutSearchConditions conditions, GameDate date)
+        private WrestlerState Generate(ScoutSearchConditions conditions, GameDate date, long prestige)
         {
-            for (var attempt = 0; attempt < 100; attempt++)
+            var range = AbilityRange(prestige);
+            var target = Math.Max(8f, Math.Min(20f, Normal((range.Minimum + range.Maximum) * .5f, 1.5f)));
+            WrestlerState closest = null;
+            var closestDistance = float.MaxValue;
+            var sampled = 0;
+            for (var attempt = 0; attempt < 200 && sampled < 40; attempt++)
             {
-                var gender = conditions.HasGender ? conditions.Gender : (attempt % 2 == 0 ? WrestlerGender.Male : WrestlerGender.Female);
+                var gender = conditions.HasGender ? conditions.Gender : random.Next(2) == 0 ? WrestlerGender.Male : WrestlerGender.Female;
                 var candidate = generator.GenerateCandidate(gender, date);
-                if (!conditions.HasBackground || candidate.Identity.Background == conditions.Background) return candidate;
+                if (conditions.HasBackground && candidate.Identity.Background != conditions.Background) continue;
+                var ability = Math.Max(WrestlerOverallCalculator.Match(candidate), WrestlerOverallCalculator.Promo(candidate));
+                if (ability < 8f) continue;
+                sampled++;
+                var distance = Math.Abs(ability - target);
+                if (distance < closestDistance) { closest = candidate; closestDistance = distance; }
+                if (distance < .05f) break;
             }
+            if (closest != null) return closest;
             throw new InvalidOperationException("Could not generate a candidate matching the search conditions.");
         }
+
+        public static (float Minimum, float Maximum) AbilityRange(long prestige) => prestige switch
+        {
+            < 300 => (9f, 12f),
+            < 2_500 => (10f, 13f),
+            < 5_500 => (11f, 14f),
+            < 20_000 => (12f, 15f),
+            < 34_000 => (13f, 16f),
+            < 55_000 => (14f, 17f),
+            _ => (15f, 18f)
+        };
 
         private static int ScoutLevel(GameSave save) => Math.Max(0, Math.Min(5, save.StaffDepartments
             .FirstOrDefault(x => x?.DepartmentType == StaffDepartmentType.Scout)?.CurrentLevel ?? 0));
@@ -135,6 +158,13 @@ namespace PWManager.Data.Generation
         }
 
         private static float RoundTenth(float value) => (float)Math.Round(value, 1, MidpointRounding.AwayFromZero);
+
+        private float Normal(float mean, float standardDeviation)
+        {
+            var u1 = 1d - random.NextDouble();
+            var u2 = 1d - random.NextDouble();
+            return mean + standardDeviation * (float)(Math.Sqrt(-2d * Math.Log(u1)) * Math.Cos(2d * Math.PI * u2));
+        }
 
         private static float StyleErrorReduction(string styleId, string ability)
         {

@@ -37,6 +37,14 @@ Button, TextField, DropdownField,
     -unity-font-style: normal;
 }
 
+Button {
+    transition-duration: 0.08s;
+}
+
+Button:active {
+    scale: 0.97 0.97;
+}
+
 .brand-title, .card-title, .wp-brand-title, .wp-card-title,
 .title-button-text, .setup-title, .wizard-title, .cost-title,
 .venue-card-title, .roster-name, .roster-grade,
@@ -262,7 +270,7 @@ Button, TextField, DropdownField,
     width: 4px;
     height: 4px;
     border-radius: 2px;
-    background-color: #121b28;
+    background-color: #29282d;
     background-image: none;
 }
 
@@ -272,7 +280,7 @@ Button, TextField, DropdownField,
     min-height: 34px;
     border-width: 0;
     border-radius: 4px;
-    background-color: #365879;
+    background-color: #62502c;
     background-image: none;
 }
 
@@ -282,7 +290,7 @@ Button, TextField, DropdownField,
     min-height: 7px;
     border-width: 0;
     border-radius: 4px;
-    background-color: #365879;
+    background-color: #62502c;
     background-image: none;
 }
 
@@ -293,5 +301,5 @@ Button, TextField, DropdownField,
 
 .unity-scroll-view__vertical-scroller .unity-base-slider__dragger:hover,
 .unity-scroll-view__horizontal-scroller .unity-base-slider__dragger:hover {
-    background-color: #4d7aa3;
+    background-color: #8a7138;
 }

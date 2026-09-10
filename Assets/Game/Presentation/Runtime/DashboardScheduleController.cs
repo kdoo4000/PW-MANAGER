@@ -57,7 +57,7 @@ namespace PWManager.Presentation
                 var footer = new VisualElement(); footer.AddToClassList("show-schedule-row-footer");
                 AddMetric(footer, "편성", $"{events.Count}개 세그먼트");
                 AddMetric(footer, "예상 비용", DashboardText.Money(show.EstimatedCost));
-                var open = new Label("상세 보기"); open.AddToClassList("show-schedule-open"); footer.Add(open); row.Add(footer);
+                row.Add(footer);
                 var id = show.Id; row.clicked += () => openShow(id);
                 host.Add(row);
             }

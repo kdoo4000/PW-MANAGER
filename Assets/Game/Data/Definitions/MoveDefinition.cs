@@ -1,3 +1,4 @@
+using SaintsField;
 using UnityEngine;
 
 namespace PWManager.Data.Definitions
@@ -13,8 +14,8 @@ namespace PWManager.Data.Definitions
         [Range(0, 1)] public float TechnicalWeight;
         [Range(0, 1)] public float HighFlyingWeight;
         [Range(1, 20)] public float ExecutionDifficulty = 1;
-        public MoveSellingDifficulty SellingDifficulty = MoveSellingDifficulty.Easy;
-        public MoveRequiredStat RequiredStat;
+        [EnumToggleButtons] public MoveSellingDifficulty SellingDifficulty = MoveSellingDifficulty.Easy;
+        [EnumToggleButtons] public MoveRequiredStat RequiredStat;
         [Range(0, 20)] public float RequiredStatValue;
         public string ScenarioGroupId;
     }

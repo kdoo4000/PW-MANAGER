@@ -24,6 +24,8 @@ namespace PWManager.Presentation
         private PromoDisposition previewDisposition;
         private Button saveMatchStyleButton;
         private Button savePromoStyleButton;
+        private Button editMovesButton;
+        private VisualElement movesOverlay;
         private bool canSaveStyles;
 
         private void OnEnable()
@@ -40,13 +42,16 @@ namespace PWManager.Presentation
             if (backButton != null) backButton.clicked -= Close;
             if (saveMatchStyleButton != null) saveMatchStyleButton.clicked -= SaveMatchStyle;
             if (savePromoStyleButton != null) savePromoStyleButton.clicked -= SavePromoStyle;
+            if (editMovesButton != null) editMovesButton.clicked -= OpenMovesEditor;
             root = target;
             if (root == null) return;
             backButton = root.Q<Button>("wrestler-profile-back"); if (backButton != null) backButton.clicked += Close;
             saveMatchStyleButton = root.Q<Button>("wp-save-match-style");
             savePromoStyleButton = root.Q<Button>("wp-save-promo-style");
+            editMovesButton = root.Q<Button>("wp-edit-moves");
             if (saveMatchStyleButton != null) saveMatchStyleButton.clicked += SaveMatchStyle;
             if (savePromoStyleButton != null) savePromoStyleButton.clicked += SavePromoStyle;
+            if (editMovesButton != null) editMovesButton.clicked += OpenMovesEditor;
             foreach (var key in new[] { "home", "roster", "teams", "locker", "scout", "show", "story", "title", "tournament", "schedule", "staff", "company", "finance", "report", "world", "history", "settings" })
             {
                 var icon = root.Q<VisualElement>($"wp-icon-{key}");
@@ -60,6 +65,7 @@ namespace PWManager.Presentation
         {
             if (saveMatchStyleButton != null) saveMatchStyleButton.clicked -= SaveMatchStyle;
             if (savePromoStyleButton != null) savePromoStyleButton.clicked -= SavePromoStyle;
+            if (editMovesButton != null) editMovesButton.clicked -= OpenMovesEditor;
             if (backButton != null) backButton.clicked -= Close;
             if (instance == this) instance = null;
         }
@@ -176,6 +182,7 @@ namespace PWManager.Presentation
             canSaveStyles = contract != null;
             saveMatchStyleButton?.SetEnabled(canSaveStyles);
             savePromoStyleButton?.SetEnabled(canSaveStyles);
+            editMovesButton?.SetEnabled(canSaveStyles);
             var results = (save?.MatchResults ?? new List<MatchResultState>()).Where(x => IsParticipant(x, wrestler.Id)).ToList();
             var wins = results.Count(x => x.WinnerId == wrestler.Id || (x.IndirectWinnerIds?.Contains(wrestler.Id) ?? false)); var losses = results.Count(x => x.LoserTargetId == wrestler.Id || (x.IndirectLoserIds?.Contains(wrestler.Id) ?? false)); var draws = Math.Max(0, results.Count - wins - losses);
             var winStreak = 0;
@@ -279,6 +286,49 @@ namespace PWManager.Presentation
             Set("wp-role", Alignment(previewAlignment));
             Class("wp-role", $"role-{previewAlignment.ToString().ToLowerInvariant()}");
             DashboardSession.PersistActive();
+        }
+
+        private void OpenMovesEditor()
+        {
+            if (!canSaveStyles || boundWrestler == null) return;
+            movesOverlay?.RemoveFromHierarchy();
+            var moves = Resources.Load<StaticContentCatalog>("PWManagerRuntime/GameStaticContentCatalog")?.Moves?
+                .Where(x => x != null).OrderBy(x => x.DisplayName).ToList();
+            if (moves == null || moves.Count == 0) return;
+
+            var labels = new List<string> { "없음" };
+            labels.AddRange(moves.Select(x => x.DisplayName));
+            var ids = new List<string> { null };
+            ids.AddRange(moves.Select(x => x.Id));
+            var current = boundWrestler.Presentation ?? new WrestlerPresentationState();
+            DropdownField Field(string label, IReadOnlyList<string> selected, int index)
+            {
+                var id = selected != null && index < selected.Count ? selected[index] : null;
+                var field = new DropdownField(label, labels, Math.Max(0, ids.IndexOf(id)));
+                field.AddToClassList("wp-moves-field");
+                return field;
+            }
+
+            var signature1 = Field("시그니처 1", current.SignatureMoveIds, 0);
+            var signature2 = Field("시그니처 2", current.SignatureMoveIds, 1);
+            var finisher1 = Field("피니셔 1", current.FinisherMoveIds, 0);
+            var finisher2 = Field("피니셔 2", current.FinisherMoveIds, 1);
+            movesOverlay = new VisualElement(); movesOverlay.AddToClassList("wp-moves-overlay");
+            var dialog = new VisualElement(); dialog.AddToClassList("wp-moves-dialog");
+            var title = new Label("무브셋 변경"); title.AddToClassList("wp-moves-dialog-title"); dialog.Add(title);
+            dialog.Add(signature1); dialog.Add(signature2); dialog.Add(finisher1); dialog.Add(finisher2);
+            var actions = new VisualElement(); actions.AddToClassList("wp-moves-actions");
+            actions.Add(new Button(() => { movesOverlay.RemoveFromHierarchy(); movesOverlay = null; }) { text = "취소" });
+            var save = new Button(() =>
+            {
+                boundWrestler.Presentation ??= new WrestlerPresentationState();
+                boundWrestler.Presentation.SignatureMoveIds = new[] { signature1.index, signature2.index }.Where(x => x > 0).Select(x => ids[x]).ToList();
+                boundWrestler.Presentation.FinisherMoveIds = new[] { finisher1.index, finisher2.index }.Where(x => x > 0).Select(x => ids[x]).ToList();
+                DashboardSession.PersistActive();
+                Bind(boundWrestler);
+                movesOverlay.RemoveFromHierarchy(); movesOverlay = null;
+            }) { text = "저장" };
+            save.AddToClassList("wp-moves-save"); actions.Add(save); dialog.Add(actions); movesOverlay.Add(dialog); root.Add(movesOverlay);
         }
 
         private static Button Choice(string label, bool selected, Action clicked)

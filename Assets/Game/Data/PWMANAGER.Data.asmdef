@@ -2,7 +2,8 @@
   "name": "PWMANAGER.Data",
   "rootNamespace": "PWManager",
   "references": [
-    "PWMANAGER.Domain"
+    "PWMANAGER.Domain",
+    "SaintsField.Runtime"
   ],
   "autoReferenced": true
 }

@@ -1,4 +1,5 @@
 using PWManager.Domain.Data;
+using SaintsField;
 using UnityEngine;
 using UnityEngine.Serialization;
 
@@ -6,9 +7,11 @@ namespace PWManager.Data.Definitions
 {
     public abstract class StaticDefinition : ScriptableObject, IIdentifiable
     {
+        [Required]
         [SerializeField] private string id;
         [FormerlySerializedAs("displayName")]
         [SerializeField] private string koreanName;
+        [Required]
         [SerializeField] private string englishName;
 
         public string Id => id;

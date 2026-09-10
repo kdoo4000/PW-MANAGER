@@ -18,11 +18,23 @@ namespace PWManager.Tests
             var catalog = Resources.Load<StaticContentCatalog>("PWManagerRuntime/GameStaticContentCatalog");
             Assert.That(catalog, Is.Not.Null);
             var save = ShowTestSaveFactory.Create(catalog, 20260903);
-            Assert.That(save.Wrestlers, Has.Count.EqualTo(20));
+            Assert.That(save.Wrestlers, Has.Count.EqualTo(105));
+            Assert.That(save.Wrestlers.Select(x => x.Identity.RingName), Does.Contain("Roman Reigns"));
+            Assert.That(save.Wrestlers.Select(x => x.Identity.RingName), Does.Contain("Cody Rhodes"));
+            Assert.That(save.Wrestlers.Count(x => x.Identity.Gender == WrestlerGender.Male), Is.EqualTo(67));
+            Assert.That(save.Wrestlers.Count(x => x.Identity.Gender == WrestlerGender.Female), Is.EqualTo(38));
+            Assert.That(save.Wrestlers.Select(x => x.Identity.RingName).Distinct(), Has.Count.EqualTo(105));
+            Assert.That(WrestlerOverallCalculator.Match(save.Wrestlers.Single(x => x.Identity.RingName == "Gunther")),
+                Is.GreaterThan(WrestlerOverallCalculator.Match(save.Wrestlers.Single(x => x.Identity.RingName == "Akira Tozawa"))));
+            Assert.That(save.Wrestlers, Has.All.Matches<WrestlerState>(x =>
+                WrestlerOverallCalculator.Match(x) <= x.Growth.MatchPotentialCap + .01f));
+            Assert.That(save.Wrestlers, Has.All.Matches<WrestlerState>(x =>
+                WrestlerOverallCalculator.Promo(x.Attributes, KayfabeAlignment.Tweener, PromoDisposition.Balanced) <= x.Growth.PromoPotentialCap + .01f));
             Assert.That(save.Shows, Has.Count.EqualTo(1));
             Assert.That(save.Schedules, Has.Count.EqualTo(1));
             Assert.That(GameSaveValidator.Validate(save), Is.Empty);
             var show = save.Shows[0];
+            Assert.That(show.Name, Is.EqualTo("WWE Raw vs SmackDown"));
             Assert.That(show.Date, Is.EqualTo(save.CurrentDate));
             Assert.That(show.TimelineEventIds, Is.Empty);
             var content = new StaticContentRegistry(catalog);

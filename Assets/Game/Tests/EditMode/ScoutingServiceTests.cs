@@ -39,6 +39,8 @@ namespace PWManager.Tests
             Assert.That(firstWrestler.Attributes.Stamina, Is.InRange(stamina.Minimum, stamina.Maximum));
             Assert.That(firstWrestler.Growth.MatchPotentialCap, Is.InRange(potential.Minimum, potential.Maximum));
             Assert.That(save.Wrestlers.All(x => x.Identity.Gender == WrestlerGender.Female), Is.True);
+            Assert.That(save.Wrestlers.All(x => Math.Max(WrestlerOverallCalculator.Match(x), WrestlerOverallCalculator.Promo(x)) >= 8f), Is.True);
+            Assert.That(save.Wrestlers.Any(x => Math.Max(WrestlerOverallCalculator.Match(x), WrestlerOverallCalculator.Promo(x)) is < 9f or > 12f), Is.True);
             Assert.That(GameSaveValidator.Validate(save), Is.Empty);
 
             save.CurrentDate = save.Wrestlers[0].Identity.ExpiryDate.Value.AddDays(1);
@@ -66,6 +68,18 @@ namespace PWManager.Tests
                     if (level == 4) foreach (var ability in priorities.Secondary) AssertExact(candidate, AbilityType(ability));
                 }
             }
+        }
+
+        [TestCase(0, 9f, 12f)]
+        [TestCase(300, 10f, 13f)]
+        [TestCase(2500, 11f, 14f)]
+        [TestCase(5500, 12f, 15f)]
+        [TestCase(20000, 13f, 16f)]
+        [TestCase(34000, 14f, 17f)]
+        [TestCase(55000, 15f, 18f)]
+        public void PromotionPrestige_SelectsHigherCandidateAbilityRanges(long prestige, float minimum, float maximum)
+        {
+            Assert.That(ScoutingService.AbilityRange(prestige), Is.EqualTo((minimum, maximum)));
         }
 
         private static void AssertExact(ScoutCandidateState candidate, ScoutValueType type)

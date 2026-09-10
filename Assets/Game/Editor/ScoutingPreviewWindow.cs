@@ -21,6 +21,7 @@ namespace PWManager.Editor
         private Vector2 scroll;
         private int seed = 12345;
         private int scoutLevel = 1;
+        private long promotionPrestige;
         private bool filterGender;
         private WrestlerGender gender;
         private bool filterBackground;
@@ -42,6 +43,7 @@ namespace PWManager.Editor
             EditorGUILayout.LabelField("Scouting Settings", EditorStyles.boldLabel);
             seed = EditorGUILayout.IntField("Seed", seed);
             scoutLevel = EditorGUILayout.IntSlider("Scout Level", scoutLevel, 1, 5);
+            promotionPrestige = Math.Max(0, EditorGUILayout.LongField("Promotion Prestige", promotionPrestige));
             filterGender = EditorGUILayout.Toggle("Filter Gender", filterGender);
             if (filterGender) gender = (WrestlerGender)EditorGUILayout.EnumPopup("Gender", gender);
             filterBackground = EditorGUILayout.Toggle("Filter Background", filterBackground);
@@ -98,7 +100,7 @@ namespace PWManager.Editor
         {
             save = GameSave.CreateNew(seed, DateTime.UtcNow);
             expandedCandidates.Clear();
-            save.Promotion = new PromotionState { Id = Guid.NewGuid().ToString("D"), Name = "Preview Promotion" };
+            save.Promotion = new PromotionState { Id = Guid.NewGuid().ToString("D"), Name = "Preview Promotion", PromotionPrestige = promotionPrestige };
             save.StaffDepartments.Add(new StaffDepartmentState
             {
                 Id = Guid.NewGuid().ToString("D"), DepartmentType = StaffDepartmentType.Scout,
@@ -113,6 +115,7 @@ namespace PWManager.Editor
         {
             save.StaffDepartments[0].CurrentLevel = scoutLevel;
             save.StaffDepartments[0].UnlockedLevel = scoutLevel;
+            save.Promotion.PromotionPrestige = promotionPrestige;
             service.Start(save, new ScoutSearchConditions
             {
                 HasGender = filterGender, Gender = gender,

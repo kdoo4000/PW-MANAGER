@@ -1,3 +1,4 @@
+using SaintsField;
 using UnityEngine;
 using UnityEngine.UIElements;
 
@@ -5,6 +6,7 @@ namespace PWManager.Presentation
 {
     public sealed class DashboardViewHost : MonoBehaviour
     {
+        [Required]
         [SerializeField] private VisualTreeAsset viewAsset;
         private VisualElement instance;
 

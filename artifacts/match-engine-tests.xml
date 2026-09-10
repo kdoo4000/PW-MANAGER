@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuites name="PWMANAGER" tests="11" failures="0" errors="0" skipped="0" time="0.155">
+  <testsuite name="PWManager.Tests.MatchEngineTests" tests="11" failures="0" errors="0" skipped="0" time="0.155">
+    <testcase name="ComebackState_BoostsTrailingPerformerWithoutForcingResult" classname="PWManager.Tests.MatchEngineTests" time="0.031" />
+    <testcase name="EqualMatches_DoNotReplayOneFixedPhaseSchedule" classname="PWManager.Tests.MatchEngineTests" time="0.067" />
+    <testcase name="EventLimit_AbortsWithoutInventingWinner" classname="PWManager.Tests.MatchEngineTests" time="0.004" />
+    <testcase name="FinishState_CanHoldOrReturnToClimax" classname="PWManager.Tests.MatchEngineTests" time="0.001" />
+    <testcase name="PerformerSelection_UsesControlReadinessAndDownedPenalty" classname="PWManager.Tests.MatchEngineTests" time="0.005" />
+    <testcase name="PinChance_IncreasesWithFatigue_AndFinisher" classname="PWManager.Tests.MatchEngineTests" time="0.001" />
+    <testcase name="RepeatedAction_LosesWeight" classname="PWManager.Tests.MatchEngineTests" time="0.001" />
+    <testcase name="SameSeed_ReplaysSameMatch_AndTerminatesWithCompleteEvents" classname="PWManager.Tests.MatchEngineTests" time="0.029" />
+    <testcase name="StateMachine_AllowsNonAdjacentTransitionsAndReentry" classname="PWManager.Tests.MatchEngineTests" time="0.004" />
+    <testcase name="StateMachine_IsAuthoritativeAndPhaseOwnsActionModifiers" classname="PWManager.Tests.MatchEngineTests" time="0.001" />
+    <testcase name="ThreeWayMatch_UsesMultiplePerformersAndTargets" classname="PWManager.Tests.MatchEngineTests" time="0.012">
+      <system-out>Saving results to: C:/Users/cjh74/AppData/LocalLow/DefaultCompany/PWMANAGER\TestResults.xml</system-out>
+    </testcase>
+  </testsuite>
+</testsuites>
