@@ -135,6 +135,36 @@ namespace PWManager.Domain.Services
                 ResultSeed = resultSeed
             };
             result.SpotResults = spots;
+            if (minimumTeamCount == 0 && sides.Count == 2 && string.IsNullOrEmpty(match.MatchGimmickId) &&
+                endingSpot == null && actualMatchDuration > 0 && finishType is >= MatchFinishType.Pinfall and <= MatchFinishType.Draw)
+            {
+                if (finishType != MatchFinishType.Draw)
+                {
+                    if (string.IsNullOrEmpty(result.LoserTargetId)) result.LoserTargetId = participantIds.Single(x => x != finishPerformerId);
+                    if (result.LoserTargetId == finishPerformerId)
+                        throw new InvalidOperationException("The winner and loser must be opponents.");
+                }
+                string Move(IEnumerable<string> ids) => ids?.FirstOrDefault(id => !string.IsNullOrWhiteSpace(id) && findMove?.Invoke(id) != null);
+                result.EngineState = new MatchSimulator(resultSeed).Simulate(participants.OrderBy(x => x.Id, StringComparer.Ordinal).Select(x =>
+                    new MatchEngineParticipant
+                    {
+                        Id = x.Id, Attributes = new WrestlerAttributesState
+                        {
+                            Brawling = x.Attributes.Brawling, Power = x.Attributes.Power, Technical = x.Attributes.Technical,
+                            HighFlying = x.Attributes.HighFlying, Selling = x.Attributes.Selling,
+                            Stamina = x.Attributes.Stamina, RingPsychology = x.Attributes.RingPsychology
+                        },
+                        Fatigue = Math.Max(0f, Math.Min(100f, 100f - x.Condition.Condition)),
+                        SignatureMoveId = Move(x.Presentation.SignatureMoveIds), FinisherMoveId = Move(x.Presentation.FinisherMoveIds)
+                    }), checked(actualMatchDuration * 60), new MatchEngineBooking
+                    {
+                        WinnerId = finishPerformerId, LoserId = result.LoserTargetId, FinishType = finishType
+                    });
+                if (!result.EngineState.IsFinished)
+                    throw new InvalidOperationException(result.EngineState.FailureReason);
+                result.WinnerId = result.FinishPerformerId = result.EngineState.WinnerId;
+                result.ActualMatchDuration = result.EngineState.ElapsedSeconds / 60;
+            }
             result.MoveResults = MatchMoveService.Evaluate(save, sides, result, findMove);
             foreach (var participant in participants)
                 result.WrestlerConditionChanges.Add(new WrestlerConditionChangeData

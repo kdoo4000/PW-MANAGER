@@ -4,7 +4,7 @@ using System.Collections.Generic;
 namespace PWManager.Domain.Models
 {
     public enum NarrativeLineType { Commentary, Dialogue, Action, Crowd }
-    public enum MatchBeatType { Opening, Control, Counter, Comeback, PlannedSpot, NearFall, FinisherAttempt, Finish, PostMatch, Context, Execution }
+    public enum MatchBeatType { Opening, Control, Counter, Comeback, PlannedSpot, NearFall, FinisherAttempt, Finish, PostMatch, Context, Execution, EngineAction }
 
     [Serializable]
     public sealed class NarrativeLineState
@@ -28,6 +28,7 @@ namespace PWManager.Domain.Models
         public float CrowdReaction;
         public float DurationSeconds;
         public float MatchProgress;
+        public int EngineEventIndex;
     }
 
     [Serializable]
