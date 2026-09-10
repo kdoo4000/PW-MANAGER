@@ -19,6 +19,27 @@ namespace PWManager.Domain.Services
         {
             var results = new List<MoveResultState>();
             if (findMove == null || sides.Count < 2) return results;
+            if (match.EngineState?.IsFinished == true)
+            {
+                foreach (var matchEvent in match.EngineState.Events.Where(x => !string.IsNullOrEmpty(x.MoveId)))
+                {
+                    var move = findMove(matchEvent.MoveId);
+                    if (move == null) continue;
+                    var actor = save.Wrestlers.Single(x => x.Id == matchEvent.PerformerId);
+                    var target = save.Wrestlers.Single(x => x.Id == matchEvent.ReceiverId);
+                    var a = actor.Attributes;
+                    results.Add(new MoveResultState
+                    {
+                        MoveId = matchEvent.MoveId, MoveName = move.Name, ActorId = actor.Id, TargetId = target.Id,
+                        IsFinisher = matchEvent.Type == MatchActionType.Finisher,
+                        ExecutionScore = Adjust(a.Brawling * move.BrawlingWeight + a.Power * move.PowerWeight +
+                            a.Technical * move.TechnicalWeight + a.HighFlying * move.HighFlyingWeight, actor, match),
+                        SellingScore = Adjust(target.Attributes.Selling, target, match),
+                        Result = matchEvent.Result == MatchActionResult.FullSuccess ? SpotExecutionResult.Success : SpotExecutionResult.Failure
+                    });
+                }
+                return results;
+            }
             // Independent stream: move highlights never change match quality, booking, spots or injuries.
             var random = new Random(match.ResultSeed ^ 0x4d4f5645);
             foreach (var side in sides)

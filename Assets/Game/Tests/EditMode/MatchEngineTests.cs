@@ -10,6 +10,78 @@ namespace PWManager.Tests
     public sealed class MatchEngineTests
     {
         [Test]
+        public void EventSnapshots_PreserveActualBeforeAndAfter_IncludingFinishAndClamping()
+        {
+            var participants = new[] { Participant("a"), Participant("b") };
+            participants[0].Fatigue = 99f;
+            var state = new MatchSimulator(73).Simulate(participants, 600,
+                new MatchEngineBooking { WinnerId = "a", LoserId = "b" });
+            Assert.That(state.Events[0].Before.Participants[0].Fatigue, Is.EqualTo(99f));
+            for (var i = 0; i < state.Events.Count; i++)
+            {
+                var value = state.Events[i];
+                Assert.That(value.After.Phase, Is.EqualTo(value.Phase));
+                Assert.That(value.After.Participants.Count, Is.EqualTo(2));
+                foreach (var wrestler in value.After.Participants)
+                {
+                    Assert.That(wrestler.Fatigue, Is.InRange(0f, 100f));
+                    Assert.That(wrestler.MatchControl, Is.InRange(0f, 100f));
+                    Assert.That(wrestler.ActionReadiness, Is.InRange(0f, 100f));
+                }
+                if (i > 0) Assert.That(UnityEngine.JsonUtility.ToJson(value.Before),
+                    Is.EqualTo(UnityEngine.JsonUtility.ToJson(state.Events[i - 1].After)));
+            }
+            Assert.That(UnityEngine.JsonUtility.ToJson(state.Events.Last().After),
+                Is.EqualTo(UnityEngine.JsonUtility.ToJson(MatchEngineSnapshot.Capture(state))));
+            participants[0].Fatigue = 0;
+            Assert.That(state.Events[0].Before.Participants[0].Fatigue, Is.EqualTo(99f));
+        }
+
+        [TestCase(MatchFinishType.Pinfall, MatchActionResult.Pinfall)]
+        [TestCase(MatchFinishType.Submission, MatchActionResult.Submitted)]
+        [TestCase(MatchFinishType.RollUp, MatchActionResult.RollUp)]
+        [TestCase(MatchFinishType.Disqualification, MatchActionResult.Disqualification)]
+        [TestCase(MatchFinishType.CountOut, MatchActionResult.CountOut)]
+        [TestCase(MatchFinishType.Draw, MatchActionResult.Draw)]
+        public void BookedSingles_OnlyEndsWithBookedFinish_AtAllottedTime(MatchFinishType finish, MatchActionResult outcome)
+        {
+            foreach (var seed in Enumerable.Range(0, 12))
+            {
+                MatchEngineState Run() => new MatchSimulator(seed).Simulate(new[] { Participant("a"), Participant("b") }, 600,
+                    new MatchEngineBooking { WinnerId = "b", LoserId = "a", FinishType = finish });
+                var state = Run();
+                Assert.That(state.IsFinished, Is.True);
+                Assert.That(state.IsAborted, Is.False);
+                Assert.That(state.WinnerId, Is.EqualTo(finish == MatchFinishType.Draw ? null : "b"));
+                Assert.That(state.ElapsedSeconds, Is.EqualTo(600));
+                Assert.That(state.Events.Sum(x => x.DurationSeconds), Is.EqualTo(600));
+                Assert.That(state.Events.All(x => x.DurationSeconds > 0), Is.True);
+                Assert.That(state.Events.Last().Type, Is.EqualTo(MatchActionType.Finish));
+                Assert.That(state.Events.Last().Result, Is.EqualTo(outcome));
+                Assert.That(state.Events.Take(state.Events.Count - 1).Any(x => x.Result is MatchActionResult.Pinfall or MatchActionResult.Submitted), Is.False);
+                for (var i = 1; i < state.Events.Count; i++)
+                    Assert.That(state.Events[i].MatchTimeSeconds, Is.EqualTo(state.Events[i - 1].MatchTimeSeconds + state.Events[i - 1].DurationSeconds));
+                Assert.That(Run().Events.Select(Key), Is.EqualTo(state.Events.Select(Key)));
+            }
+        }
+
+        [Test]
+        public void BookedSingles_RejectsInvalidBooking_AndDoesNotInventFinishAtEventLimit()
+        {
+            var participants = new[] { Participant("a"), Participant("b") };
+            Assert.Throws<ArgumentException>(() => new MatchSimulator(1).Simulate(participants, 600,
+                new MatchEngineBooking { WinnerId = "a", LoserId = "a" }));
+            Assert.Throws<ArgumentException>(() => new MatchSimulator(1).Simulate(participants, 600,
+                new MatchEngineBooking { WinnerId = "missing", LoserId = "b" }));
+            Assert.Throws<ArgumentException>(() => new MatchSimulator(1).Simulate(participants, 600,
+                new MatchEngineBooking { WinnerId = "a", LoserId = "b", FinishType = MatchFinishType.Escape }));
+            var result = new MatchSimulator(1, 0).Simulate(participants, 600,
+                new MatchEngineBooking { WinnerId = "a", LoserId = "b" });
+            Assert.That(result.IsAborted, Is.True);
+            Assert.That(result.WinnerId, Is.Null);
+        }
+
+        [Test]
         public void SameSeed_ReplaysSameMatch_AndTerminatesWithCompleteEvents()
         {
             var first = Simulate(73);

@@ -96,6 +96,7 @@ namespace PWManager.Domain.Models
         public List<MatchExecutionEventState> ExecutionEvents = new();
         public List<EvaluationReasonState> EvaluationReasons = new();
         public List<MatchSimulationBeatState> SimulationBeats = new();
+        public PWManager.Domain.Services.MatchEngineState EngineState;
         public List<SpotResultState> SpotResults = new();
         public List<MoveResultState> MoveResults = new();
         public List<NarrativeLineState> NarrativeLines = new();

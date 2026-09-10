@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using NUnit.Framework;
 using PWManager.Domain.Models;
 using PWManager.Domain.Services;
@@ -8,6 +9,79 @@ namespace PWManager.Tests
 {
     public sealed class ShowExecutionServiceTests
     {
+        [TestCase(MatchFinishType.Submission)]
+        [TestCase(MatchFinishType.RollUp)]
+        [TestCase(MatchFinishType.Disqualification)]
+        [TestCase(MatchFinishType.CountOut)]
+        [TestCase(MatchFinishType.Draw)]
+        public void Execute_SinglesSideBooking_KeepsFinishAndSingleEnding(MatchFinishType finish)
+        {
+            var save = CreateSave();
+            var plan = save.MatchPlans[0];
+            plan.ParticipantIds.Clear();
+            plan.Sides.Add(new MatchSideState { Id = "side-a", MemberIds = { "a" } });
+            plan.Sides.Add(new MatchSideState { Id = "side-b", MemberIds = { "b" } });
+            plan.WinningSideId = "side-b";
+            plan.FinishPerformerId = "b";
+            plan.LoserTargetId = "a";
+            plan.FinishType = finish;
+            Service().Execute(save, "show", 9, 1000, 100);
+            var result = save.MatchResults.Single();
+            Assert.That(result.FinishType, Is.EqualTo(finish));
+            Assert.That(result.WinnerId, Is.EqualTo(finish == MatchFinishType.Draw ? null : "b"));
+            Assert.That(result.EngineState.WinnerId, Is.EqualTo(result.WinnerId));
+            Assert.That(result.SimulationBeats.Count(x => x.BeatType == MatchBeatType.Finish), Is.EqualTo(1));
+            Assert.That(result.SimulationBeats.Single(x => x.BeatType == MatchBeatType.Finish).Detail, Is.EqualTo(finish.ToString()));
+        }
+
+        [Test]
+        public void Execute_SinglesStoresEngineTimeline_AndReplaysAfterSaveRoundTrip()
+        {
+            var save = CreateSave();
+            var plan = save.MatchPlans[0];
+            plan.WinnerId = "b";
+            plan.LoserTargetId = "a";
+            plan.OpeningSpot = "두 선수가 마주 섭니다";
+            plan.MiddleSpot = "경기 중간의 지정 장면";
+            plan.ClosingSpot = "경기 후 지정 장면";
+            var condition = save.Wrestlers[0].Condition.Condition;
+            Service().Execute(save, "show", 73, 1000, 100);
+            var result = save.MatchResults.Single();
+            Assert.That(result.EngineState.IsFinished, Is.True);
+            Assert.That(result.EngineState.WinnerId, Is.EqualTo(result.WinnerId).And.EqualTo("b"));
+            Assert.That(result.EngineState.Events.Last().ReceiverId, Is.EqualTo(result.LoserTargetId));
+            Assert.That(result.EngineState.ElapsedSeconds, Is.EqualTo(result.ActualMatchDuration * 60));
+            Assert.That(save.Wrestlers[0].Condition.Condition, Is.EqualTo(condition), "Result review must not apply condition changes yet.");
+            var engineBeats = result.SimulationBeats.Where(x => x.BeatType == MatchBeatType.EngineAction).ToList();
+            Assert.That(engineBeats, Is.Not.Empty);
+            foreach (var beat in engineBeats)
+            {
+                var matchEvent = result.EngineState.Events[beat.EngineEventIndex];
+                Assert.That(beat.ActorId, Is.EqualTo(matchEvent.PerformerId));
+                Assert.That(beat.TargetId, Is.EqualTo(matchEvent.ReceiverId));
+            }
+            Assert.That(result.SimulationBeats.Count(x => x.BeatType == MatchBeatType.Finish), Is.EqualTo(1));
+            Assert.That(result.NarrativeLines.Count, Is.EqualTo(result.SimulationBeats.Count));
+            Assert.That(result.SimulationBeats.Select(x => x.Detail), Does.Contain(plan.MiddleSpot).And.Contain(plan.ClosingSpot));
+            Assert.That(result.SimulationBeats.All(x => x.DurationSeconds > 0), Is.True);
+            Assert.That(result.SimulationBeats.Select(x => x.MatchProgress), Is.Ordered);
+            foreach (var beat in engineBeats)
+                Assert.That(beat.MatchProgress, Is.EqualTo((float)result.EngineState.Events[beat.EngineEventIndex].MatchTimeSeconds / result.EngineState.ElapsedSeconds));
+            var restored = UnityEngine.JsonUtility.FromJson<GameSave>(UnityEngine.JsonUtility.ToJson(save));
+            var savedResult = restored.MatchResults.Single();
+            Assert.That(UnityEngine.JsonUtility.ToJson(savedResult.EngineState), Is.EqualTo(UnityEngine.JsonUtility.ToJson(result.EngineState)));
+            string Name(string id)
+            {
+                var wrestler = restored.Wrestlers.Single(x => x.Id == id);
+                return string.IsNullOrWhiteSpace(wrestler.Identity.RingName) ? wrestler.Identity.LegalName : wrestler.Identity.RingName;
+            }
+            Assert.That(new MatchNarrationService().Narrate(restored.MatchPlans[0], savedResult, Name, restored).Select(x => x.Text),
+                Is.EqualTo(result.NarrativeLines.Select(x => x.Text)));
+            var snapshot = result.EngineState.Participants.Single(x => x.Id == "a").Attributes.Power;
+            save.Wrestlers[0].Attributes.Power = 1;
+            Assert.That(result.EngineState.Participants.Single(x => x.Id == "a").Attributes.Power, Is.EqualTo(snapshot));
+        }
+
         [Test]
         public void Execute_InProgressMixedTimeline_CreatesOrderedResultForReview()
         {

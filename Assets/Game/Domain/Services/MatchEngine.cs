@@ -6,8 +6,16 @@ using PWManager.Domain.Models;
 namespace PWManager.Domain.Services
 {
     public enum MatchPhase { Opening, Neutral, Control, Comeback, BackAndForth, Climax, Finish }
-    public enum MatchActionType { BasicStrike, HeavyStrike, Grapple, GroundAttack, Submission, Pin, Rest, Signature, Finisher }
-    public enum MatchActionResult { FullSuccess, PartialSuccess, ExecutionFailure, ReceptionFailure, Countered, Submitted, OneCount, TwoCount, NearFall, Pinfall }
+    public enum MatchActionType { BasicStrike, HeavyStrike, Grapple, GroundAttack, Submission, Pin, Rest, Signature, Finisher, Finish }
+    public enum MatchActionResult { FullSuccess, PartialSuccess, ExecutionFailure, ReceptionFailure, Countered, Submitted, OneCount, TwoCount, NearFall, Pinfall, RollUp, Disqualification, CountOut, Draw }
+
+    [Serializable]
+    public sealed class MatchEngineBooking
+    {
+        public string WinnerId;
+        public string LoserId;
+        public MatchFinishType FinishType;
+    }
 
     [Serializable]
     public sealed class MatchEngineParticipant
@@ -18,6 +26,8 @@ namespace PWManager.Domain.Services
         public float MatchControl = 50f;
         public float ActionReadiness = 50f;
         public bool IsDowned;
+        public string SignatureMoveId;
+        public string FinisherMoveId;
     }
 
     [Serializable]
@@ -33,6 +43,7 @@ namespace PWManager.Domain.Services
         public float Intensity;
         public float Drama;
         public float CrowdHeat;
+        public MatchEngineBooking Booking;
         public List<MatchEngineParticipant> Participants = new();
         public List<MatchEngineEvent> Events = new();
 
@@ -53,6 +64,32 @@ namespace PWManager.Domain.Services
     }
 
     [Serializable]
+    public sealed class MatchParticipantSnapshot
+    {
+        public string Id;
+        public float Fatigue, MatchControl, ActionReadiness;
+        public bool IsDowned;
+    }
+
+    [Serializable]
+    public sealed class MatchEngineSnapshot
+    {
+        public MatchPhase Phase;
+        public float Intensity, Drama, CrowdHeat;
+        public List<MatchParticipantSnapshot> Participants;
+
+        public static MatchEngineSnapshot Capture(MatchEngineState state) => new()
+        {
+            Phase = state.Phase, Intensity = state.Intensity, Drama = state.Drama, CrowdHeat = state.CrowdHeat,
+            Participants = state.Participants.Select(x => new MatchParticipantSnapshot
+            {
+                Id = x.Id, Fatigue = x.Fatigue, MatchControl = x.MatchControl,
+                ActionReadiness = x.ActionReadiness, IsDowned = x.IsDowned
+            }).ToList()
+        };
+    }
+
+    [Serializable]
     public sealed class MatchEngineEvent
     {
         public MatchActionType Type;
@@ -69,6 +106,10 @@ namespace PWManager.Domain.Services
         public float IntensityChange;
         public bool IsMajorMoment;
         public string CommentaryKey;
+        public int DurationSeconds;
+        public string MoveId;
+        public MatchEngineSnapshot Before;
+        public MatchEngineSnapshot After;
     }
 
     public sealed class MatchSimulator
@@ -89,7 +130,8 @@ namespace PWManager.Domain.Services
         public MatchEngineState Simulate(MatchEngineParticipant first, MatchEngineParticipant second,
             int targetDurationSeconds = 720) => Simulate(new[] { first, second }, targetDurationSeconds);
 
-        public MatchEngineState Simulate(IEnumerable<MatchEngineParticipant> participants, int targetDurationSeconds = 720)
+        public MatchEngineState Simulate(IEnumerable<MatchEngineParticipant> participants, int targetDurationSeconds = 720,
+            MatchEngineBooking booking = null)
         {
             if (participants == null) throw new ArgumentNullException(nameof(participants));
             var participantList = participants.ToList();
@@ -97,13 +139,24 @@ namespace PWManager.Domain.Services
                 participantList.Select(x => x.Id).Distinct(StringComparer.Ordinal).Count() != participantList.Count)
                 throw new ArgumentException("A match requires at least two participants with distinct ids.", nameof(participants));
             if (targetDurationSeconds <= 0) throw new ArgumentOutOfRangeException(nameof(targetDurationSeconds));
-            foreach (var participant in participantList) ValidateAttributes(participant.Attributes);
+            foreach (var participant in participantList)
+            {
+                ValidateAttributes(participant.Attributes);
+                if (float.IsNaN(participant.Fatigue) || float.IsInfinity(participant.Fatigue) || participant.Fatigue < 0f || participant.Fatigue > 100f)
+                    throw new ArgumentOutOfRangeException(nameof(participants), "Initial fatigue must be finite and between 0 and 100.");
+            }
+            if (booking != null && (participantList.Count != 2 ||
+                booking.FinishType is < MatchFinishType.Pinfall or > MatchFinishType.Draw ||
+                (booking.FinishType != MatchFinishType.Draw && (booking.WinnerId == booking.LoserId ||
+                    !participantList.Any(x => x.Id == booking.WinnerId) || !participantList.Any(x => x.Id == booking.LoserId)))))
+                throw new ArgumentException("A singles booking requires a supported finish and opposing participants.", nameof(booking));
 
             var state = new MatchEngineState
             {
                 Participants = participantList,
                 TargetDurationSeconds = targetDurationSeconds,
-                Phase = MatchPhase.Opening
+                Phase = MatchPhase.Opening,
+                Booking = booking
             };
             stateMachine.Initialize(state);
             while (!state.IsFinished && state.Events.Count < maximumEvents) Step(state);
@@ -115,6 +168,14 @@ namespace PWManager.Domain.Services
         {
             if (state == null) throw new ArgumentNullException(nameof(state));
             if (state.IsFinished || state.IsAborted) throw new InvalidOperationException("The match has already ended.");
+            var before = MatchEngineSnapshot.Capture(state);
+            if (state.Booking != null && state.TargetDurationSeconds - state.ElapsedSeconds <= 25)
+            {
+                var finish = FinishBookedMatch(state);
+                finish.Before = before;
+                finish.After = MatchEngineSnapshot.Capture(state);
+                return finish;
+            }
             stateMachine.Update(state);
             var performer = PerformerSelector.Select(state, random, stateMachine.CurrentState);
             var target = TargetSelector.Select(state, performer, random);
@@ -125,7 +186,44 @@ namespace PWManager.Domain.Services
             state.Events.Add(matchEvent);
             CrowdSimulator.Apply(state, matchEvent);
             UpdateParticipantReadiness(state, matchEvent);
-            state.ElapsedSeconds += random.Next(8, 26);
+            matchEvent.DurationSeconds = random.Next(8, 26);
+            if (state.Booking != null)
+                matchEvent.DurationSeconds = Math.Min(matchEvent.DurationSeconds, state.TargetDurationSeconds - state.ElapsedSeconds - 1);
+            state.ElapsedSeconds += matchEvent.DurationSeconds;
+            matchEvent.Before = before;
+            matchEvent.After = MatchEngineSnapshot.Capture(state);
+            return matchEvent;
+        }
+
+        private static MatchEngineEvent FinishBookedMatch(MatchEngineState state)
+        {
+            var booking = state.Booking;
+            var result = booking.FinishType switch
+            {
+                MatchFinishType.Submission => MatchActionResult.Submitted,
+                MatchFinishType.RollUp => MatchActionResult.RollUp,
+                MatchFinishType.Disqualification => MatchActionResult.Disqualification,
+                MatchFinishType.CountOut => MatchActionResult.CountOut,
+                MatchFinishType.Draw => MatchActionResult.Draw,
+                _ => MatchActionResult.Pinfall
+            };
+            // ponytail: the final exchange follows the booking at the allotted time; adaptive finish windows come with pacing work.
+            var matchEvent = new MatchEngineEvent
+            {
+                Type = MatchActionType.Finish, Result = result, Phase = MatchPhase.Finish,
+                PerformerId = result == MatchActionResult.Draw ? null : booking.WinnerId,
+                ReceiverId = result == MatchActionResult.Draw ? null : booking.LoserId,
+                MatchTimeSeconds = state.ElapsedSeconds,
+                DurationSeconds = state.TargetDurationSeconds - state.ElapsedSeconds,
+                IsMajorMoment = true, CrowdReaction = 8f, DramaChange = 10f,
+                CommentaryKey = $"match.finish.{booking.FinishType.ToString().ToLowerInvariant()}"
+            };
+            state.Events.Add(matchEvent);
+            state.ElapsedSeconds += matchEvent.DurationSeconds;
+            state.Phase = MatchPhase.Finish;
+            state.IsFinished = true;
+            state.WinnerId = matchEvent.PerformerId;
+            CrowdSimulator.Apply(state, matchEvent);
             return matchEvent;
         }
 
@@ -218,7 +316,8 @@ namespace PWManager.Domain.Services
 
         private static MatchEngineAction New(MatchActionType type, MatchEngineParticipant performer, MatchEngineParticipant receiver) => new()
         {
-            Type = type, PerformerId = performer.Id, ReceiverId = receiver.Id, ReceiverIds = new List<string> { receiver.Id }
+            Type = type, PerformerId = performer.Id, ReceiverId = receiver.Id, ReceiverIds = new List<string> { receiver.Id },
+            MoveId = type == MatchActionType.Signature ? performer.SignatureMoveId : type == MatchActionType.Finisher ? performer.FinisherMoveId : null
         };
     }
 
@@ -298,7 +397,7 @@ namespace PWManager.Domain.Services
         {
             var lastImpact = state.Events.LastOrDefault(x => x.ReceiverId == receiver.Id)?.Impact ?? 0f;
             var finisher = state.Events.LastOrDefault(x => x.ReceiverId == receiver.Id)?.Type == MatchActionType.Finisher;
-            var chance = PinfallChance(state, performer, receiver, lastImpact, finisher);
+            var chance = state.Booking == null ? PinfallChance(state, performer, receiver, lastImpact, finisher) : 0f;
             var roll = random.NextDouble();
             var result = roll < chance ? MatchActionResult.Pinfall : roll < chance + .12f ? MatchActionResult.NearFall : roll < chance + .42f ? MatchActionResult.TwoCount : MatchActionResult.OneCount;
             if (result == MatchActionResult.Pinfall) { state.IsFinished = true; state.WinnerId = performer.Id; }
@@ -318,7 +417,7 @@ namespace PWManager.Domain.Services
         private static MatchEngineEvent Submission(MatchEngineState state, MatchEngineParticipant performer, MatchEngineParticipant receiver, Random random)
         {
             var chance = Clamp(.005f + receiver.Fatigue * .0035f + (performer.Attributes.Technical - receiver.Attributes.Technical) * .008f + (state.Phase >= MatchPhase.Climax ? .08f : 0f), .001f, .7f);
-            var submitted = random.NextDouble() < chance;
+            var submitted = random.NextDouble() < chance && state.Booking == null;
             if (submitted) { state.IsFinished = true; state.WinnerId = performer.Id; }
             else { receiver.Fatigue = Clamp(receiver.Fatigue + 3f, 0f, 100f); receiver.IsDowned = false; }
             return Event(state, new MatchEngineAction { Type = MatchActionType.Submission, PerformerId = performer.Id, ReceiverId = receiver.Id }, submitted ? MatchActionResult.Submitted : MatchActionResult.Countered, 3f, submitted ? 8f : -4f, submitted);
@@ -326,7 +425,7 @@ namespace PWManager.Domain.Services
 
         private static MatchEngineEvent Event(MatchEngineState state, MatchEngineAction action, MatchActionResult result, float impact, float control, bool major) => new()
         {
-            Type = action.Type, Result = result, PerformerId = action.PerformerId, ReceiverId = action.ReceiverId,
+            Type = action.Type, Result = result, PerformerId = action.PerformerId, ReceiverId = action.ReceiverId, MoveId = action.MoveId,
             MatchTimeSeconds = state.ElapsedSeconds, Phase = state.Phase, Impact = impact, FatigueChange = impact,
             MatchControlChange = control, CrowdReaction = major ? 8f : impact * .3f,
             DramaChange = major ? 10f : impact * .2f, IntensityChange = impact * .25f,

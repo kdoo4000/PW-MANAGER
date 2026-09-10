@@ -10,6 +10,45 @@ namespace PWManager.Tests
     public sealed class ShowNarrativeServiceTests
     {
         [Test]
+        public void EngineCommentary_UsesRecordedRecoveryDownCounterAndFinish()
+        {
+            var value = new MatchEngineEvent
+            {
+                PerformerId = "a", ReceiverId = "b", Type = MatchActionType.Rest, Result = MatchActionResult.FullSuccess,
+                Before = new MatchEngineSnapshot { Participants = new List<MatchParticipantSnapshot>
+                    { new() { Id = "a", Fatigue = 80, IsDowned = true }, new() { Id = "b" } } },
+                After = new MatchEngineSnapshot { Participants = new List<MatchParticipantSnapshot>
+                    { new() { Id = "a", Fatigue = 76 }, new() { Id = "b" } } }
+            };
+            var result = new MatchResultState { EngineState = new MatchEngineState { Events = { value } } };
+            string Line() => MatchNarrationService.NarrateEngineEvent(result, 0, id => id == "a" ? "공격 선수" : "상대 선수");
+            Assert.That(Line(), Does.Contain("몸을 일으킵니다"));
+            value.Before.Participants[0].IsDowned = false;
+            Assert.That(Line(), Does.Contain("숨을 고릅니다").And.Not.Contain("일으킵니다"));
+            value.Type = MatchActionType.HeavyStrike;
+            value.After.Participants[1].IsDowned = true;
+            Assert.That(Line(), Does.Contain("쓰러집니다"));
+            value.After.Participants[1].IsDowned = false;
+            Assert.That(Line(), Does.Not.Contain("쓰러집니다"));
+            value.Result = MatchActionResult.ExecutionFailure;
+            Assert.That(Line(), Does.Contain("맞히지 못합니다").And.Not.Contain("반격"));
+            value.Result = MatchActionResult.Countered;
+            Assert.That(Line(), Does.StartWith("상대 선수").And.Contain("반격"));
+            value.Type = MatchActionType.Pin;
+            value.Result = MatchActionResult.NearFall;
+            Assert.That(Line(), Does.Contain("셋 직전"));
+            value.Result = MatchActionResult.Pinfall;
+            Assert.That(Line(), Does.Contain("하나, 둘, 셋").And.Not.Contain("일찍"));
+            value.Type = MatchActionType.Submission;
+            value.Result = MatchActionResult.Submitted;
+            Assert.That(Line(), Does.Contain("서브미션 승리").And.Not.Contain("빠져나옵니다"));
+            value.Type = MatchActionType.Grapple;
+            value.Result = MatchActionResult.FullSuccess;
+            value.Before = value.After = null;
+            Assert.That(Line(), Does.Contain("유리한 자세").And.Not.Contain("쓰러집니다"));
+        }
+
+        [Test]
         public void PromoContext_UsesCanonicalResultAndFallbackKeepsMandatoryOrder()
         {
             var save = new GameSave();

@@ -204,7 +204,8 @@ namespace PWManager.Presentation
         private float Duration => CurrentBeat?.DurationSeconds ?? Math.Max(4f, segments[segmentIndex].Lines[lineIndex].Text.Length / 5f);
 
         private static bool IsHighlight(MatchSimulationBeatState beat) =>
-            beat.BeatType is MatchBeatType.PlannedSpot or MatchBeatType.NearFall or MatchBeatType.Finish;
+            beat.BeatType is MatchBeatType.PlannedSpot or MatchBeatType.NearFall or MatchBeatType.Finish ||
+            beat.BeatType == MatchBeatType.EngineAction && beat.Importance >= 4;
 
         private static float AdvanceMatchClock(float current, float target, float delta, bool fastForward) =>
             Math.Min(Math.Max(current, target), current + Math.Max(0, delta) * (fastForward ? 120f : 1f));

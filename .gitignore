@@ -119,6 +119,9 @@ InitTestScene*.unity*
 /**/Captures/
 /**/captures/
 
+# Local test artifacts
+/artifacts/*-tests.xml
+
 # Local AI agent instructions and working directories
 AGENTS.md
 CLAUDE.md

@@ -116,6 +116,8 @@ namespace PWManager.Domain.Services
         {
             if (plan == null) throw new ArgumentNullException(nameof(plan));
             if (result == null) throw new ArgumentNullException(nameof(result));
+            if (result.EngineState?.IsFinished == true && result.EngineState.Events?.Count > 0)
+                return CreateEngineBeats(plan, result, save);
             var beats = new List<MatchSimulationBeatState>();
             var sides = (plan.Sides ?? new List<MatchSideState>()).Where(x => x?.MemberIds?.Any(id => !string.IsNullOrWhiteSpace(id)) == true)
                 .Select(x => new MatchSideState { Id = x.Id, MemberIds = x.MemberIds.Where(id => !string.IsNullOrWhiteSpace(id)).ToList() }).ToList();
@@ -223,8 +225,137 @@ namespace PWManager.Domain.Services
             {
                 Type = NarrativeLineType.Commentary,
                 Intensity = beat.Importance,
-                Text = Text(beat, name, random, save)
+                Text = beat.BeatType == MatchBeatType.EngineAction
+                    ? NarrateEngineEvent(result, beat.EngineEventIndex, name) : Text(beat, name, random, save)
             }).ToList();
+        }
+
+        private static List<MatchSimulationBeatState> CreateEngineBeats(MatchPlanState plan, MatchResultState result, GameSave save)
+        {
+            var state = result.EngineState;
+            var actor = state.Participants[0].Id;
+            var target = state.Participants[1].Id;
+            var beats = new List<MatchSimulationBeatState>();
+            AddSpot(beats, MatchBeatType.PlannedSpot, plan.OpeningSpot, actor, target, 0);
+            AddEvaluatedSpots(beats, result, MatchSpotPhase.Entrance);
+            beats.Add(Beat(MatchBeatType.Opening, actor, target, null, 0));
+            var context = RelationshipContext(save, actor, target, result);
+            if (context != null) beats.Add(Beat(MatchBeatType.Context, actor, target, context, 0));
+            foreach (var line in MatchContexts(save, plan, result, actor, target).Take(2))
+                beats.Add(Beat(MatchBeatType.Context, actor, target, line, 0));
+            // The complete log is saved; playback selects one real exchange per time window.
+            var highlights = state.Events.Select((value, index) => (value, index))
+                .Where(x => x.value.Type != MatchActionType.Finish)
+                .GroupBy(x => Math.Min(11, (int)((long)x.value.MatchTimeSeconds * 12 / state.TargetDurationSeconds)))
+                .Select(group => group.OrderByDescending(x => x.value.IsMajorMoment).ThenByDescending(x => x.value.Impact).First())
+                .OrderBy(x => x.index).ToList();
+            for (var phase = 1; phase <= 3; phase++)
+            {
+                foreach (var item in highlights.Where(x => Math.Min(3, 1 + (int)((long)x.value.MatchTimeSeconds * 3 / state.TargetDurationSeconds)) == phase))
+                {
+                    var beat = Beat(MatchBeatType.EngineAction, item.value.PerformerId, item.value.ReceiverId, null, phase);
+                    beat.EngineEventIndex = item.index;
+                    beat.Succeeded = item.value.Result is MatchActionResult.FullSuccess or MatchActionResult.PartialSuccess;
+                    beat.Importance = item.value.IsMajorMoment ? 4 : 2;
+                    beat.CrowdReaction = item.value.CrowdReaction;
+                    beats.Add(beat);
+                }
+                if (phase == 2) AddSpot(beats, MatchBeatType.PlannedSpot, plan.MiddleSpot, target, actor, phase);
+                AddEvaluatedSpots(beats, result, (MatchSpotPhase)phase);
+            }
+            var finish = state.Events.Last();
+            beats.Add(Beat(MatchBeatType.Finish, finish.PerformerId, finish.ReceiverId, state.Booking.FinishType.ToString(), 4));
+            AddSpot(beats, MatchBeatType.PlannedSpot, plan.ClosingSpot, finish.PerformerId ?? actor, finish.ReceiverId ?? target, 4);
+            AddEvaluatedSpots(beats, result, MatchSpotPhase.PostMatch);
+            FinalizeBeats(beats, result, save);
+            foreach (var beat in beats)
+                beat.MatchProgress = beat.BeatType == MatchBeatType.EngineAction
+                    ? (float)state.Events[beat.EngineEventIndex].MatchTimeSeconds / state.ElapsedSeconds
+                    : beat.Phase == 0 ? 0f : beat.Phase >= 4 ? 1f : beat.Phase / 3f;
+            return beats;
+        }
+
+        public static string NarrateEngineEvent(MatchResultState result, int index, Func<string, string> name)
+        {
+            if (result?.EngineState?.Events == null) throw new ArgumentException("An engine timeline is required.", nameof(result));
+            if (index < 0 || index >= result.EngineState.Events.Count) throw new ArgumentOutOfRangeException(nameof(index));
+            if (name == null) throw new ArgumentNullException(nameof(name));
+            var value = result.EngineState.Events[index];
+            if (value.Type == MatchActionType.Finish)
+                return FinishText(result.FinishType.ToString(), string.IsNullOrEmpty(value.PerformerId) ? null : name(value.PerformerId),
+                    string.IsNullOrEmpty(value.ReceiverId) ? null : name(value.ReceiverId));
+            var actor = name(value.PerformerId);
+            var target = name(value.ReceiverId);
+            if (value.Result == MatchActionResult.Pinfall) return FinishText(nameof(MatchFinishType.Pinfall), actor, target);
+            if (value.Result == MatchActionResult.Submitted) return FinishText(nameof(MatchFinishType.Submission), actor, target);
+            var actorBefore = value.Before?.Participants?.FirstOrDefault(x => x.Id == value.PerformerId);
+            var actorAfter = value.After?.Participants?.FirstOrDefault(x => x.Id == value.PerformerId);
+            var targetBefore = value.Before?.Participants?.FirstOrDefault(x => x.Id == value.ReceiverId);
+            var targetAfter = value.After?.Participants?.FirstOrDefault(x => x.Id == value.ReceiverId);
+            var action = value.Type switch
+            {
+                MatchActionType.BasicStrike => "짧은 타격", MatchActionType.HeavyStrike => "강한 타격",
+                MatchActionType.Grapple => "잡기", MatchActionType.GroundAttack => "그라운드 공격",
+                MatchActionType.Signature => "특기 기술", MatchActionType.Finisher => "결정타", _ => "공격"
+            };
+            if (value.Type == MatchActionType.Rest)
+            {
+                if (actorBefore?.IsDowned == true && actorAfter?.IsDowned == false)
+                    return actorAfter.Fatigue >= 70f ? $"{actor}, 힘겹게 몸을 일으킵니다. 아직 숨이 가쁜 모습입니다." : $"{actor}, 몸을 추스르고 다시 일어섭니다.";
+                return actorBefore?.Fatigue >= 70f ? $"{actor}, 거친 숨을 고릅니다. 잠시 체력을 회복해야겠습니다." : $"{actor}, 서두르지 않고 호흡을 가다듬습니다.";
+            }
+            if (value.Type == MatchActionType.Pin)
+            {
+                var previous = index > 0 ? result.EngineState.Events[index - 1] : null;
+                var cover = previous?.Type == MatchActionType.Finisher && previous.PerformerId == value.PerformerId &&
+                    previous.ReceiverId == value.ReceiverId && previous.Result is MatchActionResult.FullSuccess or MatchActionResult.ReceptionFailure
+                    ? $"{actor}, 결정타 직후 커버합니다!" : $"{actor}, 어깨를 누르며 커버합니다!";
+                return cover + (value.Result switch
+                {
+                    MatchActionResult.NearFall => $" 하나, 둘…! {target}, 셋 직전에 어깨를 듭니다! 끝나는 줄 알았습니다!",
+                    MatchActionResult.TwoCount => $" 하나, 둘! {target}, 어깨를 들어 카운트를 끊습니다.",
+                    _ => $" 하나! {target}, 일찍 어깨를 들어 올립니다."
+                });
+            }
+            if (value.Type == MatchActionType.Submission)
+                return value.Result == MatchActionResult.Countered
+                    ? $"{actor}, 서브미션으로 조입니다! 하지만 {target}, 버티다 끝내 빠져나옵니다!"
+                    : $"{actor}, 서브미션을 시도하지만 제대로 잠그지 못합니다.";
+            if (value.Result == MatchActionResult.Countered) return $"{target}, {actor}의 {action}을 끊고 반격합니다!";
+            if (value.Result == MatchActionResult.PartialSuccess) return $"{actor}, {action}을 연결하지만 온전히 힘을 싣지는 못합니다.";
+            if (value.Result == MatchActionResult.ReceptionFailure)
+                return $"{actor}의 {action}이 들어갑니다. 하지만 동작이 매끄럽게 이어지지는 않습니다." +
+                    (targetBefore?.IsDowned == false && targetAfter?.IsDowned == true ? $" {target}, 중심을 잃고 쓰러집니다!" : string.Empty);
+            if (!string.IsNullOrEmpty(value.MoveId) && value.Result is MatchActionResult.FullSuccess or MatchActionResult.ExecutionFailure)
+            {
+                var move = result.MoveResults?.FirstOrDefault(x => x.MoveId == value.MoveId && x.ActorId == value.PerformerId &&
+                    x.TargetId == value.ReceiverId && (x.Result >= SpotExecutionResult.Success) == (value.Result == MatchActionResult.FullSuccess));
+                if (move != null) return MatchMoveService.Narrate(move, name);
+            }
+            if (value.Result == MatchActionResult.ExecutionFailure) return value.Type switch
+            {
+                MatchActionType.Grapple => $"{actor}, 붙잡고 기술을 걸려 하지만 잡기가 풀립니다. 흐름을 이어가지 못합니다!",
+                MatchActionType.GroundAttack => $"{actor}, 아래로 공격을 이어가려 하지만 제대로 맞히지 못합니다!",
+                MatchActionType.Signature or MatchActionType.Finisher => $"{actor}, 큰 기술을 노렸지만 연결에 실패합니다! 기회를 놓칩니다.",
+                _ => $"{actor}, 타격을 시도하지만 제대로 맞히지 못합니다."
+            };
+            var line = value.Type switch
+            {
+                MatchActionType.BasicStrike => index % 2 == 0 ? $"{actor}, 짧은 타격을 꽂습니다!" : $"{actor}, 타격으로 {target}을 압박합니다.",
+                MatchActionType.HeavyStrike => $"{actor}, 힘을 실어 강하게 때립니다!",
+                MatchActionType.Grapple => $"{actor}, {target}을 붙잡고 유리한 자세를 잡습니다.",
+                MatchActionType.GroundAttack => $"{actor}, 그라운드에서 공격을 이어갑니다!",
+                MatchActionType.Signature => $"{actor}, 특기 기술을 연결합니다!",
+                MatchActionType.Finisher => $"{actor}, 결정타를 터뜨립니다!",
+                _ => $"{actor}, 공격을 연결합니다!"
+            };
+            if (targetBefore?.IsDowned == false && targetAfter?.IsDowned == true)
+                return line + $" {target}, 버티지 못하고 쓰러집니다!";
+            if (value.Phase == MatchPhase.Comeback && actorBefore != null && actorAfter != null && actorAfter.MatchControl > actorBefore.MatchControl)
+                return line + " 반격에 힘이 붙습니다!";
+            if (value.Type == MatchActionType.GroundAttack && targetAfter?.IsDowned == true)
+                return line + $" {target}, 아직 일어나지 못합니다.";
+            return line;
         }
 
         private static MatchSimulationBeatState Beat(MatchBeatType type, string actor, string target, string detail, int phase) => new()

@@ -2,7 +2,7 @@
   <Project Path="PWMANAGER.EditMode.Tests.csproj" />
   <Project Path="PWMANAGER.Domain.csproj" />
   <Project Path="PWMANAGER.Data.csproj" />
-  <Project Path="DOTween.Modules.csproj" />
+  <Project Path="Assembly-CSharp-firstpass.csproj" />
   <Project Path="Assembly-CSharp-Editor.csproj" />
   <Project Path="AssetUsageDetector.Editor.csproj" />
   <Project Path="undream.llmunity.Runtime.csproj" />

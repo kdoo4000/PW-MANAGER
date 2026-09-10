@@ -106,6 +106,7 @@ namespace PWManager.Tests
             Assert.That(result.WrestlerConditionChanges[0].ConditionDelta, Is.EqualTo(-19.2f).Within(.001f));
             Assert.That(result.IndirectWinnerIds, Is.EqualTo(new[] { "wrestler_b" }));
             Assert.That(result.IndirectLoserIds, Is.EqualTo(new[] { "wrestler_d" }));
+            Assert.That(result.EngineState, Is.Null);
         }
 
         [Test]
@@ -183,6 +184,7 @@ namespace PWManager.Tests
             var result = evaluator.EvaluateTechnical(save, "event", 0f, 1);
 
             Assert.That(result.WrestlerConditionChanges[0].ConditionDelta, Is.EqualTo(-15f).Within(0.001f));
+            Assert.That(result.EngineState, Is.Null);
         }
 
         [TestCase(null, .5f)]
@@ -216,7 +218,17 @@ namespace PWManager.Tests
             {
                 Name = "기술", BrawlingWeight = 1, ExecutionDifficulty = 10, SellingDifficulty = 7
             }).EvaluateTechnical(save, "event", 0, 73);
-            Assert.That(result.MoveResults.Count, Is.EqualTo(4));
+            var moves = result.EngineState.Events.Where(x => !string.IsNullOrEmpty(x.MoveId)).ToList();
+            Assert.That(moves, Is.Not.Empty);
+            Assert.That(result.MoveResults.Count, Is.EqualTo(moves.Count));
+            for (var i = 0; i < moves.Count; i++)
+            {
+                Assert.That(result.MoveResults[i].ActorId, Is.EqualTo(moves[i].PerformerId));
+                Assert.That(result.MoveResults[i].TargetId, Is.EqualTo(moves[i].ReceiverId));
+                Assert.That(result.MoveResults[i].MoveId, Is.EqualTo(moves[i].MoveId));
+                Assert.That(result.MoveResults[i].Result >= SpotExecutionResult.Success,
+                    Is.EqualTo(moves[i].Result == MatchActionResult.FullSuccess));
+            }
             Assert.That(result.FinalMatchQuality, Is.EqualTo(baseline.FinalMatchQuality));
             Assert.That(result.WinnerId, Is.EqualTo(baseline.WinnerId));
             Assert.That(result.FinishType, Is.EqualTo(baseline.FinishType));
