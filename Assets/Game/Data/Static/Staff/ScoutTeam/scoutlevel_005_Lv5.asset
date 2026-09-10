@@ -24,4 +24,3 @@ MonoBehaviour:
   KnowledgeLevel: 4
   ExactValueChance: 1
   ValueErrorRange: 0
-  HighTierCandidateRate: 0.35

@@ -1,3 +1,4 @@
+using SaintsField;
 using UnityEngine;
 
 namespace PWManager.Data.Definitions
@@ -7,6 +8,6 @@ namespace PWManager.Data.Definitions
         [Range(1, 5)] public int Level;
         public long RequiredPrestige;
         public long UpgradeCost;
-        [TextArea] public string EffectDescription;
+        [ResizableTextArea] public string EffectDescription;
     }
 }

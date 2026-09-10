@@ -95,7 +95,7 @@ namespace PWManager.Tests
                 var clock = root.Q<Label>("simulation-clock").text;
                 typeof(ShowSimulationPlayer).GetMethod("Tick", BindingFlags.Instance | BindingFlags.NonPublic).Invoke(player, null);
                 Assert.That(root.Q<Label>("simulation-clock").text, Is.EqualTo(clock));
-                typeof(DashboardController).GetMethod("NavigateBack", BindingFlags.Instance | BindingFlags.NonPublic).Invoke(dashboard, null);
+                typeof(DashboardController).GetMethod("AdvanceDay", BindingFlags.Instance | BindingFlags.NonPublic).Invoke(dashboard, null);
                 Assert.That(player.ViewingProfile, Is.False);
                 Assert.That(root.Q("simulation-screen").style.display.value, Is.EqualTo(DisplayStyle.Flex));
             }

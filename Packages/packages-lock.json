@@ -497,6 +497,15 @@
       "dependencies": {},
       "hash": "160ea727417a4960d1c2edfc934ba1edd8b7785d"
     },
+    "today.comes.saintsfield.animatoreditorhijack": {
+      "version": "https://github.com/TylerTemp/SaintsFieldAnimatorEditorHijack.git",
+      "depth": 0,
+      "source": "git",
+      "dependencies": {
+        "today.comes.saintsfield": "5.25.4"
+      },
+      "hash": "5d3823288a5e45205cf325bcf81f0a79ea0c2cc5"
+    },
     "com.unity.modules.accessibility": {
       "version": "1.0.0",
       "depth": 0,

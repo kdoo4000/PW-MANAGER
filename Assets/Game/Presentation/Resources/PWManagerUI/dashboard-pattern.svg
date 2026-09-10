@@ -11,7 +11,7 @@
     <circle cx="1738" cy="868" r="3"/><circle cx="1802" cy="868" r="3"/><circle cx="1866" cy="868" r="3"/>
     <circle cx="1738" cy="932" r="3"/><circle cx="1802" cy="932" r="3"/><circle cx="1866" cy="932" r="3"/>
   </g>
-  <g fill="#47719c" fill-opacity="0.028">
+  <g fill="#d9b45b" fill-opacity="0.028">
     <path d="M0 0h520L0 520z"/><path d="M1920 1080h-620l620-620z"/>
   </g>
 </svg>

@@ -5,7 +5,8 @@
     "PWMANAGER.Domain",
     "PWMANAGER.Data",
     "PWMANAGER.Infrastructure",
-    "undream.llmunity.Runtime"
+    "undream.llmunity.Runtime",
+    "SaintsField.Runtime"
   ],
   "autoReferenced": true
 }

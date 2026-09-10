@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using SaintsField.Playa;
 using UnityEngine;
 
 namespace PWManager.Data.Definitions
@@ -6,14 +7,14 @@ namespace PWManager.Data.Definitions
     [CreateAssetMenu(menuName = "PW Manager/Static/Name Pool")]
     public sealed class NamePoolDefinition : ScriptableObject
     {
-        public List<string> MaleGivenNames = new();
-        public List<string> FemaleGivenNames = new();
-        public List<string> FamilyNames = new();
-        public List<string> KoreanMaleGivenNames = new();
-        public List<string> KoreanFemaleGivenNames = new();
-        public List<string> KoreanFamilyNames = new();
-        public List<string> JapaneseMaleGivenNames = new();
-        public List<string> JapaneseFemaleGivenNames = new();
-        public List<string> JapaneseFamilyNames = new();
+        [ListDrawerSettings] public List<string> MaleGivenNames = new();
+        [ListDrawerSettings] public List<string> FemaleGivenNames = new();
+        [ListDrawerSettings] public List<string> FamilyNames = new();
+        [ListDrawerSettings] public List<string> KoreanMaleGivenNames = new();
+        [ListDrawerSettings] public List<string> KoreanFemaleGivenNames = new();
+        [ListDrawerSettings] public List<string> KoreanFamilyNames = new();
+        [ListDrawerSettings] public List<string> JapaneseMaleGivenNames = new();
+        [ListDrawerSettings] public List<string> JapaneseFemaleGivenNames = new();
+        [ListDrawerSettings] public List<string> JapaneseFamilyNames = new();
     }
 }

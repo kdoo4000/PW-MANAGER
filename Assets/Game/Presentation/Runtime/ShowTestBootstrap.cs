@@ -2,6 +2,7 @@ using System;
 using PWManager.Data.Catalogs;
 using PWManager.Data.Generation;
 using PWManager.Domain.Models;
+using SaintsField.Playa;
 using UnityEngine;
 using UnityEngine.UIElements;
 
@@ -24,8 +25,10 @@ namespace PWManager.Presentation
             StartShow();
         }
 
+        [Button("테스트 쇼 다시 시작")]
         private void StartShow()
         {
+            if (!Application.isPlaying) return;
             try
             {
                 var catalog = Resources.Load<StaticContentCatalog>("PWManagerRuntime/GameStaticContentCatalog");

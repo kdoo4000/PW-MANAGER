@@ -220,9 +220,9 @@ namespace PWManager.Editor
 
         private static List<ScoutTeamLevelDefinition> CreateScoutLevels() => new()
         {
-            ScoutLevel(1, 0, 0, "후보 6명 · 종합 능력 추정", 6, 1, 0f, 2f, .05f), ScoutLevel(2, 300, 10_000, "후보 8명 · 성장 2단계 추정", 8, 2, 0f, 1.5f, .10f),
-            ScoutLevel(3, 2_500, 50_000, "후보 10명 · 등급 정확도 60%", 10, 3, .60f, 1f, .15f), ScoutLevel(4, 5_500, 250_000, "후보 12명 · 등급 정확도 85%", 12, 4, .85f, .5f, .25f),
-            ScoutLevel(5, 20_000, 1_000_000, "후보 15명 · 모든 정보 정확히 공개", 15, 4, 1f, 0, .35f)
+            ScoutLevel(1, 0, 0, "후보 6명 · 종합 능력 추정", 6, 1, 0f, 2f), ScoutLevel(2, 300, 10_000, "후보 8명 · 성장 2단계 추정", 8, 2, 0f, 1.5f),
+            ScoutLevel(3, 2_500, 50_000, "후보 10명 · 등급 정확도 60%", 10, 3, .60f, 1f), ScoutLevel(4, 5_500, 250_000, "후보 12명 · 등급 정확도 85%", 12, 4, .85f, .5f),
+            ScoutLevel(5, 20_000, 1_000_000, "후보 15명 · 모든 정보 정확히 공개", 15, 4, 1f, 0)
         };
 
         private static List<PromotionTeamLevelDefinition> CreatePromotionLevels() => new()
@@ -372,8 +372,8 @@ namespace PWManager.Editor
 
         private static MedicalTeamLevelDefinition MedicalLevel(int level, long prestige, long cost, string effect, float recovery, float aggravation)
         { var value = TeamLevel<MedicalTeamLevelDefinition>("MedicalTeam", "medicallevel_", "의료팀", "Medical Team", level, prestige, cost, effect); value.RecoveryDurationMultiplier = recovery; value.InjuryAggravationMultiplier = aggravation; EditorUtility.SetDirty(value); return value; }
-        private static ScoutTeamLevelDefinition ScoutLevel(int level, long prestige, long cost, string effect, int candidates, int knowledge, float exact, float error, float highTier)
-        { var value = TeamLevel<ScoutTeamLevelDefinition>("ScoutTeam", "scoutlevel_", "스카우트팀", "Scout Team", level, prestige, cost, effect); value.CandidateCount = candidates; value.KnowledgeLevel = knowledge; value.ExactValueChance = exact; value.ValueErrorRange = error; value.HighTierCandidateRate = highTier; EditorUtility.SetDirty(value); return value; }
+        private static ScoutTeamLevelDefinition ScoutLevel(int level, long prestige, long cost, string effect, int candidates, int knowledge, float exact, float error)
+        { var value = TeamLevel<ScoutTeamLevelDefinition>("ScoutTeam", "scoutlevel_", "스카우트팀", "Scout Team", level, prestige, cost, effect); value.CandidateCount = candidates; value.KnowledgeLevel = knowledge; value.ExactValueChance = exact; value.ValueErrorRange = error; EditorUtility.SetDirty(value); return value; }
         private static PromotionTeamLevelDefinition PromotionLevel(int level, long prestige, long cost, string effect, float ticket, float fans)
         { var value = TeamLevel<PromotionTeamLevelDefinition>("PromotionTeam", "promotionlevel_", "홍보팀", "Promotion Team", level, prestige, cost, effect); value.TicketDemandMultiplier = ticket; value.PositiveFanGainMultiplier = fans; EditorUtility.SetDirty(value); return value; }
         private static CommentaryTeamLevelDefinition CommentaryLevel(int level, long prestige, long cost, string effect, float live, float broadcast)

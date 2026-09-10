@@ -9,6 +9,5 @@ namespace PWManager.Data.Definitions
         [Range(0, 4)] public int KnowledgeLevel;
         [Range(0f, 1f)] public float ExactValueChance;
         [Range(0f, 2f)] public float ValueErrorRange;
-        [Range(0f, 1f)] public float HighTierCandidateRate;
     }
 }

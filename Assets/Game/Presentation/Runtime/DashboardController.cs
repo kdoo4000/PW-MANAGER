@@ -500,7 +500,12 @@ namespace PWManager.Presentation
 
         private async void AdvanceDay()
         {
-            if (boundSave == null || advancingShow || simulationPlayer != null) return;
+            if (boundSave == null || advancingShow) return;
+            if (simulationPlayer != null)
+            {
+                if (simulationPlayer.ViewingProfile) NavigateBack();
+                return;
+            }
             advancingShow = true;
             var executionSave = boundSave;
             try

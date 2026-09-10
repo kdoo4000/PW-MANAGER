@@ -1,25 +1,25 @@
 .facilities-content { flex-grow: 1; min-height: 0; padding: 22px 28px 28px; }
 .facilities-tabs { flex-shrink: 0; }
-.facilities-summary { min-height: 86px; flex-shrink: 0; flex-direction: row; margin-top: 14px; padding: 14px 18px; border-width: 1px; border-color: #223248; border-radius: 8px; background-color: #0e1622; }
-.facilities-summary-item { flex-grow: 1; flex-basis: 0; justify-content: center; margin-right: 18px; padding-right: 18px; border-right-width: 1px; border-right-color: #223248; }
+.facilities-summary { min-height: 86px; flex-shrink: 0; flex-direction: row; margin-top: 14px; padding: 14px 18px; border-width: 1px; border-color: #343238; border-radius: 8px; background-color: #141518; }
+.facilities-summary-item { flex-grow: 1; flex-basis: 0; justify-content: center; margin-right: 18px; padding-right: 18px; border-right-width: 1px; border-right-color: #343238; }
 .facilities-summary-last { margin-right: 0; padding-right: 0; border-right-width: 0; }
 .facilities-summary-value { margin-top: 5px; color: #eef5ff; font-size: 23px; -unity-font-style: bold; }
 .facilities-scroll { flex-grow: 1; min-height: 0; margin-top: 16px; }
 .facilities-scroll .unity-scroll-view__horizontal-scroller { display: none; }
 .facilities-panel { flex-grow: 1; min-height: 0; }
 .facilities-grid { flex-direction: row; flex-wrap: wrap; align-content: flex-start; }
-.facility-card { width: 48.8%; min-height: 224px; margin: 0 1.2% 14px 0; padding: 18px; border-width: 1px; border-color: #25364c; border-radius: 8px; background-color: #101823; }
+.facility-card { width: 48.8%; min-height: 224px; margin: 0 1.2% 14px 0; padding: 18px; border-width: 1px; border-color: #343238; border-radius: 8px; background-color: #141518; }
 .facility-card.locked { border-color: #252d39; background-color: #0d131c; }
 .facility-card-heading { flex-direction: row; justify-content: space-between; align-items: center; }
 .facility-card-title { color: #edf5ff; font-size: 21px; -unity-font-style: bold; }
-.facility-card-level { min-width: 66px; height: 28px; padding: 4px 9px; border-radius: 5px; background-color: #17314a; color: #7fc4fa; -unity-text-align: middle-center; -unity-font-style: bold; }
+.facility-card-level { min-width: 66px; height: 28px; padding: 4px 9px; border-radius: 5px; background-color: #2b2419; color: #d9b45b; -unity-text-align: middle-center; -unity-font-style: bold; }
 .facility-card-level.locked { background-color: #29241a; color: #d9b45b; }
 .facility-card-effect { flex-grow: 1; margin-top: 15px; color: #bdcadd; font-size: 16px; white-space: normal; }
-.facility-card-status { min-height: 30px; margin-top: 14px; padding-top: 10px; border-top-width: 1px; border-top-color: #223248; color: #62b3f4; font-size: 16px; -unity-font-style: bold; white-space: normal; }
+.facility-card-status { min-height: 30px; margin-top: 14px; padding-top: 10px; border-top-width: 1px; border-top-color: #343238; color: #d9b45b; font-size: 16px; -unity-font-style: bold; white-space: normal; }
 .facility-card-status.locked { color: #d9b45b; }
 .facility-card-actions { height: 38px; flex-direction: row; justify-content: space-between; align-items: flex-end; margin-top: 5px; }
 .facility-card-cost { flex-grow: 1; color: #d9b45b; font-size: 16px; -unity-font-style: bold; }
-.facility-card-action { width: 104px; height: 34px; margin: 0; padding: 0; border-width: 1px; border-color: #3677ad; border-radius: 6px; background-color: #1769aa; color: #eef7ff; font-size: 16px; -unity-font-style: bold; }
-.facility-card-action:hover { background-color: #207fc5; }
+.facility-card-action { width: 104px; height: 34px; margin: 0; padding: 0; border-width: 1px; border-color: #d9b45b; border-radius: 6px; background-color: #5a461e; color: #f4f0e7; font-size: 16px; -unity-font-style: bold; }
+.facility-card-action:hover { background-color: #6f5726; }
 .facility-card-action:disabled { border-color: #293444; background-color: #151d28; color: #5f6d7e; }
 .facilities-empty { min-height: 160px; flex-grow: 1; align-items: center; justify-content: center; color: #7f91a8; font-size: 17px; white-space: normal; }
