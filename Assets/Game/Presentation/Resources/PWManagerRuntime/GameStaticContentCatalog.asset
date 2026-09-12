@@ -81,6 +81,30 @@ MonoBehaviour:
   - {fileID: 11400000, guid: 80d5069e0045fa548bec4ed3a182b835, type: 2}
   - {fileID: 11400000, guid: d03538414d85e7c40947dc1402cfb22f, type: 2}
   - {fileID: 11400000, guid: 14af74f795165eb4da66a1a8c2c991c3, type: 2}
+  MedicalTeamLevels:
+  - {fileID: 11400000, guid: 6d4bd3bd1f0bce84190844b01ebef8e8, type: 2}
+  - {fileID: 11400000, guid: 5d2ba48fdc379e243a76806cf8812505, type: 2}
+  - {fileID: 11400000, guid: 098a9467cea01d64986b61f10ccdd393, type: 2}
+  - {fileID: 11400000, guid: dd0bd94ad9da99941bbb56f2639e3985, type: 2}
+  - {fileID: 11400000, guid: 104c251fab20fd74da5e41a52a5ff083, type: 2}
+  ScoutTeamLevels:
+  - {fileID: 11400000, guid: 0b72c6418bd2d284ab251bd9fb460660, type: 2}
+  - {fileID: 11400000, guid: dba8503494ce4cd4ea4f878471f65c41, type: 2}
+  - {fileID: 11400000, guid: 5194f0598a9aa8b47b3566f39f5a9f27, type: 2}
+  - {fileID: 11400000, guid: 76a2cf528083e42469f565274e0bc19d, type: 2}
+  - {fileID: 11400000, guid: befa3ac15d685b94b88f6242f73ef852, type: 2}
+  PromotionTeamLevels:
+  - {fileID: 11400000, guid: b749037ae2d1d774f9f7e960b0cd14ca, type: 2}
+  - {fileID: 11400000, guid: effe71bf9da41ed478ce46074b035ffb, type: 2}
+  - {fileID: 11400000, guid: c57eb95554e2f2f4d9b439a4eb25bd9e, type: 2}
+  - {fileID: 11400000, guid: 0caebf3f2654d6c418b22d8ca5840988, type: 2}
+  - {fileID: 11400000, guid: 4f57635af91b3244a8bee98e18722bf1, type: 2}
+  CommentaryTeamLevels:
+  - {fileID: 11400000, guid: 51d7e8cd3948df0499d5225469257c7f, type: 2}
+  - {fileID: 11400000, guid: 573c2e7793a45e44bb2350e45e22b28a, type: 2}
+  - {fileID: 11400000, guid: f6a3ef266cf3ded488ca20f9ea4cce8a, type: 2}
+  - {fileID: 11400000, guid: 7ad6cc7e4b679ec4ea9027ed92c634ec, type: 2}
+  - {fileID: 11400000, guid: f21ea6fed5e3ba44b8c298274f0fbfbf, type: 2}
   MatchTypes:
   - {fileID: 11400000, guid: ac164291a7f6703498f894b67fc2bb87, type: 2}
   - {fileID: 11400000, guid: bb9fccec0568fde48b6c0802439949e1, type: 2}
