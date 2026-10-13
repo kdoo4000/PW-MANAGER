@@ -110,7 +110,9 @@ namespace PWManager.Presentation
                     segment.Title = string.Join(" / ", segment.Participants.Select(Name));
                     var winners = new[] { match.FinishPerformerId ?? match.WinnerId }.Concat(match.IndirectWinnerIds ?? new List<string>())
                         .Where(x => !string.IsNullOrEmpty(x)).Distinct().Select(Name);
-                    segment.Result = (match.FinishType == MatchFinishType.Draw ? "무승부" : $"{string.Join(" & ", winners)} 승리") + $" · ★ {match.CriticReview?.DisplayedStars:0.##}";
+                    segment.Result = !string.IsNullOrEmpty(match.CancellationReason) ? match.CancellationReason : (match.WasStoppedByInjury ? "실제 부상으로 경기 중단" :
+                        match.FinishType == MatchFinishType.Draw ? "무승부" : $"{string.Join(" & ", winners)} 승리");
+                    if (match.CriticReview != null) segment.Result += $" · ★ {match.CriticReview.DisplayedStars:0.##}";
                     foreach (var spot in match.SpotResults ?? new List<SpotResultState>())
                         segment.Result += $"\n특수 스팟 · {SpecialMatchSpotCatalog.Find(spot.SpotId)?.Name ?? "스팟"} · {MatchSpotEvaluator.ResultText(spot)}" +
                             (spot.Result >= SpotExecutionResult.Success && spot.FinalSpotScore < 0 ? " · 반복 역반응" : spot.RepeatCount > 0 ? " · 반복 사용" : string.Empty);
@@ -123,7 +125,8 @@ namespace PWManager.Presentation
                     if (segment.Lines == null || segment.Lines.Count == 0)
                         segment.Lines = PromoFallbackNarration.Create(PromoContextBuilder.Build(save, promo)).Lines;
                     segment.Title = "프로모 · " + string.Join(" / ", segment.Participants.Select(Name));
-                    segment.Result = $"프로모 종료 · {promo.PromoScore:0.0}점";
+                    segment.Result = !string.IsNullOrEmpty(promo.CancellationReason) ? promo.CancellationReason : $"프로모 종료 · {promo.PromoScore:0.0}점";
+                    if (!string.IsNullOrEmpty(promo.CancellationReason)) segment.Lines = new() { new NarrativeLineState { Text = promo.CancellationReason } };
                 }
                 if (segment.Lines.Count == 0) throw new InvalidOperationException("세그먼트의 해설이 없습니다.");
                 segments.Add(segment);

@@ -1,0 +1,182 @@
+﻿Id,Key,KoreanName,EnglishName,Action,Situation,Kind,TargetRegion,AllowedStyleIds,Enabled,CanUseGenerally,CanBeSignature,CanBeFinisher,BrawlingWeight,PowerWeight,TechnicalWeight,HighFlyingWeight,ExecutionDifficulty,SellingDifficulty,RequiredStat,RequiredStatValue,MotionProfile,EndPosture,TravelDistance,ExecutionStyle
+move_001,legacy-move_001,러닝 니 스트라이크,Running Knee Strike,Finisher,StandingHeavyStrike,Strike,Body,,True,False,True,True,0.7,0.0,0.3,0.0,11.0,7.0,None,0.0,Strike,Supine,0.07,Running
+move_002,legacy-move_002,디스커스 래리어트,Discus Lariat,Finisher,StandingHeavyStrike,Strike,Body,,True,False,True,True,0.8,0.2,0.0,0.0,10.0,7.0,None,0.0,Strike,Supine,0.07,Stationary
+move_003,legacy-move_003,스피닝 백피스트,Spinning Backfist,Finisher,StandingHeavyStrike,Strike,Body,,True,False,True,True,0.85,0.0,0.15,0.0,10.0,7.0,None,0.0,Strike,Supine,0.07,Stationary
+move_004,legacy-move_004,스피어,Spear,Finisher,StandingHeavyStrike,Strike,Body,,True,False,True,True,0.45,0.55,0.0,0.0,9.0,10.0,None,0.0,Strike,Supine,0.07,Running
+move_005,legacy-move_005,싯아웃 파워밤,Sit-Out Powerbomb,Finisher,StandingGrapple,Grapple,Body,,True,False,True,True,0.0,0.75,0.25,0.0,13.0,10.0,Power,10.0,Powerbomb,Supine,0.32,Stationary
+move_006,legacy-move_006,초크슬램,Chokeslam,Finisher,StandingHeavyStrike,Grapple,Body,,True,False,True,True,0.15,0.85,0.0,0.0,11.0,7.0,Power,9.0,Slam,Supine,0.24,Stationary
+move_007,legacy-move_007,스파인버스터,Spinebuster,Finisher,StandingGrapple,Grapple,Body,,True,False,True,True,0.0,0.65,0.35,0.0,10.0,7.0,None,0.0,Slam,Supine,0.24,Stationary
+move_008,legacy-move_008,파일드라이버,Piledriver,Finisher,StandingGrapple,Grapple,Body,,True,False,True,True,0.0,0.45,0.55,0.0,12.0,16.0,Technical,11.0,Slam,Supine,0.24,Stationary
+move_009,legacy-move_009,저먼 수플렉스,German Suplex,Finisher,StandingRearGrapple,Grapple,Body,,True,False,True,True,0.0,0.45,0.55,0.0,12.0,10.0,None,0.0,Suplex,Supine,0.35,Stationary
+move_010,legacy-move_010,드래곤 수플렉스,Dragon Suplex,Finisher,StandingRearGrapple,Grapple,Body,,True,False,True,True,0.0,0.3,0.7,0.0,14.0,13.0,Technical,10.0,Suplex,Supine,0.35,Stationary
+move_011,crossface,크로스페이스,Crossface,Submission,GroundSubmission,Submission,Head,,True,True,True,True,0.15,0.0,0.85,0.0,12.0,7.0,Technical,9.0,Hold,Prone,0,Stationary
+move_012,legacy-move_012,앵클 락,Ankle Lock,Finisher,GroundSubmission,Submission,Legs,,True,False,True,True,0.1,0.0,0.9,0.0,11.0,7.0,None,0.0,Hold,Supine,0,Stationary
+move_013,legacy-move_013,프로그 스플래시,Frog Splash,Finisher,DivingGrounded,Aerial,Body,,True,False,True,True,0.0,0.0,0.2,0.8,13.0,7.0,HighFlying,9.0,Dive,Supine,0.18,Aerial
+move_014,legacy-move_014,문설트,Moonsault,Finisher,DivingGrounded,Aerial,Body,,True,False,True,True,0.0,0.0,0.15,0.85,15.0,7.0,HighFlying,11.0,Dive,Supine,0.18,Aerial
+move_015,legacy-move_015,슈팅 스타 프레스,Shooting Star Press,Finisher,DivingGrounded,Aerial,Body,,True,False,True,True,0.0,0.0,0.1,0.9,18.0,7.0,HighFlying,14.0,Dive,Supine,0.18,Aerial
+move_016,legacy-move_016,450 스플래시,450 Splash,Finisher,DivingGrounded,Aerial,Body,,True,False,True,True,0.0,0.0,0.1,0.9,17.0,7.0,HighFlying,13.0,Dive,Supine,0.18,Aerial
+move_017,legacy-move_017,스프링보드 커터,Springboard Cutter,Finisher,DivingGrounded,Aerial,Body,,True,False,True,True,0.0,0.0,0.4,0.6,15.0,10.0,HighFlying,11.0,Dive,Supine,0.18,Aerial
+move_018,diving-elbow,다이빙 엘보 드롭,Diving Elbow Drop,Dive,DivingGrounded,Aerial,Body,,True,True,True,True,0.45,0.0,0.0,0.55,12.0,7.0,None,0.0,Dive,Supine,0.18,Aerial
+move_019,legacy-move_019,토네이도 DDT,Tornado DDT,Finisher,StandingGrapple,Grapple,Body,,True,False,True,True,0.0,0.0,0.55,0.45,13.0,10.0,None,0.0,Slam,Supine,0.24,Stationary
+move_020,superkick,슈퍼킥,Superkick,HeavyStrike,StandingHeavyStrike,Strike,Head,style_001;style_003;style_004;style_005;style_007,True,True,True,True,0.6,0.0,0.4,0.0,11.0,7.0,None,0.0,Kick,Supine,0.1,Stationary
+move_021,legacy-move_021,바이시클 킥,Bicycle Kick,Finisher,StandingHeavyStrike,Strike,Body,,True,False,True,True,0.65,0.35,0.0,0.0,12.0,7.0,None,0.0,Strike,Supine,0.07,Stationary
+move_022,legacy-move_022,데스 밸리 드라이버,Death Valley Driver,Finisher,StandingGrapple,Grapple,Body,,True,False,True,True,0.0,0.5,0.5,0.0,10.0,13.0,Power,10.0,Slam,Supine,0.24,Stationary
+move_023,legacy-move_023,브리징 수플렉스,Bridging Suplex,Finisher,StandingGrapple,Grapple,Body,,True,False,True,True,0.0,0.25,0.75,0.0,13.0,10.0,None,0.0,Suplex,Supine,0.35,Stationary
+move_024,legacy-move_024,코크스크루 센턴,Corkscrew Senton,Finisher,DivingGrounded,Aerial,Body,,True,False,True,True,0.0,0.0,0.25,0.75,16.0,7.0,HighFlying,12.0,Dive,Supine,0.18,Aerial
+move_101,circling,서클링,Circling,Probe,Probe,Grapple,Body,,True,True,False,False,0,0,1,0,6,7,None,0,Circle,Standing,0,Stationary
+move_102,hand-fight,손싸움,Hand Fight,Probe,Probe,Grapple,Body,,True,True,False,False,0,0,1,0,6,7,None,0,HandFight,Standing,0,Stationary
+move_103,tie-up,칼라 앤 엘보 타이업,Tie Up,TieUp,TieUp,Grapple,Body,,True,True,False,False,0,0,1,0,6,7,None,0,TieUp,Standing,0,Stationary
+move_104,chain-reset,거리 벌리기,Chain Reset,Chain,Chain,Grapple,Body,,True,True,False,False,0,0,1,0,6,7,None,0,Chain,Standing,0,Stationary
+move_105,chain-rollthrough,롤스루 리스트록,Chain Rollthrough,Chain,Chain,Grapple,Body,,True,True,False,False,0,0,1,0,6,7,None,0,Chain,Standing,0,Stationary
+move_106,chain-switch,뒤잡기 전환,Chain Switch,Chain,Chain,Grapple,Body,,True,True,False,False,0,0,1,0,6,7,None,0,Chain,Standing,0,Stationary
+move_107,chain-headlock-takedown,헤드록 테이크다운,Chain Headlock Takedown,Chain,Chain,Grapple,Body,,True,True,False,False,0,0,1,0,6,7,None,0,Takedown,Supine,0.15,Stationary
+move_108,chain-waistlock-takedown,웨이스트록 테이크다운,Chain Waistlock Takedown,Chain,Chain,Grapple,Body,,True,True,False,False,0,0,1,0,6,7,None,0,Takedown,Supine,0.15,Stationary
+move_109,chain-headlock,사이드 헤드록,Chain Headlock,Chain,Chain,Grapple,Body,,True,True,False,False,0,0,1,0,6,7,None,0,Hold,Standing,0,Stationary
+move_110,chain-wristlock,리스트록,Chain Wristlock,Chain,Chain,Grapple,Body,,True,True,False,False,0,0,1,0,6,7,None,0,Hold,Standing,0,Stationary
+move_111,chain-hammerlock,해머록,Chain Hammerlock,Chain,Chain,Grapple,Body,,True,True,False,False,0,0,1,0,6,7,None,0,Hold,Standing,0,Stationary
+move_112,chain-waistlock,웨이스트록,Chain Waistlock,Chain,Chain,Grapple,Body,,True,True,False,False,0,0,1,0,6,7,None,0,Hold,Standing,0,Stationary
+move_113,chop,나이프에지 찹,Chop,BasicStrike,StandingStrike,Strike,Body,,True,True,False,False,1,0,0,0,6,7,None,0,Strike,Supine,0.07,Stationary
+move_114,forearm,포어암 스매시,Forearm,BasicStrike,StandingStrike,Strike,Head,,True,True,False,False,1,0,0,0,6,7,None,0,Strike,Supine,0.07,Stationary
+move_115,body-kick,미들 킥,Body Kick,BasicStrike,StandingStrike,Strike,Body,,True,True,False,False,1,0,0,0,6,7,None,0,Kick,Supine,0.1,Stationary
+move_116,clothesline,클로스라인,Clothesline,HeavyStrike,StandingHeavyStrike,Strike,Head,,True,True,True,True,1,0,0,0,6,7,None,0,Strike,Supine,0.07,Stationary
+move_117,big-boot,빅 부트,Big Boot,HeavyStrike,StandingHeavyStrike,Strike,Head,style_002;style_006;style_007,True,True,True,True,1,0,0,0,6,7,None,0,Kick,Supine,0.1,Stationary
+move_118,knee-lift,니 리프트,Knee Lift,HeavyStrike,StandingHeavyStrike,Strike,Body,,True,True,True,True,1,0,0,0,6,7,None,0,Kick,Supine,0.1,Stationary
+move_119,body-slam,보디슬램,Body Slam,Grapple,StandingGrapple,Grapple,Body,,True,True,True,True,0,0,1,0,6,7,None,0,Slam,Supine,0.24,Stationary
+move_120,snap-suplex,스냅 수플렉스,Snap Suplex,Grapple,StandingGrapple,Grapple,Body,,True,True,True,True,0,0,1,0,6,7,None,0,Suplex,Supine,0.35,Stationary
+move_121,snapmare,스냅메어,Snapmare,Grapple,StandingGrapple,Grapple,Body,,True,True,True,True,0,0,1,0,6,7,None,0,Snapmare,Seated,0.23,Stationary
+move_122,stomp,복부 스톰프,Stomp,GroundAttack,GroundStrike,Strike,Body,,True,True,False,False,1,0,0,0,6,7,None,0,Strike,Supine,0,Stationary
+move_123,elbow-drop,엘보드롭,Elbow Drop,GroundAttack,GroundStrike,Strike,Body,,True,True,False,False,1,0,0,0,6,7,None,0,GroundDrop,Supine,0,Stationary
+move_124,knee-drop,니 드롭,Knee Drop,GroundAttack,GroundStrike,Strike,Body,,True,True,False,False,1,0,0,0,6,7,None,0,GroundDrop,Supine,0,Stationary
+move_125,dragon-screw,드래곤 스크루,Dragon Screw,LimbAttack,StandingLimb,Grapple,Legs,,True,True,False,False,0,0,1,0,6,7,None,0,LimbControl,Supine,0.08,Stationary
+move_126,low-kick,로 킥,Low Kick,LimbAttack,StandingLimb,Strike,Legs,,True,True,False,False,0,0,1,0,6,7,None,0,Kick,Supine,0.1,Stationary
+move_127,leg-stomp,무릎 스톰프,Leg Stomp,LimbAttack,GroundLimb,Strike,Legs,,True,True,False,False,0,0,1,0,6,7,None,0,Strike,Supine,0.07,Stationary
+move_128,leg-elbow,무릎 엘보드롭,Leg Elbow,LimbAttack,GroundLimb,Strike,Legs,,True,True,False,False,0,0,1,0,6,7,None,0,GroundDrop,Supine,0.07,Stationary
+move_129,arm-wringer,암 링거,Arm Wringer,LimbAttack,StandingLimb,Strike,Arms,,True,True,False,False,0,0,1,0,6,7,None,0,Strike,Supine,0.07,Stationary
+move_130,arm-stomp,팔 스톰프,Arm Stomp,LimbAttack,GroundLimb,Strike,Arms,,True,True,False,False,0,0,1,0,6,7,None,0,Strike,Supine,0.07,Stationary
+move_131,head-elbow,백 엘보,Head Elbow,LimbAttack,StandingLimb,Strike,Head,,True,True,False,False,0,0,1,0,6,7,None,0,Strike,Supine,0.07,Stationary
+move_132,head-knee,머리 니 드롭,Head Knee,LimbAttack,GroundLimb,Strike,Head,,True,True,False,False,0,0,1,0,6,7,None,0,GroundDrop,Supine,0.1,Stationary
+move_133,body-knee,복부 니 스트라이크,Body Knee,LimbAttack,StandingLimb,Strike,Body,,True,True,False,False,0,0,1,0,6,7,None,0,Kick,Supine,0.1,Stationary
+move_134,body-elbow,복부 엘보드롭,Body Elbow,LimbAttack,GroundLimb,Strike,Body,,True,True,False,False,0,0,1,0,6,7,None,0,GroundDrop,Supine,0.07,Stationary
+move_135,boston-crab,보스턴 크랩,Boston Crab,Submission,GroundSubmission,Submission,Legs,,True,True,True,True,0,0,1,0,6,7,None,0,Hold,Prone,0,Stationary
+move_136,single-leg-crab,싱글 레그 크랩,Single Leg Crab,Submission,GroundSubmission,Submission,Legs,,True,True,True,True,0,0,1,0,6,7,None,0,Hold,Prone,0,Stationary
+move_137,armbar,암바,Armbar,Submission,GroundSubmission,Submission,Arms,,True,True,True,True,0,0,1,0,6,7,None,0,Hold,Supine,0,Stationary
+move_138,kimura,기무라 록,Kimura,Submission,GroundSubmission,Submission,Arms,,True,True,True,True,0,0,1,0,6,7,None,0,Hold,Supine,0,Stationary
+move_139,chinlock,리어 친록,Chinlock,Submission,GroundSubmission,Submission,Head,,True,True,True,True,0,0,1,0,6,7,None,0,Hold,Seated,0,Stationary
+move_140,ground-sleeper,그라운드 슬리퍼 홀드,Ground Sleeper,Submission,GroundSubmission,Submission,Head,,True,True,True,True,0,0,1,0,6,7,None,0,Hold,Supine,0,Stationary
+move_141,body-scissors,보디 시저스,Body Scissors,Submission,GroundSubmission,Submission,Body,,True,True,True,True,0,0,1,0,6,7,None,0,Hold,Supine,0,Stationary
+move_142,compat-diving-elbow,다이빙 엘보드롭,Diving Elbow,Dive,DivingGrounded,Aerial,Body,,False,False,False,False,0,0,0,1,6,7,None,0,Dive,Supine,0.18,Aerial
+move_143,diving-splash,다이빙 스플래시,Diving Splash,Dive,DivingGrounded,Aerial,Body,style_002;style_004;style_005;style_006;style_007,True,True,True,True,0,0,0,1,6,7,None,0,Dive,Supine,0.18,Aerial
+move_144,double-suplex,더블 수플렉스,Double Suplex,DoubleTeam,DoubleTeamStanding,Grapple,Body,,True,True,False,False,0,0,1,0,6,7,None,0,Suplex,Supine,0.35,Stationary
+move_145,double-elbow,더블 엘보드롭,Double Elbow,DoubleTeam,DoubleTeamGrounded,Strike,Body,,True,True,False,False,1,0,0,0,6,7,None,0,GroundDrop,Supine,0.07,Stationary
+move_146,uppercut,유러피언 어퍼컷,Uppercut,BasicStrike,StandingStrike,Strike,Head,,True,True,False,False,1,0,0,0,6,7,None,0,Strike,Supine,0.07,Stationary
+move_147,back-elbow,백 엘보,Back Elbow,BasicStrike,StandingStrike,Strike,Head,,True,True,False,False,1,0,0,0,6,7,None,0,Strike,Supine,0.07,Stationary
+move_148,body-punch,복부 펀치,Body Punch,BasicStrike,StandingStrike,Strike,Body,,True,True,False,False,1,0,0,0,6,7,None,0,Strike,Supine,0.07,Stationary
+move_149,dropkick,드롭킥,Dropkick,HeavyStrike,StandingHeavyStrike,Strike,Body,style_003;style_004;style_005;style_007,True,True,True,True,1,0,0,0,6,7,None,0,Kick,Supine,0.1,Stationary
+move_150,compat-superkick,슈퍼킥,Superkick,HeavyStrike,StandingHeavyStrike,Strike,Head,style_001;style_003;style_004;style_005;style_007,False,False,False,False,1,0,0,0,6,7,None,0,Kick,Supine,0.1,Stationary
+move_151,discus-elbow,디스커스 엘보,Discus Elbow,HeavyStrike,StandingHeavyStrike,Strike,Head,,True,True,True,True,1,0,0,0,6,7,None,0,Strike,Supine,0.07,Stationary
+move_152,hip-toss,힙 토스,Hip Toss,Grapple,StandingGrapple,Grapple,Body,,True,True,True,True,0,0,1,0,6,7,None,0,Slam,Supine,0.24,Stationary
+move_153,arm-drag,암 드래그,Arm Drag,Grapple,StandingGrapple,Grapple,Arms,,True,True,True,True,0,0,1,0,6,7,None,0,Slam,Supine,0.24,Stationary
+move_154,belly-to-belly,벨리 투 벨리 수플렉스,Belly To Belly,Grapple,StandingGrapple,Grapple,Body,style_002;style_003;style_006;style_007,True,True,True,True,0,1,0,0,6,7,None,0,Suplex,Supine,0.35,Stationary
+move_155,back-suplex,백 수플렉스,Back Suplex,Grapple,StandingRearGrapple,Grapple,Body,,True,True,True,True,0,0,1,0,6,7,None,0,Suplex,Supine,0.35,Stationary
+move_156,gutbuster,것버스터,Gutbuster,Grapple,StandingGrapple,Grapple,Body,style_002;style_003;style_006;style_007,True,True,True,True,0,1,0,0,6,7,None,0,Slam,Supine,0.24,Stationary
+move_157,neckbreaker,넥브레이커,Neckbreaker,Grapple,StandingGrapple,Grapple,Head,,True,True,True,True,0,0,1,0,6,7,None,0,Slam,Supine,0.24,Stationary
+move_158,sidewalk-slam,사이드워크 슬램,Sidewalk Slam,Grapple,StandingGrapple,Grapple,Body,style_002;style_006;style_007,True,True,True,True,0,1,0,0,6,7,None,0,Slam,Supine,0.24,Stationary
+move_159,vertical-suplex,버티컬 수플렉스,Vertical Suplex,Grapple,StandingGrapple,Grapple,Body,,True,True,True,True,0,1,0,0,6,7,None,0,Suplex,Supine,0.35,Stationary
+move_160,senton,센턴,Senton,GroundAttack,GroundStrike,Strike,Body,,True,True,False,False,1,0,0,0,6,7,None,0,GroundDrop,Supine,0,Stationary
+move_161,leg-drop,레그드롭,Leg Drop,GroundAttack,GroundStrike,Strike,Head,,True,True,False,False,1,0,0,0,6,7,None,0,GroundDrop,Supine,0,Stationary
+move_162,fist-drop,피스트드롭,Fist Drop,GroundAttack,GroundStrike,Strike,Head,,True,True,False,False,1,0,0,0,6,7,None,0,GroundDrop,Supine,0,Stationary
+move_163,arm-breaker,암브레이커,Arm Breaker,LimbAttack,StandingLimb,Grapple,Arms,,True,True,False,False,0,0,1,0,6,7,None,0,LimbControl,Supine,0.08,Stationary
+move_164,arm-knee,팔 니 드롭,Arm Knee,LimbAttack,GroundLimb,Strike,Arms,,True,True,False,False,0,0,1,0,6,7,None,0,GroundDrop,Supine,0.1,Stationary
+move_165,shin-breaker,신브레이커,Shin Breaker,LimbAttack,StandingLimb,Grapple,Legs,,True,True,False,False,0,0,1,0,6,7,None,0,LimbControl,Supine,0.08,Stationary
+move_166,leg-twist,누운 다리 비틀기,Leg Twist,LimbAttack,GroundLimb,Strike,Legs,,True,True,False,False,0,0,1,0,6,7,None,0,Strike,Supine,0.07,Stationary
+move_167,figure-four,피겨 포 레그록,Figure Four,Submission,GroundSubmission,Submission,Legs,style_003;style_007,True,True,True,True,0,0,1,0,6,7,None,0,Hold,Supine,0,Stationary
+move_168,compat-crossface,크로스페이스,Crossface,Submission,GroundSubmission,Submission,Head,,False,False,False,False,0,0,1,0,6,7,None,0,Hold,Supine,0,Stationary
+move_169,abdominal-stretch,앱도미널 스트레치,Abdominal Stretch,StandingHold,StandingSubmission,Submission,Body,,True,True,True,False,0,0,1,0,6,7,None,0,Hold,Standing,0,Stationary
+move_170,bearhug,베어허그,Bearhug,StandingHold,StandingSubmission,Submission,Body,style_002;style_006;style_007,True,True,True,False,0,1,0,0,6,7,None,0,Hold,Standing,0,Stationary
+move_171,standing-sleeper,스탠딩 슬리퍼 홀드,Standing Sleeper,StandingHold,StandingSubmission,Submission,Head,,True,True,True,False,0,0,1,0,6,7,None,0,Hold,Standing,0,Stationary
+move_172,diving-crossbody,다이빙 크로스보디,Diving Crossbody,Dive,DivingStanding,Aerial,Body,style_004;style_005;style_007,True,True,True,True,0,0,0,1,6,7,None,0,Dive,Supine,0.18,Aerial
+move_173,diving-double-axe,다이빙 더블 액스 핸들,Diving Double Axe,Dive,DivingStanding,Aerial,Head,,True,True,True,True,0,0,0,1,6,7,None,0,Dive,Supine,0.18,Aerial
+move_174,diving-leg-drop,다이빙 레그드롭,Diving Leg Drop,Dive,DivingGrounded,Aerial,Head,style_004;style_005;style_007,True,True,True,True,0,0,0,1,6,7,None,0,Dive,Supine,0.18,Aerial
+move_175,running-clothesline,러닝 클로스라인,Running Clothesline,RunningAttack,RunningStanding,Strike,Head,,True,True,False,False,1,0,0,0,6,7,None,0,Strike,Supine,0.07,Running
+move_176,running-forearm,러닝 포어암,Running Forearm,RunningAttack,RunningStanding,Strike,Head,,True,True,False,False,1,0,0,0,6,7,None,0,Strike,Supine,0.07,Running
+move_177,shoulder-block,숄더 블록,Shoulder Block,RunningAttack,RunningStanding,Strike,Body,,True,True,False,False,0,1,0,0,6,7,None,0,Strike,Supine,0.07,Running
+move_178,running-dropkick,러닝 드롭킥,Running Dropkick,RunningAttack,RunningStanding,Strike,Body,style_003;style_004;style_005;style_007,True,True,False,False,1,0,0,0,6,7,None,0,Kick,Supine,0.1,Running
+move_179,running-powerslam,스냅 파워슬램,Running Powerslam,RunningAttack,RunningStanding,Grapple,Body,style_002;style_006;style_007,True,True,False,False,0,1,0,0,6,7,None,0,Slam,Supine,0.24,Running
+move_180,back-body-drop,백 보디드롭,Back Body Drop,RunningAttack,RunningStanding,Grapple,Body,style_001;style_002;style_003;style_006;style_007,True,True,False,False,0,1,0,0,6,7,None,0,Slam,Supine,0.24,Running
+move_181,running-elbow-drop,러닝 엘보드롭,Running Elbow Drop,RunningAttack,RunningGrounded,Strike,Body,,True,True,False,False,1,0,0,0,6,7,None,0,Strike,Supine,0.07,Running
+move_182,running-senton,러닝 센턴,Running Senton,RunningAttack,RunningGrounded,Strike,Body,,True,True,False,False,1,0,0,0,6,7,None,0,Strike,Supine,0.07,Running
+move_183,corner-clothesline,코너 클로스라인,Corner Clothesline,CornerAttack,CornerStanding,Strike,Head,,True,True,False,False,1,0,0,0,6,7,None,0,Strike,Supine,0.07,Running
+move_184,corner-splash,코너 스플래시,Corner Splash,CornerAttack,CornerStanding,Strike,Body,,True,True,False,False,0,1,0,0,6,7,None,0,Strike,Supine,0.07,Running
+move_185,corner-knee,코너 니 스트라이크,Corner Knee,CornerAttack,CornerStanding,Strike,Body,,True,True,False,False,1,0,0,0,6,7,None,0,Kick,Supine,0.1,Running
+move_186,ringside-forearm,링사이드 포어암,Ringside Forearm,RingsideAttack,RingsideStanding,Strike,Head,,True,True,False,False,1,0,0,0,6,7,None,0,Strike,Supine,0.07,Stationary
+move_187,barricade-slam,방호벽에 밀어붙이기,Barricade Slam,RingsideAttack,RingsideStanding,Strike,Body,,True,True,False,False,0,1,0,0,6,7,None,0,Strike,Supine,0.07,Stationary
+move_188,ringside-stomp,링사이드 스톰프,Ringside Stomp,RingsideAttack,RingsideGrounded,Strike,Body,,True,True,False,False,1,0,0,0,6,7,None,0,Strike,Supine,0.07,Stationary
+move_189,ringside-elbow,링사이드 엘보드롭,Ringside Elbow,RingsideAttack,RingsideGrounded,Strike,Body,,True,True,False,False,1,0,0,0,6,7,None,0,Strike,Supine,0.07,Stationary
+move_190,superplex,슈퍼플렉스,Superplex,TopRopeAttack,TopRopeGrapple,Grapple,Body,,True,True,False,False,0,0,1,0,6,7,None,0,Suplex,Supine,0.35,Aerial
+move_191,avalanche-hip-toss,코너 위 힙 토스,Avalanche Hip Toss,TopRopeAttack,TopRopeGrapple,Grapple,Body,,True,True,False,False,0,0,1,0,6,7,None,0,Slam,Supine,0.24,Aerial
+move_192,finishing-lariat,래리어트,Finishing Lariat,Finisher,StandingHeavyStrike,Strike,Head,,True,True,True,True,0,1,0,0,6,7,None,0,Strike,Supine,0.07,Stationary
+move_193,finishing-powerslam,파워슬램,Finishing Powerslam,Finisher,StandingHeavyStrike,Grapple,Body,style_002;style_006;style_007,True,True,True,True,0,1,0,0,6,7,None,0,Slam,Supine,0.24,Stationary
+move_194,finishing-senton,센턴,Finishing Senton,Finisher,GroundStrike,Strike,Body,,True,True,True,True,0,1,0,0,6,7,None,0,GroundDrop,Supine,0.07,Stationary
+move_195,finishing-elbow,점핑 엘보드롭,Finishing Elbow,Finisher,GroundStrike,Strike,Body,,True,True,True,True,0,1,0,0,6,7,None,0,GroundDrop,Supine,0.07,Stationary
+move_201,rolling-elbow,롤링 엘보,Rolling Elbow,HeavyStrike,StandingHeavyStrike,Strike,Head,style_001;style_003;style_007,True,True,True,False,1,0,0,0,7,7,None,0,Strike,Supine,0.07,Stationary
+move_202,spinning-heel-kick,스피닝 힐 킥,Spinning Heel Kick,HeavyStrike,StandingHeavyStrike,Strike,Head,style_003;style_004;style_005;style_007,True,True,True,True,1,0,0,0,10,7,None,0,Kick,Supine,0.1,Stationary
+move_203,enzuigiri,엔즈이기리,Enzuigiri,HeavyStrike,StandingHeavyStrike,Strike,Head,style_003;style_004;style_005;style_007,True,True,True,False,1,0,0,0,7,7,None,0,Strike,Supine,0.07,Stationary
+move_204,headbutt,헤드버트,Headbutt,HeavyStrike,StandingHeavyStrike,Strike,Head,style_001;style_002;style_006;style_007,True,True,True,False,1,0,0,0,7,7,None,0,Strike,Supine,0.07,Stationary
+move_205,scoop-powerslam,스쿱 파워슬램,Scoop Powerslam,Grapple,StandingGrapple,Grapple,Body,style_002;style_006;style_007,True,True,True,True,0,1,0,0,10,7,None,0,Slam,Supine,0.24,Stationary
+move_206,fallaway-slam,폴어웨이 슬램,Fallaway Slam,Grapple,StandingGrapple,Grapple,Body,style_002;style_006;style_007,True,True,True,False,0,1,0,0,7,7,None,0,Slam,Supine,0.24,Stationary
+move_207,backbreaker,백브레이커,Backbreaker,Grapple,StandingGrapple,Grapple,Body,,True,True,True,False,0,1,0,0,7,7,None,0,Slam,Supine,0.24,Stationary
+move_208,swinging-neckbreaker,스윙잉 넥브레이커,Swinging Neckbreaker,Grapple,StandingGrapple,Grapple,Head,style_001;style_003;style_007,True,True,True,True,0,0,1,0,10,7,None,0,Slam,Supine,0.24,Stationary
+move_209,bulldog,불도그,Bulldog,RunningAttack,RunningRearStanding,Grapple,Head,style_001;style_003;style_004;style_005;style_007,True,True,True,False,0,0,1,0,7,7,None,0,Bulldog,Prone,0.22,Running
+move_210,standing-powerbomb,스탠딩 파워밤,Standing Powerbomb,Grapple,StandingGrapple,Grapple,Body,style_002;style_006;style_007,True,True,True,True,0,1,0,0,10,7,None,0,Powerbomb,Supine,0.32,Stationary
+move_211,brainbuster,브레인버스터,Brainbuster,Grapple,StandingGrapple,Grapple,Head,style_002;style_003;style_007,True,True,True,True,0,0,1,0,10,7,None,0,Suplex,Supine,0.35,Stationary
+move_212,michinoku-driver,미치노쿠 드라이버,Michinoku Driver,Grapple,StandingGrapple,Grapple,Body,style_002;style_003;style_004;style_005;style_007,True,True,True,True,0,0,1,0,10,7,None,0,Slam,Supine,0.24,Stationary
+move_213,standing-hurricanrana,스탠딩 허리케인라나,Standing Hurricanrana,Grapple,StandingGrapple,Grapple,Head,style_004;style_005;style_007,True,True,True,False,0,0,1,0,7,7,None,0,Takedown,Supine,0.25,Stationary
+move_214,ground-big-splash,빅 스플래시,Ground Big Splash,GroundAttack,GroundStrike,Strike,Body,style_002;style_006;style_007,True,True,True,True,0,1,0,0,10,7,None,0,GroundDrop,Supine,0,Stationary
+move_215,ground-double-stomp,더블 풋 스톰프,Ground Double Stomp,GroundAttack,GroundStrike,Strike,Body,style_003;style_004;style_005;style_007,True,True,True,False,1,0,0,0,7,7,None,0,GroundDrop,Supine,0,Stationary
+move_216,heel-hook,힐 훅,Heel Hook,Submission,GroundSubmission,Submission,Legs,style_003;style_007,True,True,True,True,0,0,1,0,10,7,None,0,Hold,Supine,0,Stationary
+move_217,kneebar,니바,Kneebar,Submission,GroundSubmission,Submission,Legs,style_003;style_007,True,True,True,True,0,0,1,0,10,7,None,0,Hold,Supine,0,Stationary
+move_218,fujiwara-armbar,후지와라 암바,Fujiwara Armbar,Submission,GroundSubmission,Submission,Arms,style_003;style_007,True,True,True,True,0,0,1,0,10,7,None,0,Hold,Prone,0,Stationary
+move_219,triangle-choke,트라이앵글 초크,Triangle Choke,Submission,GroundSubmission,Submission,Head,style_003;style_007,True,True,True,True,0,0,1,0,10,7,None,0,Hold,Kneeling,0,Stationary
+move_220,sharpshooter,샤프슈터,Sharpshooter,Submission,GroundSubmission,Submission,Legs,style_003;style_007,True,True,True,True,0,0,1,0,10,7,None,0,Hold,Prone,0,Stationary
+move_221,indian-deathlock,인디언 데스록,Indian Deathlock,Submission,GroundSubmission,Submission,Legs,style_003;style_007,True,True,True,False,0,0,1,0,7,7,None,0,Hold,Prone,0,Stationary
+move_222,missile-dropkick,미사일 드롭킥,Missile Dropkick,Dive,DivingStanding,Aerial,Body,style_004;style_005;style_007,True,True,True,True,0,0,0,1,10,7,None,0,Dive,Supine,0.18,Aerial
+move_223,diving-hurricanrana,다이빙 허리케인라나,Diving Hurricanrana,Dive,DivingStanding,Aerial,Head,style_004;style_005;style_007,True,True,True,False,0,0,0,1,7,7,None,0,Takedown,Supine,0.25,Aerial
+move_224,corner-back-elbow,코너 백 엘보,Corner Back Elbow,CornerAttack,CornerStanding,Strike,Head,,True,True,False,False,1,0,0,0,7,7,None,0,Strike,Supine,0.07,Running
+move_225,ringside-headbutt,링사이드 헤드버트,Ringside Headbutt,RingsideAttack,RingsideStanding,Strike,Head,style_001;style_002;style_006;style_007,True,True,False,False,1,0,0,0,7,7,None,0,Strike,Supine,0.07,Stationary
+move_226,ringside-suplex,링사이드 수플렉스,Ringside Suplex,RingsideAttack,RingsideStanding,Grapple,Body,style_001;style_002;style_003;style_006;style_007,True,True,False,False,0,0,1,0,7,7,None,0,Suplex,Supine,0.35,Stationary
+move_227,avalanche-powerslam,코너 위 파워슬램,Avalanche Powerslam,TopRopeAttack,TopRopeGrapple,Grapple,Body,style_002;style_006;style_007,True,True,False,False,0,1,0,0,10,7,None,0,Slam,Supine,0.24,Aerial
+move_228,avalanche-ddt,코너 위 DDT,Avalanche Ddt,TopRopeAttack,TopRopeGrapple,Grapple,Head,style_003;style_004;style_005;style_007,True,True,False,False,0,0,1,0,10,7,None,0,Bulldog,Prone,0.22,Aerial
+move_301,rear-forearm,후면 포어암,Rear Forearm,HeavyStrike,StandingRearStrike,Strike,Head,,True,True,False,False,1,0,0,0,6,7,None,0,Strike,Supine,0.07,Stationary
+move_302,rear-german,후면 저먼 수플렉스,Rear German,Grapple,StandingRearGrapple,Grapple,Body,style_002;style_003;style_006;style_007,True,True,False,False,0,0,1,0,6,7,None,0,Suplex,Supine,0.35,Stationary
+move_303,rear-sleeper,후면 슬리퍼 홀드,Rear Sleeper,StandingHold,StandingRearSubmission,Submission,Head,style_003;style_007,True,True,False,False,0,0,1,0,6,7,None,0,Hold,Standing,0,Stationary
+move_304,prone-camel-clutch,카멜 클러치,Prone Camel Clutch,Submission,GroundProne,Submission,Body,style_001;style_003;style_006;style_007,True,True,False,False,0,0,1,0,6,7,None,0,Hold,Prone,0,Stationary
+move_305,seated-soccer-kick,앉은 상대 사커 킥,Seated Soccer Kick,GroundAttack,GroundSeated,Strike,Body,style_001;style_003;style_004;style_005;style_007,True,True,False,False,1,0,0,0,6,7,None,0,Kick,Seated,.07,Stationary
+move_306,kneeling-ddt,무릎 꿇은 상대 DDT,Kneeling Ddt,GroundAttack,GroundKneeling,Grapple,Head,style_001;style_003;style_007,True,True,False,False,0,0,1,0,6,7,None,0,Bulldog,Prone,.22,Stationary
+move_307,running-seated-boot,앉은 상대 러닝 빅 부트,Running Seated Boot,Grapple,RunningSeated,Strike,Head,,False,False,False,False,1,0,0,0,6,7,None,0,Kick,Supine,0.1,Running
+move_308,running-kneeling-knee,무릎 꿇은 상대 러닝 니,Running Kneeling Knee,Grapple,RunningKneeling,Strike,Head,,False,False,False,False,1,0,0,0,6,7,None,0,Kick,Supine,0.1,Running
+move_309,rebound-powerslam,반동을 받아 파워슬램,Rebound Powerslam,Grapple,RunningRebound,Grapple,Body,,False,False,False,False,0,0,1,0,6,7,None,0,Slam,Supine,0.24,Running
+move_310,corner-rear-forearm,코너 후면 포어암,Corner Rear Forearm,Grapple,CornerRear,Strike,Body,,False,False,False,False,1,0,0,0,6,7,None,0,Strike,Supine,0.07,Running
+move_311,corner-seated-dropkick,코너에 앉은 상대 드롭킥,Corner Seated Dropkick,Grapple,CornerSeated,Strike,Body,,False,False,False,False,1,0,0,0,6,7,None,0,Kick,Supine,0.1,Running
+move_312,tree-of-woe-stomp,트리 오브 워 스톰프,Tree Of Woe Stomp,Grapple,CornerHanging,Strike,Body,,False,False,False,False,1,0,0,0,6,7,None,0,Strike,Supine,0.07,Stationary
+move_313,avalanche-german,코너 위 후면 저먼 수플렉스,Avalanche German,Grapple,TopRopeRearGrapple,Grapple,Body,,False,False,False,False,0,0,1,0,6,7,None,0,Suplex,Supine,0.35,Aerial
+move_314,outside-crossbody,링 밖 다이빙 크로스보디,Outside Crossbody,Dive,DivingOutsideStanding,Aerial,Body,style_004;style_005;style_007,True,True,False,False,0,0,0,1,10,7,HighFlying,10,Dive,Supine,0.18,Aerial
+move_315,outside-splash,링 밖 다이빙 스플래시,Outside Splash,Dive,DivingOutsideGrounded,Aerial,Body,style_004;style_005;style_007,True,True,False,False,0,0,0,1,10,7,HighFlying,10,Dive,Supine,0.18,Aerial
+move_316,rope-leaning-chop,로프에 기댄 상대 찹,Rope Leaning Chop,Grapple,RopeLeaning,Strike,Body,,False,False,False,False,1,0,0,0,6,7,None,0,Strike,Supine,0.07,Stationary
+move_317,rope-hung-ddt,로프에 걸린 상대 DDT,Rope Hung Ddt,Grapple,RopeHung,Grapple,Head,,False,False,False,False,0,0,1,0,6,7,None,0,Bulldog,Prone,0.22,Stationary
+move_318,springboard-crossbody,스프링보드 크로스보디,Springboard Crossbody,Dive,SpringboardStanding,Aerial,Body,style_004;style_005;style_007,False,False,False,False,0,0,0,1,6,7,None,0,Dive,Supine,0.18,Aerial
+move_319,springboard-moonsault,스프링보드 문설트,Springboard Moonsault,Dive,SpringboardGrounded,Aerial,Body,style_004;style_005;style_007,False,False,False,False,0,0,0,1,6,7,None,0,Dive,Supine,0.18,Aerial
+move_320,springboard-outside-crossbody,링 밖 스프링보드 크로스보디,Springboard Outside Crossbody,Dive,SpringboardOutsideStanding,Aerial,Body,style_004;style_005;style_007,True,True,False,False,0,0,0,1,10,7,HighFlying,10,Dive,Supine,0.18,Aerial
+move_321,springboard-outside-splash,링 밖 스프링보드 스플래시,Springboard Outside Splash,Dive,SpringboardOutsideGrounded,Aerial,Body,style_004;style_005;style_007,True,True,False,False,0,0,0,1,10,7,HighFlying,10,Dive,Supine,0.18,Aerial
+move_322,suicide-dive,수어사이드 다이브,Suicide Dive,Dive,RingsideDive,Aerial,Body,style_004;style_005;style_007,True,True,False,False,0,0,0,1,10,7,HighFlying,10,Dive,Supine,0.18,Aerial
+move_323,apron-suplex,에이프런 수플렉스,Apron Suplex,Grapple,ApronBoth,Grapple,Body,,False,False,False,False,0,0,1,0,6,7,None,0,Suplex,Supine,0.35,Stationary
+move_324,apron-sunset-flip,에이프런에서 선셋 플립,Apron Sunset Flip,Grapple,ApronToRing,Grapple,Body,,False,False,False,False,0,0,1,0,6,7,None,0,Slam,Supine,0.24,Stationary
+move_325,ring-to-apron-forearm,에이프런 상대 포어암,Ring To Apron Forearm,Grapple,RingToApron,Strike,Head,,False,False,False,False,1,0,0,0,6,7,None,0,Strike,Supine,0.07,Stationary
+move_326,apron-outside-elbow,에이프런에서 링 밖 엘보드롭,Apron Outside Elbow,Dive,ApronToOutside,Aerial,Body,style_004;style_005;style_007,False,False,False,False,0,0,0,1,6,7,None,0,Dive,Supine,0.18,Stationary
+move_327,outside-apron-leg-pull,에이프런 상대 다리 당기기,Outside Apron Leg Pull,Grapple,OutsideToApron,Grapple,Legs,,False,False,False,False,0,0,1,0,6,7,None,0,Slam,Supine,0.24,Stationary
+move_328,carry-samoan-drop,캐리 사모안 드롭,Carry Samoan Drop,Grapple,Carry,Grapple,Body,,False,False,False,False,0,0,1,0,6,7,None,0,Slam,Supine,0.24,Stationary
+move_329,ladder-retrieval,사다리 위 물건 획득,Ladder Retrieval,Grapple,Ladder,Grapple,Body,,False,False,False,False,0,0,1,0,6,7,None,0,Slam,Supine,0.24,Stationary
+move_330,table-powerbomb,테이블 파워밤,Table Powerbomb,RingsideAttack,Table,Grapple,Body,,True,False,False,False,0,0.8,0.2,0,12,7,Power,12,Powerbomb,Supine,0.32,Stationary
+move_331,cage-escape,케이지 탈출,Cage Escape,Grapple,Cage,Grapple,Body,,False,False,False,False,0,0,1,0,6,7,None,0,Slam,Supine,0.24,Stationary
+move_332,plancha,플란챠,Plancha,Dive,SpringboardOutsideStanding,Aerial,Body,style_004;style_005;style_007,True,True,False,False,0,0,0,1,10,7,HighFlying,10,Dive,Supine,0.18,Aerial
+move_333,senton-bomb,센턴 밤,Senton Bomb,Dive,DivingGrounded,Aerial,Body,style_004;style_005;style_007,True,True,True,True,0,0,0,1,14,7,HighFlying,10,Dive,Supine,0.18,Aerial
+move_334,diving-seated-senton,시티드 센턴,Diving Seated Senton,Dive,DivingGrounded,Aerial,Body,,True,True,True,True,0,0.8,0,0.2,7,7,Power,7,Dive,Supine,0.08,Aerial

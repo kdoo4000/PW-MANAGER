@@ -44,6 +44,8 @@ namespace PWManager.Infrastructure.Save
                 throw new InvalidDataException($"Save version must be {GameSave.CurrentSaveVersion}.");
 
             save.SystemNames = SystemNames.CreateDefaults();
+            StorylineService.UpgradeRelationships(save);
+            ChampionshipService.Upgrade(save);
             NormalizePlayerBirthDate(save);
             save.UpdatedAtUtc = DateTime.UtcNow.ToString("O");
 
@@ -123,6 +125,18 @@ namespace PWManager.Infrastructure.Save
             var errors = GameSaveValidator.Validate(save);
             if (errors.Count > 0) throw new InvalidDataException(string.Join(Environment.NewLine, errors));
             foreach (var wrestler in save.Wrestlers) wrestler.FanReaction.Upgrade();
+            foreach (var wrestler in save.Wrestlers.Where(x => x != null))
+                if (wrestler.Presentation?.Appearance != null || string.IsNullOrEmpty(wrestler.Presentation?.PortraitResourcePath))
+                    PortraitAppearanceRules.Ensure(wrestler);
+            if (save.Player != null)
+            {
+                var playerWrestler = save.Wrestlers.FirstOrDefault(x => x.Id == save.Player.WrestlerId);
+                save.Player.Appearance ??= playerWrestler?.Presentation.Appearance?.Clone() ?? PortraitAppearanceRules.Generate(
+                    new WrestlerIdentityState { Gender = save.Player.Gender, BodyType = PortraitAppearanceRules.BodyType(save.Player.HeightCm, save.Player.WeightKg) switch
+                    { 2 => WrestlerBodyType.Lightweight, 3 => WrestlerBodyType.Heavyweight, _ => WrestlerBodyType.Balanced } },
+                    save.Player.WrestlingStyleId, new System.Random(PortraitAppearanceRules.StableSeed(save.Player.Name)));
+                PortraitAppearanceRules.Normalize(save.Player.Appearance, save.Player.Gender);
+            }
             FanAudienceService.Initialize(save);
             return save;
         }
@@ -136,6 +150,13 @@ namespace PWManager.Infrastructure.Save
                 save.Promotion.Abbreviation = PromotionState.CreateAbbreviation(save.Promotion.Name);
             save.Shows ??= new List<ShowState>();
             save.TagTeams ??= new List<TagTeamState>();
+            save.Championships ??= new List<ChampionshipState>();
+            ChampionshipService.Upgrade(save);
+            save.Stables ??= new List<StableState>();
+            save.StoryRelationships ??= new List<StoryRelationshipState>();
+            save.Storylines ??= new List<StorylineState>();
+            save.StoryCandidates ??= new List<StoryCandidateState>();
+            StorylineService.UpgradeRelationships(save);
             save.ShowEvents ??= new List<ShowEventState>();
             save.MatchPlans ??= new List<MatchPlanState>();
             save.PromoPlans ??= new List<PromoPlanState>();

@@ -24,3 +24,22 @@ MonoBehaviour:
   RequiredStat: 0
   RequiredStatValue: 0
   ScenarioGroupId: 
+  Kind: 1
+  TargetRegion: 0
+  Enabled: 1
+  CanUseGenerally: 1
+  CanBeSignature: 1
+  CanBeFinisher: 1
+  TechniqueKey: superkick
+  AllowedStyleIds:
+  - style_001
+  - style_003
+  - style_004
+  - style_005
+  - style_007
+  Action: 1
+  Situation: 5
+  MotionProfile: 6
+  ExecutionStyle: 0
+  EndPosture: 1
+  TravelDistance: 0.1

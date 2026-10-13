@@ -17,6 +17,21 @@ namespace PWManager.Tests
         private const string CatalogPath = "Assets/Game/Data/Static/GameStaticContentCatalog.asset";
 
         [Test]
+        public void Validate_RejectsTwoBoutsForSameChampionshipInOneShow()
+        {
+            var save = CreateInitialSave();
+            var service = Service(10);
+            var show = service.CreateDraft(save, save.Schedules[0].Id, "Title Night", save.VenueContracts[0].Id, 60);
+            var title = ChampionshipService.Create(save, "개인", ChampionshipType.Individual);
+            var first = Match(save, 0, 1); first.ChampionshipId = title.Id;
+            var second = Match(save, 2, 3); second.ChampionshipId = title.Id;
+            service.AddMatch(save, show.Id, first, 30);
+            service.AddMatch(save, show.Id, second, 30);
+            Assert.That(service.Validate(save, show.Id).Any(x => x.Code == "match.championship-duplicate" &&
+                x.Severity == ShowValidationSeverity.Error), Is.True);
+        }
+
+        [Test]
         public void StadiumCost_UsesOneMillionPerHour()
         {
             var venue = new VenueContractState { VenueId = "venue_006", ProductionCost = 1000000 };

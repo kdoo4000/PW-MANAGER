@@ -45,6 +45,12 @@ namespace PWManager.Data.Validation
                     errors.Add($"Move without a required stat must use required value 0: {move.Id}");
                 if (move.RequiredStat != MoveRequiredStat.None && (move.RequiredStatValue < 1 || move.RequiredStatValue > 20))
                     errors.Add($"Move required stat value must be 1-20: {move.Id}");
+                foreach (var styleId in move.AllowedStyleIds ?? Array.Empty<string>())
+                    if (!(catalog.WrestlingStyles ?? new()).Any(x => x != null && x.Id == styleId))
+                        errors.Add($"Move references missing style {styleId}: {move.Id}");
+                if (move.Enabled && move.Situation != PWManager.Domain.Services.MoveSituation.Automatic &&
+                    !PWManager.Domain.Services.MatchTechniques.IsSupported(move.Situation))
+                    errors.Add($"Move situation is not supported yet: {move.Id}");
             }
             ValidateTeamLevels(catalog.MedicalTeamLevels, "Medical", errors);
             ValidateTeamLevels(catalog.ScoutTeamLevels, "Scout", errors);

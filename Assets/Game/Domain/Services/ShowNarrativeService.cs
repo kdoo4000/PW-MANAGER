@@ -40,6 +40,12 @@ namespace PWManager.Domain.Services
             AddBeat(context, "opening", plan.OpeningSpot);
             AddBeat(context, "middle", plan.MiddleSpot);
             AddBeat(context, "closing", plan.ClosingSpot);
+            var incident = StorylineService.PromoIncident(plan);
+            if (incident != StoryIncident.None && !string.IsNullOrEmpty(plan.IncidentTargetId))
+                AddBeat(context, "relationship", $"행동 선수 ID: {plan.IncidentActorId ?? plan.ParticipantIds.FirstOrDefault()}; 대상 ID: {plan.IncidentTargetId}; 확정 사건: {incident}");
+            var story = save.Storylines?.FirstOrDefault(x => x.Id == plan.StorylineId);
+            if (story != null && !string.IsNullOrWhiteSpace(story.Context))
+                context.RecentEvents.Add(new ResultChangeState { ValueKey = "스토리 맥락", Reason = story.Context });
             return context;
         }
 
@@ -116,6 +122,8 @@ namespace PWManager.Domain.Services
         {
             if (plan == null) throw new ArgumentNullException(nameof(plan));
             if (result == null) throw new ArgumentNullException(nameof(result));
+            if (!string.IsNullOrEmpty(result.CancellationReason))
+                return new() { Beat(MatchBeatType.Context, null, null, result.CancellationReason, 4) };
             if (result.EngineState?.IsFinished == true && result.EngineState.Events?.Count > 0)
                 return CreateEngineBeats(plan, result, save);
             var beats = new List<MatchSimulationBeatState>();
@@ -237,42 +245,64 @@ namespace PWManager.Domain.Services
             var target = state.Participants[1].Id;
             var beats = new List<MatchSimulationBeatState>();
             AddSpot(beats, MatchBeatType.PlannedSpot, plan.OpeningSpot, actor, target, 0);
-            AddEvaluatedSpots(beats, result, MatchSpotPhase.Entrance);
             beats.Add(Beat(MatchBeatType.Opening, actor, target, null, 0));
             var context = RelationshipContext(save, actor, target, result);
             if (context != null) beats.Add(Beat(MatchBeatType.Context, actor, target, context, 0));
             foreach (var line in MatchContexts(save, plan, result, actor, target).Take(2))
                 beats.Add(Beat(MatchBeatType.Context, actor, target, line, 0));
-            // The complete log is saved; playback selects one real exchange per time window.
-            var highlights = state.Events.Select((value, index) => (value, index))
-                .Where(x => x.value.Type != MatchActionType.Finish)
-                .GroupBy(x => Math.Min(11, (int)((long)x.value.MatchTimeSeconds * 12 / state.TargetDurationSeconds)))
-                .Select(group => group.OrderByDescending(x => x.value.IsMajorMoment).ThenByDescending(x => x.value.Impact).First())
-                .OrderBy(x => x.index).ToList();
-            for (var phase = 1; phase <= 3; phase++)
+            // Select whole causal exchanges. A cover must not survive without its setup.
+            var groups = state.Events.Select((value, index) => (value, index)).Where(x => x.value.Type is not (MatchActionType.Finish or MatchActionType.MedicalStop))
+                .GroupBy(x => x.value.ExchangeId).ToList();
+            var selected = groups.OrderByDescending(g => g.Any(x => x.value.Type == MatchActionType.Spot))
+                .ThenByDescending(g => g.Sum(x => x.value.IsMajorMoment ? 8 : x.value.Impact)).Take(8)
+                .SelectMany(g => g.Select(x => x.index)).ToHashSet();
+            foreach (var item in state.Events.Select((e, index) => (e, index)).Where(x => x.e.InjurySeverity != InjuryStatus.None && x.e.Type != MatchActionType.MedicalStop)) selected.Add(item.index);
+            foreach (var index in selected.ToList())
             {
-                foreach (var item in highlights.Where(x => Math.Min(3, 1 + (int)((long)x.value.MatchTimeSeconds * 3 / state.TargetDurationSeconds)) == phase))
-                {
-                    var beat = Beat(MatchBeatType.EngineAction, item.value.PerformerId, item.value.ReceiverId, null, phase);
-                    beat.EngineEventIndex = item.index;
-                    beat.Succeeded = item.value.Result is MatchActionResult.FullSuccess or MatchActionResult.PartialSuccess;
-                    beat.Importance = item.value.IsMajorMoment ? 4 : 2;
-                    beat.CrowdReaction = item.value.CrowdReaction;
-                    beats.Add(beat);
-                }
-                if (phase == 2) AddSpot(beats, MatchBeatType.PlannedSpot, plan.MiddleSpot, target, actor, phase);
-                AddEvaluatedSpots(beats, result, (MatchSpotPhase)phase);
+                var cause = state.Events[index].CauseEventIndex;
+                while (cause >= 0 && cause < index && selected.Add(cause)) cause = state.Events[cause].CauseEventIndex;
             }
+            foreach (var index in selected.OrderBy(x => x))
+            {
+                var item = state.Events[index];
+                if (item.Type == MatchActionType.Recover && index + 1 < state.Events.Count && selected.Contains(index + 1) &&
+                    state.Events[index + 1].Type == MatchActionType.Recover && state.Events[index + 1].PerformerId == item.PerformerId &&
+                    !item.SellingProtectedRegion && item.InjurySeverity == InjuryStatus.None) continue;
+                var phase = Math.Min(3, 1 + (int)((long)item.MatchTimeSeconds * 3 / state.TargetDurationSeconds));
+                var planned = item.Type == MatchActionType.Spot ? result.SpotResults.FirstOrDefault(x => x.SpotId == item.Detail && x.ActorId == item.PerformerId) : null;
+                if (planned != null) phase = (int)planned.Phase;
+                var beat = Beat(MatchBeatType.EngineAction, item.PerformerId, item.ReceiverId, planned?.ScriptedMoment, phase);
+                beat.EngineEventIndex = index;
+                beat.Succeeded = item.Result is MatchActionResult.FullSuccess or MatchActionResult.PartialSuccess;
+                beat.Importance = item.IsMajorMoment ? 4 : 2;
+                beat.CrowdReaction = item.CrowdReaction;
+                beats.Add(beat);
+            }
+            if (!state.WasStoppedByInjury || state.ElapsedSeconds >= state.TargetDurationSeconds / 2)
+                AddSpot(beats, MatchBeatType.PlannedSpot, plan.MiddleSpot, target, actor, 2);
             var finish = state.Events.Last();
-            beats.Add(Beat(MatchBeatType.Finish, finish.PerformerId, finish.ReceiverId, state.Booking.FinishType.ToString(), 4));
-            AddSpot(beats, MatchBeatType.PlannedSpot, plan.ClosingSpot, finish.PerformerId ?? actor, finish.ReceiverId ?? target, 4);
-            AddEvaluatedSpots(beats, result, MatchSpotPhase.PostMatch);
+            var endingSpot = result.SpotResults.FirstOrDefault(x => x.SpotId == finish.Detail && x.ScriptedEffect != SpotScriptedEffect.None);
+            if (endingSpot != null)
+                beats.Add(Beat(MatchBeatType.PlannedSpot, endingSpot.ActorId, endingSpot.TargetId, endingSpot.ScriptedMoment, 4));
+            else if (finish.Type == MatchActionType.MedicalStop)
+            {
+                var beat = Beat(MatchBeatType.EngineAction, finish.PerformerId, finish.ReceiverId, null, 4);
+                beat.EngineEventIndex = state.Events.Count - 1; beats.Add(beat);
+            }
+            else beats.Add(Beat(MatchBeatType.Finish, finish.PerformerId, finish.ReceiverId, result.FinishType.ToString(), 4));
+            foreach (var injury in result.InjuryChanges.Where(i => i.IsKayfabe))
+                beats.Add(Beat(MatchBeatType.Context, injury.WrestlerId, null, $"story-injury:{(int)injury.Region}:{injury.RecoveryDays}", 4));
+            if (!state.WasStoppedByInjury)
+            {
+                AddSpot(beats, MatchBeatType.PlannedSpot, plan.ClosingSpot, finish.PerformerId ?? actor, finish.ReceiverId ?? target, 4);
+                AddEvaluatedSpots(beats, result, MatchSpotPhase.PostMatch);
+            }
             FinalizeBeats(beats, result, save);
             foreach (var beat in beats)
                 beat.MatchProgress = beat.BeatType == MatchBeatType.EngineAction
                     ? (float)state.Events[beat.EngineEventIndex].MatchTimeSeconds / state.ElapsedSeconds
                     : beat.Phase == 0 ? 0f : beat.Phase >= 4 ? 1f : beat.Phase / 3f;
-            return beats;
+            return beats.OrderBy(x => x.MatchProgress).ToList();
         }
 
         public static string NarrateEngineEvent(MatchResultState result, int index, Func<string, string> name)
@@ -281,6 +311,7 @@ namespace PWManager.Domain.Services
             if (index < 0 || index >= result.EngineState.Events.Count) throw new ArgumentOutOfRangeException(nameof(index));
             if (name == null) throw new ArgumentNullException(nameof(name));
             var value = result.EngineState.Events[index];
+            if (result.EngineState.EngineVersion >= 2) return MatchEventNarration.Text(value, result, name);
             if (value.Type == MatchActionType.Finish)
                 return FinishText(result.FinishType.ToString(), string.IsNullOrEmpty(value.PerformerId) ? null : name(value.PerformerId),
                     string.IsNullOrEmpty(value.ReceiverId) ? null : name(value.ReceiverId));
@@ -460,6 +491,12 @@ namespace PWManager.Domain.Services
         {
             var actor = string.IsNullOrEmpty(beat.ActorId) ? "선수" : name(beat.ActorId);
             var target = string.IsNullOrEmpty(beat.TargetId) ? "상대" : name(beat.TargetId);
+            if (beat.Detail?.StartsWith("story-injury:", StringComparison.Ordinal) == true)
+            {
+                var parts = beat.Detail.Split(':');
+                var region = (BodyRegion)int.Parse(parts[1]) switch { BodyRegion.Head => "머리", BodyRegion.Arms => "팔", BodyRegion.Legs => "다리", _ => "몸통" };
+                return $"{actor}, {region}을 감싸며 물러납니다. 이 부상 장면은 이후 스토리로 이어집니다.";
+            }
             var wrestler = save?.Wrestlers?.FirstOrDefault(x => x?.Id == beat.ActorId);
             var style = wrestler?.Presentation?.WrestlingStyleId;
             if (style == null || !new[] { "style_001", "style_002", "style_003", "style_004", "style_005", "style_006", "style_007" }.Contains(style))

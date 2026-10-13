@@ -92,9 +92,14 @@ namespace PWManager.Tests
 
             for (var i = 0; i < 200; i++)
             {
-                var parts = generator.GenerateCandidate(i % 2 == 0 ? WrestlerGender.Male : WrestlerGender.Female, new GameDate(2026, 1, 1)).Identity.LegalName.Split(' ');
+                var candidate = generator.GenerateCandidate(i % 2 == 0 ? WrestlerGender.Male : WrestlerGender.Female, new GameDate(2026, 1, 1));
+                var parts = candidate.Identity.LegalName.Split(' ');
                 if (names.KoreanFamilyNames.Contains(parts[^1])) { Assert.That(koreanGiven, Does.Contain(parts[0])); koreanCount++; }
                 if (names.JapaneseFamilyNames.Contains(parts[^1])) { Assert.That(japaneseGiven, Does.Contain(parts[0])); japaneseCount++; }
+                var expected = PortraitAppearanceRules.Generate(candidate.Identity, candidate.Presentation.WrestlingStyleId,
+                    new Random(PortraitAppearanceRules.StableSeed(candidate.Id) ^ 2026),
+                    names.KoreanFamilyNames.Contains(parts[^1]) || names.JapaneseFamilyNames.Contains(parts[^1]));
+                Assert.That(candidate.Presentation.Appearance.SkinBrightness, Is.EqualTo(expected.SkinBrightness));
             }
 
             Assert.That(koreanCount, Is.GreaterThan(0));

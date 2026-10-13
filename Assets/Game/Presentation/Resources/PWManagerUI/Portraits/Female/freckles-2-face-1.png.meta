@@ -1,0 +1,793 @@
+fileFormatVersion: 2
+guid: becbe141b6fea3c4187906aaa89bcfe3
+TextureImporter:
+  internalIDToNameTable:
+  - first:
+      213: 5348654250570181194
+    second: freckles-2-face-1_0
+  - first:
+      213: -2409933628304748222
+    second: freckles-2-face-1_1
+  - first:
+      213: -2355813179995249590
+    second: freckles-2-face-1_2
+  - first:
+      213: -6677239474119024543
+    second: freckles-2-face-1_3
+  - first:
+      213: -6041662821914890174
+    second: freckles-2-face-1_4
+  - first:
+      213: -95013347852953836
+    second: freckles-2-face-1_5
+  - first:
+      213: -1357216246174061541
+    second: freckles-2-face-1_6
+  - first:
+      213: 5643546308549889068
+    second: freckles-2-face-1_7
+  - first:
+      213: -8766544969692416532
+    second: freckles-2-face-1_8
+  - first:
+      213: -9053160095049772309
+    second: freckles-2-face-1_9
+  - first:
+      213: -1901278450913522296
+    second: freckles-2-face-1_10
+  - first:
+      213: 3609483688742976930
+    second: freckles-2-face-1_11
+  - first:
+      213: 4468353476680689658
+    second: freckles-2-face-1_12
+  - first:
+      213: 8498529217372326544
+    second: freckles-2-face-1_13
+  - first:
+      213: 8162040237752733495
+    second: freckles-2-face-1_14
+  - first:
+      213: 4345798835119964913
+    second: freckles-2-face-1_15
+  - first:
+      213: -3889768136648071377
+    second: freckles-2-face-1_16
+  - first:
+      213: -123923520460456389
+    second: freckles-2-face-1_17
+  - first:
+      213: -3153789471395737808
+    second: freckles-2-face-1_18
+  - first:
+      213: 7205597729535635236
+    second: freckles-2-face-1_19
+  - first:
+      213: 2702346869540246007
+    second: freckles-2-face-1_20
+  - first:
+      213: -3818058546380988661
+    second: freckles-2-face-1_21
+  - first:
+      213: -6600377175490355034
+    second: freckles-2-face-1_22
+  - first:
+      213: -5323293283032510212
+    second: freckles-2-face-1_23
+  - first:
+      213: 6658737204013106201
+    second: freckles-2-face-1_24
+  - first:
+      213: -2449697692884539236
+    second: freckles-2-face-1_25
+  externalObjects: {}
+  serializedVersion: 13
+  mipmaps:
+    mipMapMode: 0
+    enableMipMap: 0
+    sRGBTexture: 1
+    linearTexture: 0
+    fadeOut: 0
+    borderMipMap: 0
+    mipMapsPreserveCoverage: 0
+    alphaTestReferenceValue: 0.5
+    mipMapFadeDistanceStart: 1
+    mipMapFadeDistanceEnd: 3
+  bumpmap:
+    convertToNormalMap: 0
+    externalNormalMap: 0
+    heightScale: 0.25
+    normalMapFilter: 0
+    flipGreenChannel: 0
+  isReadable: 0
+  streamingMipmaps: 0
+  streamingMipmapsPriority: 0
+  vTOnly: 0
+  ignoreMipmapLimit: 0
+  grayScaleToAlpha: 0
+  generateCubemap: 6
+  cubemapConvolution: 0
+  seamlessCubemap: 0
+  textureFormat: 1
+  maxTextureSize: 2048
+  textureSettings:
+    serializedVersion: 2
+    filterMode: 1
+    aniso: 1
+    mipBias: 0
+    wrapU: 1
+    wrapV: 1
+    wrapW: 1
+  nPOTScale: 0
+  lightmap: 0
+  compressionQuality: 50
+  spriteMode: 2
+  spriteExtrude: 1
+  spriteMeshType: 1
+  alignment: 0
+  spritePivot: {x: 0.5, y: 0.5}
+  spritePixelsToUnits: 100
+  spriteBorder: {x: 0, y: 0, z: 0, w: 0}
+  spriteGenerateFallbackPhysicsShape: 1
+  alphaUsage: 1
+  alphaIsTransparency: 1
+  spriteTessellationDetail: -1
+  textureType: 0
+  textureShape: 1
+  singleChannelComponent: 0
+  flipbookRows: 1
+  flipbookColumns: 1
+  maxTextureSizeSet: 0
+  compressionQualitySet: 0
+  textureFormatSet: 0
+  ignorePngGamma: 0
+  applyGammaDecoding: 0
+  swizzle: 50462976
+  cookieLightType: 0
+  platformSettings:
+  - serializedVersion: 4
+    buildTarget: DefaultTexturePlatform
+    maxTextureSize: 1024
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 2
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: Standalone
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  spriteSheet:
+    serializedVersion: 2
+    sprites:
+    - serializedVersion: 2
+      name: freckles-2-face-1_0
+      rect:
+        serializedVersion: 2
+        x: 306
+        y: 398
+        width: 10
+        height: 10
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: a4a6e97d3bc3a3a40800000000000000
+      internalID: 5348654250570181194
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: freckles-2-face-1_1
+      rect:
+        serializedVersion: 2
+        x: 313
+        y: 408
+        width: 6
+        height: 9
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 24190a822223e8ed0800000000000000
+      internalID: -2409933628304748222
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: freckles-2-face-1_2
+      rect:
+        serializedVersion: 2
+        x: 318
+        y: 405
+        width: 9
+        height: 11
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: a442339f4687e4fd0800000000000000
+      internalID: -2355813179995249590
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: freckles-2-face-1_3
+      rect:
+        serializedVersion: 2
+        x: 326
+        y: 380
+        width: 17
+        height: 28
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 1606be8631ea553a0800000000000000
+      internalID: -6677239474119024543
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: freckles-2-face-1_4
+      rect:
+        serializedVersion: 2
+        x: 381
+        y: 396
+        width: 18
+        height: 13
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 240341f6ca3b72ca0800000000000000
+      internalID: -6041662821914890174
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: freckles-2-face-1_5
+      rect:
+        serializedVersion: 2
+        x: 443
+        y: 396
+        width: 11
+        height: 12
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 417dd401dd17eaef0800000000000000
+      internalID: -95013347852953836
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: freckles-2-face-1_6
+      rect:
+        serializedVersion: 2
+        x: 453
+        y: 399
+        width: 19
+        height: 17
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: b1ce763d3033a2de0800000000000000
+      internalID: -1357216246174061541
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: freckles-2-face-1_7
+      rect:
+        serializedVersion: 2
+        x: 315
+        y: 390
+        width: 12
+        height: 12
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: c2c45928777e15e40800000000000000
+      internalID: 5643546308549889068
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: freckles-2-face-1_8
+      rect:
+        serializedVersion: 2
+        x: 336
+        y: 392
+        width: 14
+        height: 14
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: ce5fef51cc9f65680800000000000000
+      internalID: -8766544969692416532
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: freckles-2-face-1_9
+      rect:
+        serializedVersion: 2
+        x: 352
+        y: 399
+        width: 11
+        height: 8
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: be211d7fbd6bc5280800000000000000
+      internalID: -9053160095049772309
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: freckles-2-face-1_10
+      rect:
+        serializedVersion: 2
+        x: 354
+        y: 392
+        width: 14
+        height: 7
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 88dc132825d4d95e0800000000000000
+      internalID: -1901278450913522296
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: freckles-2-face-1_11
+      rect:
+        serializedVersion: 2
+        x: 397
+        y: 389
+        width: 6
+        height: 10
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 2ad77128a46771230800000000000000
+      internalID: 3609483688742976930
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: freckles-2-face-1_12
+      rect:
+        serializedVersion: 2
+        x: 402
+        y: 395
+        width: 8
+        height: 10
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: af72f6c00d7c20e30800000000000000
+      internalID: 4468353476680689658
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: freckles-2-face-1_13
+      rect:
+        serializedVersion: 2
+        x: 415
+        y: 384
+        width: 16
+        height: 16
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 09a81cacb47d0f570800000000000000
+      internalID: 8498529217372326544
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: freckles-2-face-1_14
+      rect:
+        serializedVersion: 2
+        x: 421
+        y: 399
+        width: 10
+        height: 8
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 73f42b51a54654170800000000000000
+      internalID: 8162040237752733495
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: freckles-2-face-1_15
+      rect:
+        serializedVersion: 2
+        x: 438
+        y: 391
+        width: 6
+        height: 12
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 1f2c1a8f3016f4c30800000000000000
+      internalID: 4345798835119964913
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: freckles-2-face-1_16
+      rect:
+        serializedVersion: 2
+        x: 463
+        y: 396
+        width: 11
+        height: 9
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: f2765741d74c40ac0800000000000000
+      internalID: -3889768136648071377
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: freckles-2-face-1_17
+      rect:
+        serializedVersion: 2
+        x: 312
+        y: 383
+        width: 11
+        height: 8
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: b3e73a7f63cb74ef0800000000000000
+      internalID: -123923520460456389
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: freckles-2-face-1_18
+      rect:
+        serializedVersion: 2
+        x: 342
+        y: 383
+        width: 13
+        height: 11
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 03f071d6f2d7b34d0800000000000000
+      internalID: -3153789471395737808
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: freckles-2-face-1_19
+      rect:
+        serializedVersion: 2
+        x: 359
+        y: 385
+        width: 10
+        height: 8
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 42f255745fc6ff360800000000000000
+      internalID: 7205597729535635236
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: freckles-2-face-1_20
+      rect:
+        serializedVersion: 2
+        x: 381
+        y: 390
+        width: 10
+        height: 8
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 7f1d5d2092aa08520800000000000000
+      internalID: 2702346869540246007
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: freckles-2-face-1_21
+      rect:
+        serializedVersion: 2
+        x: 429
+        y: 382
+        width: 12
+        height: 13
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: b0f11532bf7830bc0800000000000000
+      internalID: -3818058546380988661
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: freckles-2-face-1_22
+      rect:
+        serializedVersion: 2
+        x: 441
+        y: 385
+        width: 13
+        height: 11
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 6a02d4fddefb664a0800000000000000
+      internalID: -6600377175490355034
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: freckles-2-face-1_23
+      rect:
+        serializedVersion: 2
+        x: 455
+        y: 386
+        width: 12
+        height: 12
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: cf0df9d86fcdf16b0800000000000000
+      internalID: -5323293283032510212
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: freckles-2-face-1_24
+      rect:
+        serializedVersion: 2
+        x: 467
+        y: 390
+        width: 8
+        height: 8
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 91401e12536986c50800000000000000
+      internalID: 6658737204013106201
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: freckles-2-face-1_25
+      rect:
+        serializedVersion: 2
+        x: 440
+        y: 379
+        width: 8
+        height: 8
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: c98e5886dece00ed0800000000000000
+      internalID: -2449697692884539236
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    outline: []
+    customData: 
+    physicsShape: []
+    bones: []
+    spriteID: 
+    internalID: 0
+    vertices: []
+    indices: 
+    edges: []
+    weights: []
+    secondaryTextures: []
+    spriteCustomMetadata:
+      entries: []
+    nameFileIdTable:
+      freckles-2-face-1_0: 5348654250570181194
+      freckles-2-face-1_1: -2409933628304748222
+      freckles-2-face-1_10: -1901278450913522296
+      freckles-2-face-1_11: 3609483688742976930
+      freckles-2-face-1_12: 4468353476680689658
+      freckles-2-face-1_13: 8498529217372326544
+      freckles-2-face-1_14: 8162040237752733495
+      freckles-2-face-1_15: 4345798835119964913
+      freckles-2-face-1_16: -3889768136648071377
+      freckles-2-face-1_17: -123923520460456389
+      freckles-2-face-1_18: -3153789471395737808
+      freckles-2-face-1_19: 7205597729535635236
+      freckles-2-face-1_2: -2355813179995249590
+      freckles-2-face-1_20: 2702346869540246007
+      freckles-2-face-1_21: -3818058546380988661
+      freckles-2-face-1_22: -6600377175490355034
+      freckles-2-face-1_23: -5323293283032510212
+      freckles-2-face-1_24: 6658737204013106201
+      freckles-2-face-1_25: -2449697692884539236
+      freckles-2-face-1_3: -6677239474119024543
+      freckles-2-face-1_4: -6041662821914890174
+      freckles-2-face-1_5: -95013347852953836
+      freckles-2-face-1_6: -1357216246174061541
+      freckles-2-face-1_7: 5643546308549889068
+      freckles-2-face-1_8: -8766544969692416532
+      freckles-2-face-1_9: -9053160095049772309
+  mipmapLimitGroupName: 
+  pSDRemoveMatte: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 

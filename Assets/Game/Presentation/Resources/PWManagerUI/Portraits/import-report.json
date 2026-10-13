@@ -1,0 +1,30 @@
+[
+  {
+    "gender": "Male",
+    "count": 567,
+    "bodyDefaults": [
+      100,
+      85,
+      115
+    ],
+    "wrinkles": false,
+    "outputSize": [
+      784,
+      706
+    ]
+  },
+  {
+    "gender": "Female",
+    "count": 477,
+    "bodyDefaults": [
+      100,
+      85,
+      115
+    ],
+    "wrinkles": false,
+    "outputSize": [
+      784,
+      706
+    ]
+  }
+]

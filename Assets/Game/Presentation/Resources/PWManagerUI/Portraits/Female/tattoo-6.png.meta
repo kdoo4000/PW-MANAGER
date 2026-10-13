@@ -1,0 +1,637 @@
+fileFormatVersion: 2
+guid: 275366c986bf16d4b9d504300534273e
+TextureImporter:
+  internalIDToNameTable:
+  - first:
+      213: -3203803231817918860
+    second: tattoo-6_0
+  - first:
+      213: -2622023338149260256
+    second: tattoo-6_1
+  - first:
+      213: -2695883252625138586
+    second: tattoo-6_2
+  - first:
+      213: -5638575389381460372
+    second: tattoo-6_3
+  - first:
+      213: 32394815637829222
+    second: tattoo-6_4
+  - first:
+      213: -1819712344230442589
+    second: tattoo-6_5
+  - first:
+      213: -4358326665671372350
+    second: tattoo-6_6
+  - first:
+      213: 1293534950162714094
+    second: tattoo-6_7
+  - first:
+      213: -803258243729933745
+    second: tattoo-6_8
+  - first:
+      213: 334205108648892281
+    second: tattoo-6_9
+  - first:
+      213: -8418699495520211419
+    second: tattoo-6_10
+  - first:
+      213: 3625454646408359998
+    second: tattoo-6_11
+  - first:
+      213: -5433161398122275890
+    second: tattoo-6_12
+  - first:
+      213: 7488111401059427319
+    second: tattoo-6_13
+  - first:
+      213: -8528521231566529559
+    second: tattoo-6_14
+  - first:
+      213: -1185187343111297394
+    second: tattoo-6_15
+  - first:
+      213: -6851679074945119663
+    second: tattoo-6_16
+  - first:
+      213: 7454334175033539386
+    second: tattoo-6_17
+  - first:
+      213: 436008996371229572
+    second: tattoo-6_18
+  - first:
+      213: -818751433913370332
+    second: tattoo-6_19
+  externalObjects: {}
+  serializedVersion: 13
+  mipmaps:
+    mipMapMode: 0
+    enableMipMap: 0
+    sRGBTexture: 1
+    linearTexture: 0
+    fadeOut: 0
+    borderMipMap: 0
+    mipMapsPreserveCoverage: 0
+    alphaTestReferenceValue: 0.5
+    mipMapFadeDistanceStart: 1
+    mipMapFadeDistanceEnd: 3
+  bumpmap:
+    convertToNormalMap: 0
+    externalNormalMap: 0
+    heightScale: 0.25
+    normalMapFilter: 0
+    flipGreenChannel: 0
+  isReadable: 0
+  streamingMipmaps: 0
+  streamingMipmapsPriority: 0
+  vTOnly: 0
+  ignoreMipmapLimit: 0
+  grayScaleToAlpha: 0
+  generateCubemap: 6
+  cubemapConvolution: 0
+  seamlessCubemap: 0
+  textureFormat: 1
+  maxTextureSize: 2048
+  textureSettings:
+    serializedVersion: 2
+    filterMode: 1
+    aniso: 1
+    mipBias: 0
+    wrapU: 1
+    wrapV: 1
+    wrapW: 1
+  nPOTScale: 0
+  lightmap: 0
+  compressionQuality: 50
+  spriteMode: 2
+  spriteExtrude: 1
+  spriteMeshType: 1
+  alignment: 0
+  spritePivot: {x: 0.5, y: 0.5}
+  spritePixelsToUnits: 100
+  spriteBorder: {x: 0, y: 0, z: 0, w: 0}
+  spriteGenerateFallbackPhysicsShape: 1
+  alphaUsage: 1
+  alphaIsTransparency: 1
+  spriteTessellationDetail: -1
+  textureType: 0
+  textureShape: 1
+  singleChannelComponent: 0
+  flipbookRows: 1
+  flipbookColumns: 1
+  maxTextureSizeSet: 0
+  compressionQualitySet: 0
+  textureFormatSet: 0
+  ignorePngGamma: 0
+  applyGammaDecoding: 0
+  swizzle: 50462976
+  cookieLightType: 0
+  platformSettings:
+  - serializedVersion: 4
+    buildTarget: DefaultTexturePlatform
+    maxTextureSize: 1024
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 2
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: Standalone
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  spriteSheet:
+    serializedVersion: 2
+    sprites:
+    - serializedVersion: 2
+      name: tattoo-6_0
+      rect:
+        serializedVersion: 2
+        x: 171
+        y: 239
+        width: 8
+        height: 9
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 4769e356fedc983d0800000000000000
+      internalID: -3203803231817918860
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: tattoo-6_1
+      rect:
+        serializedVersion: 2
+        x: 197
+        y: 248
+        width: 148
+        height: 91
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 02454d08aa3bc9bd0800000000000000
+      internalID: -2622023338149260256
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: tattoo-6_2
+      rect:
+        serializedVersion: 2
+        x: 359
+        y: 243
+        width: 168
+        height: 94
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 66c9a53177c469ad0800000000000000
+      internalID: -2695883252625138586
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: tattoo-6_3
+      rect:
+        serializedVersion: 2
+        x: 552
+        y: 242
+        width: 50
+        height: 18
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: c6e78acce81cfb1b0800000000000000
+      internalID: -5638575389381460372
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: tattoo-6_4
+      rect:
+        serializedVersion: 2
+        x: 157
+        y: 230
+        width: 16
+        height: 14
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 66638a6c9e6137000800000000000000
+      internalID: 32394815637829222
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: tattoo-6_5
+      rect:
+        serializedVersion: 2
+        x: 303
+        y: 101
+        width: 172
+        height: 143
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 3a940c0a3451fb6e0800000000000000
+      internalID: -1819712344230442589
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: tattoo-6_6
+      rect:
+        serializedVersion: 2
+        x: 602
+        y: 237
+        width: 12
+        height: 10
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 2c19b8d2dfc1483c0800000000000000
+      internalID: -4358326665671372350
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: tattoo-6_7
+      rect:
+        serializedVersion: 2
+        x: 618
+        y: 229
+        width: 10
+        height: 8
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: eed40090f2f83f110800000000000000
+      internalID: 1293534950162714094
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: tattoo-6_8
+      rect:
+        serializedVersion: 2
+        x: 261
+        y: 164
+        width: 40
+        height: 14
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: f4ab29712e04ad4f0800000000000000
+      internalID: -803258243729933745
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: tattoo-6_9
+      rect:
+        serializedVersion: 2
+        x: 297
+        y: 166
+        width: 18
+        height: 14
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 977532f86c553a400800000000000000
+      internalID: 334205108648892281
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: tattoo-6_10
+      rect:
+        serializedVersion: 2
+        x: 465
+        y: 164
+        width: 54
+        height: 16
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 52ee1cab965ca2b80800000000000000
+      internalID: -8418699495520211419
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: tattoo-6_11
+      rect:
+        serializedVersion: 2
+        x: 629
+        y: 170
+        width: 32
+        height: 59
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: e30b57cdac3305230800000000000000
+      internalID: 3625454646408359998
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: tattoo-6_12
+      rect:
+        serializedVersion: 2
+        x: 170
+        y: 8
+        width: 90
+        height: 144
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: ecb9e899e788994b0800000000000000
+      internalID: -5433161398122275890
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: tattoo-6_13
+      rect:
+        serializedVersion: 2
+        x: 330
+        y: 37
+        width: 29
+        height: 16
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 7f323b245ad1be760800000000000000
+      internalID: 7488111401059427319
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: tattoo-6_14
+      rect:
+        serializedVersion: 2
+        x: 418
+        y: 35
+        width: 31
+        height: 16
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 9eb991d302b94a980800000000000000
+      internalID: -8528521231566529559
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: tattoo-6_15
+      rect:
+        serializedVersion: 2
+        x: 515
+        y: 27
+        width: 15
+        height: 8
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: e86ef8d046e5d8fe0800000000000000
+      internalID: -1185187343111297394
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: tattoo-6_16
+      rect:
+        serializedVersion: 2
+        x: 526
+        y: 2
+        width: 81
+        height: 71
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 15a4beede22f9e0a0800000000000000
+      internalID: -6851679074945119663
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: tattoo-6_17
+      rect:
+        serializedVersion: 2
+        x: 549
+        y: 111
+        width: 25
+        height: 39
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: a3bbdebff6d137760800000000000000
+      internalID: 7454334175033539386
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: tattoo-6_18
+      rect:
+        serializedVersion: 2
+        x: 563
+        y: 77
+        width: 8
+        height: 8
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 48be4934fd30d0600800000000000000
+      internalID: 436008996371229572
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: tattoo-6_19
+      rect:
+        serializedVersion: 2
+        x: 668
+        y: 90
+        width: 21
+        height: 41
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 4297046a8e533a4f0800000000000000
+      internalID: -818751433913370332
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    outline: []
+    customData: 
+    physicsShape: []
+    bones: []
+    spriteID: 
+    internalID: 0
+    vertices: []
+    indices: 
+    edges: []
+    weights: []
+    secondaryTextures: []
+    spriteCustomMetadata:
+      entries: []
+    nameFileIdTable:
+      tattoo-6_0: -3203803231817918860
+      tattoo-6_1: -2622023338149260256
+      tattoo-6_10: -8418699495520211419
+      tattoo-6_11: 3625454646408359998
+      tattoo-6_12: -5433161398122275890
+      tattoo-6_13: 7488111401059427319
+      tattoo-6_14: -8528521231566529559
+      tattoo-6_15: -1185187343111297394
+      tattoo-6_16: -6851679074945119663
+      tattoo-6_17: 7454334175033539386
+      tattoo-6_18: 436008996371229572
+      tattoo-6_19: -818751433913370332
+      tattoo-6_2: -2695883252625138586
+      tattoo-6_3: -5638575389381460372
+      tattoo-6_4: 32394815637829222
+      tattoo-6_5: -1819712344230442589
+      tattoo-6_6: -4358326665671372350
+      tattoo-6_7: 1293534950162714094
+      tattoo-6_8: -803258243729933745
+      tattoo-6_9: 334205108648892281
+  mipmapLimitGroupName: 
+  pSDRemoveMatte: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 

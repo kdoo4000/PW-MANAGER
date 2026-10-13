@@ -305,7 +305,9 @@ namespace PWManager.Editor
             value.PinfallRule = pinfallRule;
             value.SubmissionRule = submissionRule;
             value.DisqualificationRule = disqualificationRule;
-            value.CountOutRule = countOutRule;
+              value.CountOutRule = countOutRule;
+              value.RopeBreakRule = MatchRuleOverride.Default;
+              value.CountOutSeconds = 10;
             value.AllowedSpecialFinishTypes = new List<MatchFinishType>(specialFinishTypes);
             EditorUtility.SetDirty(value);
             return value;
@@ -321,33 +323,7 @@ namespace PWManager.Editor
             Venue("venue_006", "Stadium", VenueScale.Stadium, 70000, 55000, 30000000, 1000000, 150)
         };
 
-        private static List<MoveDefinition> CreateMoves() => new()
-        {
-            Move("move_001", "Running Knee Strike", .70f, 0, .30f, 0, 11, MoveSellingDifficulty.Easy),
-            Move("move_002", "Discus Lariat", .80f, .20f, 0, 0, 10, MoveSellingDifficulty.Easy),
-            Move("move_003", "Spinning Backfist", .85f, 0, .15f, 0, 10, MoveSellingDifficulty.Easy),
-            Move("move_004", "Spear", .45f, .55f, 0, 0, 9, MoveSellingDifficulty.Normal),
-            Move("move_005", "Sit-Out Powerbomb", 0, .75f, .25f, 0, 13, MoveSellingDifficulty.Normal, MoveRequiredStat.Power, 10),
-            Move("move_006", "Chokeslam", .15f, .85f, 0, 0, 11, MoveSellingDifficulty.Easy, MoveRequiredStat.Power, 9),
-            Move("move_007", "Spinebuster", 0, .65f, .35f, 0, 10, MoveSellingDifficulty.Easy),
-            Move("move_008", "Piledriver", 0, .45f, .55f, 0, 12, MoveSellingDifficulty.VeryHard, MoveRequiredStat.Technical, 11),
-            Move("move_009", "German Suplex", 0, .45f, .55f, 0, 12, MoveSellingDifficulty.Normal),
-            Move("move_010", "Dragon Suplex", 0, .30f, .70f, 0, 14, MoveSellingDifficulty.Hard, MoveRequiredStat.Technical, 10),
-            Move("move_011", "Crossface", .15f, 0, .85f, 0, 12, MoveSellingDifficulty.Easy, MoveRequiredStat.Technical, 9),
-            Move("move_012", "Ankle Lock", .10f, 0, .90f, 0, 11, MoveSellingDifficulty.Easy),
-            Move("move_013", "Frog Splash", 0, 0, .20f, .80f, 13, MoveSellingDifficulty.Easy, MoveRequiredStat.HighFlying, 9),
-            Move("move_014", "Moonsault", 0, 0, .15f, .85f, 15, MoveSellingDifficulty.Easy, MoveRequiredStat.HighFlying, 11),
-            Move("move_015", "Shooting Star Press", 0, 0, .10f, .90f, 18, MoveSellingDifficulty.Easy, MoveRequiredStat.HighFlying, 14),
-            Move("move_016", "450 Splash", 0, 0, .10f, .90f, 17, MoveSellingDifficulty.Easy, MoveRequiredStat.HighFlying, 13),
-            Move("move_017", "Springboard Cutter", 0, 0, .40f, .60f, 15, MoveSellingDifficulty.Normal, MoveRequiredStat.HighFlying, 11),
-            Move("move_018", "Diving Elbow Drop", .45f, 0, 0, .55f, 12, MoveSellingDifficulty.Easy),
-            Move("move_019", "Tornado DDT", 0, 0, .55f, .45f, 13, MoveSellingDifficulty.Normal),
-            Move("move_020", "Superkick", .60f, 0, .40f, 0, 11, MoveSellingDifficulty.Easy),
-            Move("move_021", "Bicycle Kick", .65f, .35f, 0, 0, 12, MoveSellingDifficulty.Easy),
-            Move("move_022", "Death Valley Driver", 0, .50f, .50f, 0, 10, MoveSellingDifficulty.Hard, MoveRequiredStat.Power, 10),
-            Move("move_023", "Bridging Suplex", 0, .25f, .75f, 0, 13, MoveSellingDifficulty.Normal),
-            Move("move_024", "Corkscrew Senton", 0, 0, .25f, .75f, 16, MoveSellingDifficulty.Easy, MoveRequiredStat.HighFlying, 12)
-        };
+        private static List<MoveDefinition> CreateMoves() => MoveTableImporter.CreateMoves();
 
         private static WrestlingStyleDefinition Style(string id, string name, float b, float p, float h, float t,
             float gb, float gp, float gh, float gt, int male = 0, int female = 0)
@@ -380,23 +356,6 @@ namespace PWManager.Editor
         { var value = TeamLevel<CommentaryTeamLevelDefinition>("CommentaryTeam", "commentarylevel_", "해설진", "Commentary Team", level, prestige, cost, effect); value.LiveAudienceReactionMultiplier = live; value.BroadcastAudienceReactionMultiplier = broadcast; EditorUtility.SetDirty(value); return value; }
         private static T TeamLevel<T>(string folder, string prefix, string korean, string english, int level, long prestige, long cost, string effect) where T : StaffTeamLevelDefinition
         { var id = $"{prefix}{level:000}"; var value = LoadOrCreate<T>($"{Root}/Staff/{folder}/{id}_Lv{level}.asset"); value.SetEditorIdentity(id, $"{korean} Lv.{level}", $"{english} Lv.{level}"); value.Level = level; value.RequiredPrestige = prestige; value.UpgradeCost = cost; value.EffectDescription = effect; return value; }
-
-        private static MoveDefinition Move(string id, string name, float brawling, float power,
-            float technical, float highFlying, float execution, MoveSellingDifficulty selling,
-            MoveRequiredStat requiredStat = MoveRequiredStat.None, float requiredValue = 0)
-        {
-            var value = Definition<MoveDefinition>(Root + "/Wrestlers/Moves/", id, name);
-            value.BrawlingWeight = brawling;
-            value.PowerWeight = power;
-            value.TechnicalWeight = technical;
-            value.HighFlyingWeight = highFlying;
-            value.ExecutionDifficulty = execution;
-            value.SellingDifficulty = selling;
-            value.RequiredStat = requiredStat;
-            value.RequiredStatValue = requiredValue;
-            EditorUtility.SetDirty(value);
-            return value;
-        }
 
         private static VenueDefinition Venue(string id, string name, VenueScale scale, int capacity,
             long requiredPrestige, long unlockCost, long productionCost, long baseTicketPrice)

@@ -32,10 +32,19 @@
         </ui:VisualElement>
         <ui:VisualElement name="show-editor-spots" class="show-editor-spots hidden">
             <ui:VisualElement name="show-editor-finish" class="show-editor-finish hidden">
-                <ui:DropdownField name="show-editor-finish-type" label="결말 방식" class="show-editor-field"/>
-                <ui:DropdownField name="show-editor-winning-side" label="승리 선수 / 팀" class="show-editor-field"/>
-                <ui:DropdownField name="show-editor-finish-performer" label="승부를 결정할 선수" class="show-editor-field"/>
-                <ui:DropdownField name="show-editor-loser" label="패배 대상" class="show-editor-field"/>
+                <ui:VisualElement class="show-editor-finish-row">
+                    <ui:DropdownField name="show-editor-finish-type" label="결말 방식" class="show-editor-field"/>
+                    <ui:DropdownField name="show-editor-winning-side" label="승리 선수 / 팀" class="show-editor-field"/>
+                    <ui:DropdownField name="show-editor-finish-performer" label="승부를 결정할 선수" class="show-editor-field"/>
+                    <ui:DropdownField name="show-editor-loser" label="패배 대상" class="show-editor-field"/>
+                </ui:VisualElement>
+                <ui:VisualElement class="show-editor-finish-row">
+                    <ui:IntegerField name="show-editor-falls-to-win" label="승리에 필요한 폴" value="1" class="show-editor-field"/>
+                    <ui:Toggle name="show-editor-iron-man" label="아이언맨 방식" class="show-editor-field"/>
+                    <ui:Toggle name="show-editor-elimination" label="탈락 방식" class="show-editor-field"/>
+                    <ui:Toggle name="show-editor-tornado" label="토네이도 태그" class="show-editor-field"/>
+                    <ui:DropdownField name="show-editor-dominant-side" label="경기 주도 선수 / 팀" class="show-editor-field"/>
+                </ui:VisualElement>
             </ui:VisualElement>
             <ui:VisualElement class="spot-production-columns">
                 <ui:VisualElement class="spot-authored-events">
@@ -46,6 +55,7 @@
                 <ui:VisualElement name="show-editor-match-spots" class="spot-catalog"/>
             </ui:VisualElement>
         </ui:VisualElement>
+        <ui:VisualElement name="show-editor-team-slots" class="show-editor-team-slots hidden"/>
         <ui:VisualElement class="show-editor-roster-heading">
             <ui:Label text="출연 선수" class="show-editor-section-title"/>
             <ui:DropdownField name="show-editor-roster-sort" label="정렬" class="show-editor-roster-sort"/>

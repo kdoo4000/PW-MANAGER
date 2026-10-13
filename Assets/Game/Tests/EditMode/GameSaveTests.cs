@@ -23,6 +23,8 @@ namespace PWManager.Tests
             Assert.That(save.CurrentDate, Is.EqualTo(new GameDate(2026, 6, 1)));
             Assert.That(save.ProcessedIds, Is.Empty);
             Assert.That(save.Wrestlers, Is.Empty);
+            Assert.That(save.StoryRelationships, Is.Empty);
+            Assert.That(save.Storylines, Is.Empty);
             Assert.That(save.Managers, Is.Empty);
             Assert.That(save.Contracts, Is.Empty);
             Assert.That(save.StaffDepartments, Is.Empty);

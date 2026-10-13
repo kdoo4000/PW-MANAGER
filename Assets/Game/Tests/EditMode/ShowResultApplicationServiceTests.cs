@@ -94,6 +94,51 @@ namespace PWManager.Tests
             return () => $"transaction-{++value}";
         }
 
+        [Test]
+        public void Apply_TitleChange_IsPersistedAndCannotBeAppliedTwice()
+        {
+            var save = CreateSave();
+            save.CurrentDate = new GameDate(2026, 6, 1);
+            foreach (var wrestler in save.Wrestlers) wrestler.PromotionId = save.Promotion.Id;
+            var title = ChampionshipService.Create(save, "월드", ChampionshipType.Individual, true, "a");
+            save.MatchPlans[0].ChampionshipId = title.Id;
+            var result = save.MatchResults[0];
+            result.ParticipantProfiles.Clear();
+            result.ParticipantProfiles.Add(new MatchParticipantProfileState { SideId = "a-side", MemberIds = { "a" } });
+            result.ParticipantProfiles.Add(new MatchParticipantProfileState { SideId = "b-side", MemberIds = { "b" } });
+            result.WinningSideId = "b-side";
+            result.FinishType = MatchFinishType.Pinfall;
+            var service = new ShowResultApplicationService(Ids());
+            service.Apply(save, "show_result");
+            Assert.That(save.Championships[0].HolderId, Is.EqualTo("b"));
+            Assert.That(save.Championships[0].MatchHistory, Has.Count.EqualTo(1));
+            var prestige = save.Championships[0].Prestige;
+            Assert.That(save.Championships[0].Reigns[1].WonDate, Is.EqualTo(save.Shows[0].Date));
+            Assert.Throws<InvalidOperationException>(() => service.Apply(save, "show_result"));
+            Assert.That(save.Championships[0].Reigns, Has.Count.EqualTo(2));
+            Assert.That(save.Championships[0].MatchHistory, Has.Count.EqualTo(1));
+            Assert.That(save.Championships[0].Prestige, Is.EqualTo(prestige));
+        }
+
+        [Test]
+        public void Apply_InvalidTitleWinner_RejectsBeforeAnyMutation()
+        {
+            var save = CreateSave();
+            save.CurrentDate = new GameDate(2026, 6, 1);
+            foreach (var wrestler in save.Wrestlers) wrestler.PromotionId = save.Promotion.Id;
+            var title = ChampionshipService.Create(save, "월드", ChampionshipType.Individual, true, "a");
+            save.MatchPlans[0].ChampionshipId = title.Id;
+            var result = save.MatchResults[0];
+            result.ParticipantProfiles.Clear();
+            result.ParticipantProfiles.Add(new MatchParticipantProfileState { SideId = "a-side", MemberIds = { "a" } });
+            result.ParticipantProfiles.Add(new MatchParticipantProfileState { SideId = "b-side", MemberIds = { "b" } });
+            result.WinningSideId = "missing";
+            Assert.Throws<InvalidOperationException>(() => new ShowResultApplicationService(Ids()).Apply(save, "show_result"));
+            Assert.That(save.Championships[0].HolderId, Is.EqualTo("a"));
+            Assert.That(save.Transactions, Is.Empty);
+            Assert.That(save.Wrestlers[0].Condition.Condition, Is.EqualTo(100));
+        }
+
         private static GameSave CreateSave()
         {
             var save = new GameSave

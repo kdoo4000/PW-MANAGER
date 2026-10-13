@@ -11,6 +11,7 @@ namespace PWManager.Domain.Models
         public PromoDisposition PromoDisposition;
         public string WrestlingStyleId;
         public string PortraitResourcePath;
+        public PortraitAppearanceState Appearance;
         public List<string> TraitIds = new();
         public List<string> SignatureMoveIds = new();
         public List<string> FinisherMoveIds = new();

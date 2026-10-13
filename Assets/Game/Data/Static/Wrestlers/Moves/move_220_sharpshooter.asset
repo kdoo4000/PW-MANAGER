@@ -1,0 +1,42 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 92ce33d374916a64eab27f7d3c88fa16, type: 3}
+  m_Name: move_220_sharpshooter
+  m_EditorClassIdentifier: PWMANAGER.Data::PWManager.Data.Definitions.MoveDefinition
+  id: move_220
+  koreanName: "\uC0E4\uD504\uC288\uD130"
+  englishName: Sharpshooter
+  BrawlingWeight: 0
+  PowerWeight: 0
+  TechnicalWeight: 1
+  HighFlyingWeight: 0
+  ExecutionDifficulty: 10
+  SellingDifficulty: 7
+  RequiredStat: 0
+  RequiredStatValue: 0
+  ScenarioGroupId: 
+  Kind: 4
+  TargetRegion: 3
+  Enabled: 1
+  CanUseGenerally: 1
+  CanBeSignature: 1
+  CanBeFinisher: 1
+  TechniqueKey: sharpshooter
+  AllowedStyleIds:
+  - style_003
+  - style_007
+  Action: 4
+  Situation: 10
+  MotionProfile: 14
+  ExecutionStyle: 0
+  EndPosture: 2
+  TravelDistance: 0

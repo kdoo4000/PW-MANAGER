@@ -6,8 +6,8 @@ using PWManager.Domain.Models;
 namespace PWManager.Domain.Services
 {
     public enum MatchPhase { Opening, Neutral, Control, Comeback, BackAndForth, Climax, Finish }
-    public enum MatchActionType { BasicStrike, HeavyStrike, Grapple, GroundAttack, Submission, Pin, Rest, Signature, Finisher, Finish }
-    public enum MatchActionResult { FullSuccess, PartialSuccess, ExecutionFailure, ReceptionFailure, Countered, Submitted, OneCount, TwoCount, NearFall, Pinfall, RollUp, Disqualification, CountOut, Draw }
+    public enum MatchActionType { BasicStrike, HeavyStrike, Grapple, GroundAttack, Submission, Pin, Rest, Signature, Finisher, Finish, Recover, Reposition, Climb, Dive, LimbAttack, Counter, Cover, Hold, RopeBreak, Tag, DoubleTeam, BreakUp, Taunt, ObjectSetup, ObjectClimb, ObjectFinish, Spot, Fall, Lift, Probe, TieUp, Chain, IrishWhip, CornerWhip, RopeRun, RunningAttack, CornerAttack, Evade, Retreat, StandingHold, PrepareAttack, ExitRing, Pursue, RingsideAttack, TopRopeAttack, TurnOver, MedicalStop }
+    public enum MatchActionResult { FullSuccess, PartialSuccess, ExecutionFailure, ReceptionFailure, Countered, Submitted, OneCount, TwoCount, NearFall, Pinfall, RollUp, Disqualification, CountOut, Draw, Escaped, Blocked, RopeBreak, Interrupted, Held, PassedOut, ObjectRetrieved, TableBroken, CageEscaped }
 
     [Serializable]
     public sealed class MatchEngineBooking
@@ -21,20 +21,60 @@ namespace PWManager.Domain.Services
     public sealed class MatchEngineParticipant
     {
         public string Id;
+        public string WrestlingStyleId;
         public WrestlerAttributesState Attributes = new();
-        public float Fatigue;
+        public float Fatigue, StartingFatigue;
         public float MatchControl = 50f;
         public float ActionReadiness = 50f;
         public bool IsDowned;
+        public MatchPosture Posture;
+        public float RingX, RingZ, Height, FacingX = 1, FacingZ;
+        public MatchGrip Grip;
+        public string GripTargetId;
+        public KayfabeAlignment Alignment;
+        public string SideId;
+        public float StatusValue, AmbushTendency;
+        public bool IsLegal = true, IsEliminated;
+        public MatchPosition Position;
+        public float HeadDamage, BodyDamage, ArmDamage, LegDamage, Stun, Exertion;
+        public int LastImpactTime, Falls;
+        public float LastImpact;
+        public bool LastImpactWasFinisher;
+        public BodyRegion TargetRegion = BodyRegion.Legs;
+        public List<string> SignatureMoveIds = new(), FinisherMoveIds = new();
         public string SignatureMoveId;
         public string FinisherMoveId;
+        public string PlannedFinisherMoveId;
+        public InjuryStatus RealInjury;
+        public BodyRegion RealInjuryRegion = BodyRegion.Body;
+        public bool InjuredThisMatch;
+        public string ReplacedFinishMoveId;
     }
 
     [Serializable]
     public sealed class MatchEngineState
     {
+        public int EngineVersion;
+        public bool SpatialInitialized;
+        public MatchRuntimeRules Rules = new();
+        public MatchOpeningState Opening = new();
+        public MatchExchange Exchange;
+        public int NextExchangeId, RefereeUnavailableUntil;
+        public bool ObjectReady, BookingSequence;
+        public bool RingsideEligible, AnnounceTableEligible, AnnounceTableReady, AnnounceTableBroken;
+        public MatchFinishType ActualFinish;
+        public List<SpotResultState> ScheduledSpots = new();
+        public List<int> AppliedSpots = new();
+        [NonSerialized] public Func<string, MatchMoveRules> FindMove;
         public int ElapsedSeconds;
         public int TargetDurationSeconds = 720;
+        public int DurationToleranceSeconds => !Rules.IronMan && Booking != null && Booking.FinishType != MatchFinishType.Draw ? TargetDurationSeconds / 20 : 0;
+        public int EarliestFinishSeconds => TargetDurationSeconds - DurationToleranceSeconds;
+        public bool AccidentsEnabled = true;
+        public bool WasStoppedByInjury, RescueRequired, RescuePrepared;
+        public string MedicalStopWrestlerId;
+        public int RescueDeadline;
+        public int LatestFinishSeconds => Math.Max(TargetDurationSeconds + DurationToleranceSeconds, RescueDeadline);
         public bool IsFinished;
         public bool IsAborted;
         public string FailureReason;
@@ -48,8 +88,8 @@ namespace PWManager.Domain.Services
         public List<MatchEngineEvent> Events = new();
 
         public MatchEngineParticipant GetParticipant(string id) => Participants.Single(x => x.Id == id);
-        public List<MatchEngineParticipant> GetOpponents(string id) => Participants.Where(x => x.Id != id).ToList();
-        public List<MatchEngineParticipant> GetActiveParticipants() => Participants.Where(x => x != null).ToList();
+        public List<MatchEngineParticipant> GetOpponents(string id) => Participants.Where(x => x.Id != id && !x.IsEliminated && (string.IsNullOrEmpty(x.SideId) || x.SideId != GetParticipant(id).SideId)).ToList();
+        public List<MatchEngineParticipant> GetActiveParticipants() => Participants.Where(x => x != null && !x.IsEliminated && (x.IsLegal || !Rules.Tag || Rules.Tornado)).ToList();
     }
 
     [Serializable]
@@ -60,7 +100,10 @@ namespace PWManager.Domain.Services
         public string PerformerId;
         public string ReceiverId;
         public List<string> ReceiverIds = new();
+        public bool IsContinuation;
         public float Score;
+        public BodyRegion TargetRegion;
+        public string PartnerId;
     }
 
     [Serializable]
@@ -69,6 +112,18 @@ namespace PWManager.Domain.Services
         public string Id;
         public float Fatigue, MatchControl, ActionReadiness;
         public bool IsDowned;
+        public MatchPosture Posture;
+        public float RingX, RingZ, Height, FacingX, FacingZ;
+        public MatchGrip Grip;
+        public string GripTargetId;
+        public MatchPosition Position;
+        public bool IsLegal, IsEliminated;
+        public float HeadDamage, BodyDamage, ArmDamage, LegDamage, Stun;
+        public int Falls;
+        public string PlannedFinisherMoveId;
+        public BodyRegion TargetRegion;
+        public InjuryStatus RealInjury;
+        public BodyRegion RealInjuryRegion;
     }
 
     [Serializable]
@@ -84,7 +139,13 @@ namespace PWManager.Domain.Services
             Participants = state.Participants.Select(x => new MatchParticipantSnapshot
             {
                 Id = x.Id, Fatigue = x.Fatigue, MatchControl = x.MatchControl,
-                ActionReadiness = x.ActionReadiness, IsDowned = x.IsDowned
+                ActionReadiness = x.ActionReadiness, IsDowned = x.IsDowned,
+                PlannedFinisherMoveId = x.PlannedFinisherMoveId, TargetRegion = x.TargetRegion,
+                RealInjury = x.RealInjury, RealInjuryRegion = x.RealInjuryRegion,
+                Posture = x.Posture, RingX = x.RingX, RingZ = x.RingZ, Height = x.Height,
+                FacingX = x.FacingX, FacingZ = x.FacingZ, Grip = x.Grip, GripTargetId = x.GripTargetId,
+                Position = x.Position, IsLegal = x.IsLegal, IsEliminated = x.IsEliminated,
+                HeadDamage = x.HeadDamage, BodyDamage = x.BodyDamage, ArmDamage = x.ArmDamage, LegDamage = x.LegDamage, Stun = x.Stun, Falls = x.Falls
             }).ToList()
         };
     }
@@ -92,6 +153,28 @@ namespace PWManager.Domain.Services
     [Serializable]
     public sealed class MatchEngineEvent
     {
+        public int ExchangeId;
+        public int CauseEventIndex = -1;
+        public int RefereeCountFrom, RefereeCount;
+        public string PartnerId, Detail;
+        public string KayfabeAction;
+        public string TechniqueId, TechniqueName;
+        public float ExecutionQuality = 1f;
+        public bool HasDecisionEvidence, ContextualChoice = true, ValidCover;
+        public bool TargetCompleted, PreparationAvailable, IsPreparation, IntentionalCombination;
+        public string GoalMoveId;
+        public BodyRegion GoalRegion;
+        public float PinRisk, SellingQuality = .75f;
+        public bool SellingProtectedRegion, SellingContradiction;
+        public string SellingWrestlerId;
+        public BodyRegion SellingRegion;
+        public bool IsPhysicalAttack, PhysicalExecutionFailed;
+        public bool IsRescuePreparation;
+        public float ContactDifficulty;
+        public string InjuredWrestlerId;
+        public InjuryStatus InjurySeverity;
+        public BodyRegion InjuryRegion;
+        public BodyRegion TargetRegion;
         public MatchActionType Type;
         public MatchActionResult Result;
         public string PerformerId;
@@ -108,22 +191,31 @@ namespace PWManager.Domain.Services
         public string CommentaryKey;
         public int DurationSeconds;
         public string MoveId;
+        public List<MatchMotionFrame> Motion;
+        public float MotionSeconds;
         public MatchEngineSnapshot Before;
         public MatchEngineSnapshot After;
     }
 
     public sealed class MatchSimulator
     {
-        public const int MaximumEvents = 500;
+        public const int MaximumEvents = 2000;
         private readonly Random random;
+        private readonly Random safetyRandom;
         private readonly int maximumEvents;
         private readonly MatchStateMachine stateMachine;
+        private readonly Func<string, MatchMoveRules> findMove;
+        private readonly bool accidentsEnabled;
 
-        public MatchSimulator(int seed, int maximumEvents = MaximumEvents)
+        public MatchSimulator(int seed, int maximumEvents = MaximumEvents, Func<string, MatchMoveRules> findMove = null,
+            bool accidentsEnabled = true)
         {
             if (maximumEvents < 0) throw new ArgumentOutOfRangeException(nameof(maximumEvents));
             random = new Random(seed);
+            safetyRandom = new Random(unchecked(seed ^ 0x51A7E239));
             this.maximumEvents = maximumEvents;
+            this.findMove = findMove;
+            this.accidentsEnabled = accidentsEnabled;
             stateMachine = new MatchStateMachine(random);
         }
 
@@ -131,36 +223,51 @@ namespace PWManager.Domain.Services
             int targetDurationSeconds = 720) => Simulate(new[] { first, second }, targetDurationSeconds);
 
         public MatchEngineState Simulate(IEnumerable<MatchEngineParticipant> participants, int targetDurationSeconds = 720,
-            MatchEngineBooking booking = null)
+            MatchEngineBooking booking = null, MatchRuntimeRules rules = null, IEnumerable<SpotResultState> spots = null)
         {
             if (participants == null) throw new ArgumentNullException(nameof(participants));
-            var participantList = participants.ToList();
-            if (participantList.Count < 2 || participantList.Any(x => x == null || string.IsNullOrWhiteSpace(x.Id)) ||
-                participantList.Select(x => x.Id).Distinct(StringComparer.Ordinal).Count() != participantList.Count)
-                throw new ArgumentException("A match requires at least two participants with distinct ids.", nameof(participants));
+            var list = participants.ToList();
+            if (list.Count < 2 || list.Any(x => x == null || string.IsNullOrWhiteSpace(x.Id)) || list.Select(x => x.Id).Distinct().Count() != list.Count)
+                throw new ArgumentException("A match requires distinct participants.", nameof(participants));
             if (targetDurationSeconds <= 0) throw new ArgumentOutOfRangeException(nameof(targetDurationSeconds));
-            foreach (var participant in participantList)
+            foreach (var p in list)
             {
-                ValidateAttributes(participant.Attributes);
-                if (float.IsNaN(participant.Fatigue) || float.IsInfinity(participant.Fatigue) || participant.Fatigue < 0f || participant.Fatigue > 100f)
-                    throw new ArgumentOutOfRangeException(nameof(participants), "Initial fatigue must be finite and between 0 and 100.");
+                if (p.Attributes == null) throw new ArgumentException("Attributes are required.");
+                foreach (var v in new[] { p.Attributes.Brawling, p.Attributes.Power, p.Attributes.Technical, p.Attributes.HighFlying,
+                    p.Attributes.Selling, p.Attributes.Stamina, p.Attributes.RingPsychology, p.Attributes.RingImprovisation,
+                    p.Attributes.Charisma, p.Attributes.Acting, p.Attributes.FaceWork, p.Attributes.HeelWork })
+                    if (!MatchPhysics.Finite(v) || v < 0 || v > 20) throw new ArgumentOutOfRangeException(nameof(participants));
+                foreach (var v in new[] { p.Fatigue, p.MatchControl, p.ActionReadiness, p.HeadDamage, p.BodyDamage, p.ArmDamage, p.LegDamage, p.Stun, p.StartingFatigue })
+                    if (!MatchPhysics.Finite(v) || v < 0 || v > 100) throw new ArgumentOutOfRangeException(nameof(participants));
+                if (!MatchPhysics.Finite(p.Exertion) || p.Exertion < 0) throw new ArgumentOutOfRangeException(nameof(participants));
+                p.StartingFatigue = Math.Max(p.StartingFatigue, p.Fatigue);
+                p.SideId ??= p.Id;
             }
-            if (booking != null && (participantList.Count != 2 ||
-                booking.FinishType is < MatchFinishType.Pinfall or > MatchFinishType.Draw ||
+            rules ??= new MatchRuntimeRules();
+            if (rules.FallsToWin < 1 || rules.CountOutSeconds < 1 || !Enum.IsDefined(typeof(MatchObjective), rules.Objective))
+                throw new ArgumentException("Invalid match rules.");
+            if (booking != null && (!Enum.IsDefined(typeof(MatchFinishType), booking.FinishType) || !rules.Allows(booking.FinishType) ||
                 (booking.FinishType != MatchFinishType.Draw && (booking.WinnerId == booking.LoserId ||
-                    !participantList.Any(x => x.Id == booking.WinnerId) || !participantList.Any(x => x.Id == booking.LoserId)))))
-                throw new ArgumentException("A singles booking requires a supported finish and opposing participants.", nameof(booking));
-
-            var state = new MatchEngineState
-            {
-                Participants = participantList,
-                TargetDurationSeconds = targetDurationSeconds,
-                Phase = MatchPhase.Opening,
-                Booking = booking
-            };
+                !list.Any(x => x.Id == booking.WinnerId) || !list.Any(x => x.Id == booking.LoserId) ||
+                list.Single(x => x.Id == booking.WinnerId).SideId == list.Single(x => x.Id == booking.LoserId).SideId))))
+                throw new ArgumentException("Booking must have opposing participants and a legal finish.", nameof(booking));
+            if (rules.Tag && !rules.Tornado)
+                foreach (var side in list.GroupBy(x => x.SideId))
+                    foreach (var p in side) { p.IsLegal = p == side.First(); if (!p.IsLegal) p.Position = MatchPosition.Apron; }
+            // Singles roster order is not a tactical choice; tag starter order remains explicit.
+            if (!rules.Tag) list = list.OrderBy(p => p.Id, StringComparer.Ordinal).ToList();
+            var state = new MatchEngineState { EngineVersion = 4, Participants = list, TargetDurationSeconds = targetDurationSeconds,
+                Booking = booking == null ? null : new MatchEngineBooking { WinnerId = booking.WinnerId,
+                    LoserId = booking.LoserId, FinishType = booking.FinishType }, Rules = rules, FindMove = findMove,
+                AccidentsEnabled = accidentsEnabled, ScheduledSpots = spots?.ToList() ?? new List<SpotResultState>() };
+            state.AnnounceTableEligible = list.Count == 2 && rules.Objective == MatchObjective.PinOrSubmission &&
+                rules.ImportantMatch && !rules.Disqualification && (!rules.CountOut || rules.CountOutSeconds >= 30) &&
+                targetDurationSeconds >= 900 && random.NextDouble() < .12;
+            state.RingsideEligible = state.AnnounceTableEligible || list.Count == 2 &&
+                random.NextDouble() < (list.Any(p => p.Alignment == KayfabeAlignment.Heel) ? .45 : .18);
             stateMachine.Initialize(state);
-            while (!state.IsFinished && state.Events.Count < maximumEvents) Step(state);
-            if (!state.IsFinished) Abort(state);
+            while (!state.IsFinished && !state.IsAborted && state.Events.Count < maximumEvents) Step(state);
+            if (!state.IsFinished && !state.IsAborted) { state.IsAborted = true; state.FailureReason = "MaximumEvents reached without a finish."; }
             return state;
         }
 
@@ -168,86 +275,41 @@ namespace PWManager.Domain.Services
         {
             if (state == null) throw new ArgumentNullException(nameof(state));
             if (state.IsFinished || state.IsAborted) throw new InvalidOperationException("The match has already ended.");
+            if (state.WasStoppedByInjury) { MatchHealth.RecordStop(state); return state.Events.Last(); }
+            MatchMovement.Initialize(state);
+            if (!state.Opening.Initialized) MatchOpening.Initialize(state, random);
             var before = MatchEngineSnapshot.Capture(state);
-            if (state.Booking != null && state.TargetDurationSeconds - state.ElapsedSeconds <= 25)
-            {
-                var finish = FinishBookedMatch(state);
-                finish.Before = before;
-                finish.After = MatchEngineSnapshot.Capture(state);
-                return finish;
-            }
             stateMachine.Update(state);
-            var performer = PerformerSelector.Select(state, random, stateMachine.CurrentState);
-            var target = TargetSelector.Select(state, performer, random);
-            var actions = ActionGenerator.Generate(state, performer, target);
-            foreach (var action in actions) action.Score = ActionEvaluator.Score(state, action, stateMachine.CurrentState);
-            var selected = ActionSelector.Select(actions, random);
-            var matchEvent = ActionResolver.Resolve(state, selected, random);
-            state.Events.Add(matchEvent);
-            CrowdSimulator.Apply(state, matchEvent);
-            UpdateParticipantReadiness(state, matchEvent);
-            matchEvent.DurationSeconds = random.Next(8, 26);
-            if (state.Booking != null)
-                matchEvent.DurationSeconds = Math.Min(matchEvent.DurationSeconds, state.TargetDurationSeconds - state.ElapsedSeconds - 1);
-            state.ElapsedSeconds += matchEvent.DurationSeconds;
-            matchEvent.Before = before;
-            matchEvent.After = MatchEngineSnapshot.Capture(state);
-            return matchEvent;
-        }
-
-        private static MatchEngineEvent FinishBookedMatch(MatchEngineState state)
-        {
-            var booking = state.Booking;
-            var result = booking.FinishType switch
+            var combination = state.Exchange?.Kind is ExchangeKind.GripCombo or ExchangeKind.Hold or ExchangeKind.Chain;
+            var e = MatchPhysics.Next(state, random, stateMachine.CurrentState);
+            e.IntentionalCombination = combination;
+            e.Before = before;
+            MatchMovement.Apply(state, e, before);
+            MatchHealth.RecordEvidence(state, e, before);
+            MatchHealth.Observe(state, e, safetyRandom);
+            e.MatchTimeSeconds = state.ElapsedSeconds;
+            e.Phase = state.IsFinished ? MatchPhase.Finish : state.Phase;
+            if (e.DurationSeconds < 1) e.DurationSeconds = 1;
+            state.ElapsedSeconds += e.DurationSeconds;
+            foreach (var p in state.Participants)
             {
-                MatchFinishType.Submission => MatchActionResult.Submitted,
-                MatchFinishType.RollUp => MatchActionResult.RollUp,
-                MatchFinishType.Disqualification => MatchActionResult.Disqualification,
-                MatchFinishType.CountOut => MatchActionResult.CountOut,
-                MatchFinishType.Draw => MatchActionResult.Draw,
-                _ => MatchActionResult.Pinfall
-            };
-            // ponytail: the final exchange follows the booking at the allotted time; adaptive finish windows come with pacing work.
-            var matchEvent = new MatchEngineEvent
-            {
-                Type = MatchActionType.Finish, Result = result, Phase = MatchPhase.Finish,
-                PerformerId = result == MatchActionResult.Draw ? null : booking.WinnerId,
-                ReceiverId = result == MatchActionResult.Draw ? null : booking.LoserId,
-                MatchTimeSeconds = state.ElapsedSeconds,
-                DurationSeconds = state.TargetDurationSeconds - state.ElapsedSeconds,
-                IsMajorMoment = true, CrowdReaction = 8f, DramaChange = 10f,
-                CommentaryKey = $"match.finish.{booking.FinishType.ToString().ToLowerInvariant()}"
-            };
-            state.Events.Add(matchEvent);
-            state.ElapsedSeconds += matchEvent.DurationSeconds;
-            state.Phase = MatchPhase.Finish;
-            state.IsFinished = true;
-            state.WinnerId = matchEvent.PerformerId;
-            CrowdSimulator.Apply(state, matchEvent);
-            return matchEvent;
-        }
-
-        private static void UpdateParticipantReadiness(MatchEngineState state, MatchEngineEvent matchEvent)
-        {
-            foreach (var participant in state.Participants)
-            {
-                var change = participant.Id == matchEvent.PerformerId ? (matchEvent.IsMajorMoment ? -24f : -14f) : 6f;
-                if (participant.Id == matchEvent.ReceiverId) change = matchEvent.Result is MatchActionResult.ExecutionFailure or MatchActionResult.Countered ? 16f : -matchEvent.Impact;
-                participant.ActionReadiness = Clamp(participant.ActionReadiness + change, 0f, 100f);
+                p.Stun = Math.Max(0, p.Stun - e.DurationSeconds * .35f);
+                if (p.Id != e.PerformerId && p.Id != e.ReceiverId)
+                    MatchPhysics.RecoverFatigue(p, e.DurationSeconds);
+                p.ActionReadiness = MatchPhysics.Clamp(p.ActionReadiness + (p.Id == e.PerformerId ? -8 : 5));
             }
+            CrowdSimulator.Apply(state, e);
+            e.After = MatchEngineSnapshot.Capture(state);
+            var rb = before.Participants.FirstOrDefault(x => x.Id == e.ReceiverId);
+            var ra = e.After.Participants.FirstOrDefault(x => x.Id == e.ReceiverId);
+            e.FatigueChange = rb == null ? 0 : ra.Fatigue - rb.Fatigue;
+            var ab = before.Participants.FirstOrDefault(x => x.Id == e.PerformerId);
+            e.MatchControlChange = ab == null ? 0 : state.GetParticipant(e.PerformerId).MatchControl - ab.MatchControl;
+            e.CommentaryKey = $"match.{e.Type.ToString().ToLowerInvariant()}.{e.Result.ToString().ToLowerInvariant()}";
+            state.Events.Add(e);
+            if (state.WasStoppedByInjury) MatchHealth.RecordStop(state);
+            return e;
         }
-
-        private static void Abort(MatchEngineState state) { state.IsAborted = true; state.FailureReason = "MaximumEvents reached without a finish."; }
-
-        private static void ValidateAttributes(WrestlerAttributesState value)
-        {
-            if (value == null) throw new ArgumentNullException(nameof(value));
-            foreach (var attribute in new[] { value.Brawling, value.Power, value.Technical, value.HighFlying, value.Selling, value.Stamina, value.RingPsychology })
-                if (float.IsNaN(attribute) || float.IsInfinity(attribute) || attribute < 0f || attribute > 20f)
-                    throw new ArgumentOutOfRangeException(nameof(value), "Match attributes must be finite and between 0 and 20.");
-        }
-
-        private static float Clamp(float value, float minimum, float maximum) => Math.Max(minimum, Math.Min(maximum, value));
     }
 
     public static class PerformerSelector
@@ -256,7 +318,7 @@ namespace PWManager.Domain.Services
         {
             var candidates = state.GetActiveParticipants();
             if (candidates.Count == 0) throw new InvalidOperationException("No participant can act.");
-            var weights = candidates.Select(x => Math.Exp(Math.Min(40d, Score(state, x, phaseState) / 24f))).ToArray();
+            var weights = candidates.Select(x => (double)Score(state, x, phaseState)).ToArray();
             return candidates[WeightedIndex(weights, random)];
         }
 
@@ -264,9 +326,10 @@ namespace PWManager.Domain.Services
         {
             var score = 20f + participant.MatchControl * .55f + participant.ActionReadiness * .75f - participant.Fatigue * .35f;
             if (participant.IsDowned) score -= 45f;
-            if (state.Events.TakeLast(2).Any(x => x.PerformerId == participant.Id)) score -= 28f;
+            if (state.Events.TakeLast(2).Any(x => x.PerformerId == participant.Id)) score -= state.Rules.DominantSideId == participant.SideId ? 2f : 18f;
             if (state.Events.TakeLast(3).Any(x => x.ReceiverId == participant.Id)) score += state.Phase == MatchPhase.Comeback ? 30f : 10f;
             score += phaseState?.GetPerformerScoreModifier(state, participant) ?? 0f;
+            score += MatchOpening.PerformerBonus(state, participant);
             return Math.Max(.01f, score);
         }
 
@@ -290,7 +353,7 @@ namespace PWManager.Domain.Services
 
         public static float Score(MatchEngineState state, MatchEngineParticipant performer, MatchEngineParticipant target)
         {
-            var score = 20f + target.Fatigue * .35f + target.MatchControl * .2f + (target.IsDowned ? 8f : 0f);
+            var score = 20f + (target.IsLegal ? 12f : -100f) + target.Fatigue * .35f + target.MatchControl * .2f + (target.IsDowned ? 8f : 0f);
             if (state.Events.TakeLast(4).Any(x => x.PerformerId == target.Id && x.ReceiverId == performer.Id)) score += 18f;
             if (state.Events.LastOrDefault()?.ReceiverId == target.Id) score -= 10f;
             return Math.Max(.01f, score);
@@ -301,24 +364,8 @@ namespace PWManager.Domain.Services
     {
         public static List<MatchEngineAction> Generate(MatchEngineState state, MatchEngineParticipant performer, MatchEngineParticipant receiver)
         {
-            if (performer.IsDowned)
-                return new List<MatchEngineAction> { New(MatchActionType.Rest, performer, receiver) };
-            var types = receiver.IsDowned
-                ? new[] { MatchActionType.GroundAttack, MatchActionType.Submission, MatchActionType.Pin, MatchActionType.Rest }
-                : new[] { MatchActionType.BasicStrike, MatchActionType.HeavyStrike, MatchActionType.Grapple, MatchActionType.Rest };
-            var result = types.Select(x => New(x, performer, receiver)).ToList();
-            if (performer.MatchControl >= 65f)
-                result.Add(New(MatchActionType.Signature, performer, receiver));
-            if (performer.MatchControl >= 78f)
-                result.Add(New(MatchActionType.Finisher, performer, receiver));
-            return result;
+            return MatchPhysics.Actions(state, performer, receiver);
         }
-
-        private static MatchEngineAction New(MatchActionType type, MatchEngineParticipant performer, MatchEngineParticipant receiver) => new()
-        {
-            Type = type, PerformerId = performer.Id, ReceiverId = receiver.Id, ReceiverIds = new List<string> { receiver.Id },
-            MoveId = type == MatchActionType.Signature ? performer.SignatureMoveId : type == MatchActionType.Finisher ? performer.FinisherMoveId : null
-        };
     }
 
     public static class ActionEvaluator
@@ -330,21 +377,110 @@ namespace PWManager.Domain.Services
             var score = action.Type switch
             {
                 MatchActionType.BasicStrike => 30f + performer.Attributes.Brawling,
+                MatchActionType.Probe => 35f,
+                MatchActionType.TieUp => 35f + performer.Attributes.Technical,
                 MatchActionType.HeavyStrike => 18f + performer.Attributes.Brawling + performer.Attributes.Power * .5f,
                 MatchActionType.Grapple => 25f + performer.Attributes.Technical,
                 MatchActionType.GroundAttack => 25f + performer.Attributes.Brawling,
                 MatchActionType.Submission => 5f + performer.Attributes.Technical + receiver.Fatigue * .2f,
                 MatchActionType.Pin => 8f + receiver.Fatigue * .35f + state.Drama * .1f,
-                MatchActionType.Rest => 4f + performer.Fatigue * .25f,
+                MatchActionType.Rest => 2f + performer.Fatigue * .2f,
+                MatchActionType.Recover => 100f,
+                MatchActionType.Reposition => 12f,
+                MatchActionType.IrishWhip => 18f + performer.Attributes.Power * .7f + performer.Attributes.Technical * .3f,
+                MatchActionType.CornerWhip => 15f + performer.Attributes.Brawling * .7f + performer.Attributes.Power * .3f,
+                MatchActionType.RopeRun => 12f + performer.Attributes.HighFlying - performer.LegDamage * .12f - performer.Fatigue * .08f,
+                MatchActionType.StandingHold => 6f + performer.Attributes.Technical + performer.Attributes.Power * .4f,
+                MatchActionType.ExitRing => 1f + performer.Stun * .35f + performer.Fatigue * .1f +
+                    (performer.Alignment == KayfabeAlignment.Heel ? performer.Attributes.HeelWork * .5f +
+                        Math.Max(0, receiver.MatchControl - performer.MatchControl) * .2f : 0),
+                MatchActionType.Retreat => 2f + performer.Fatigue * .18f + performer.Stun * .25f,
+                MatchActionType.Lift => 24f,
+                MatchActionType.TurnOver => 18f + receiver.Stun * .2f,
+                MatchActionType.Climb => 8f + performer.Attributes.HighFlying,
+                MatchActionType.LimbAttack => 12f + performer.Attributes.Technical + performer.Attributes.RingPsychology * .5f + Math.Max(0, 12 - Math.Abs(MatchPhysics.Damage(receiver, performer.TargetRegion) - 35) * .3f),
+                MatchActionType.Tag => 6f + performer.Fatigue * .7f,
+                MatchActionType.DoubleTeam => 22f,
+                MatchActionType.Taunt => 3f + performer.Attributes.Charisma * .35f + performer.Attributes.Acting * .2f,
+                MatchActionType.ObjectSetup or MatchActionType.ObjectClimb => 30f,
                 MatchActionType.Signature => 28f + performer.MatchControl * .2f,
-                MatchActionType.Finisher => 38f + performer.MatchControl * .25f,
+                MatchActionType.Finisher => (12f + performer.MatchControl * .12f) * (.3f + Math.Min(1f, (float)state.ElapsedSeconds / state.TargetDurationSeconds)),
                 _ => 1f
             };
             if (state.Drama > 50f && action.Type is MatchActionType.Pin or MatchActionType.Submission or MatchActionType.Signature or MatchActionType.Finisher) score *= 1.25f;
             if (state.Intensity > 40f && action.Type is MatchActionType.HeavyStrike or MatchActionType.Grapple or MatchActionType.Signature) score *= 1.2f;
             if (state.CrowdHeat < 25f && action.Type is MatchActionType.HeavyStrike or MatchActionType.Signature or MatchActionType.Finisher) score *= 1.25f;
+            score *= TacticalFit(state, action, performer, receiver);
             var repeats = state.Events.TakeLast(4).Count(x => x.PerformerId == action.PerformerId && x.Type == action.Type);
-            return Math.Max(.01f, score * (float)Math.Pow(.45f, repeats) * (phaseState?.GetActionScoreModifier(state, action) ?? 1f));
+            if (action.Type == MatchActionType.LimbAttack && !string.IsNullOrEmpty(performer.PlannedFinisherMoveId) &&
+                MatchPhysics.Damage(receiver, performer.TargetRegion) < 60 ||
+                state.Exchange?.Kind is ExchangeKind.GripCombo or ExchangeKind.Hold or ExchangeKind.Chain) repeats = 0;
+            return Math.Max(.01f, score * (float)Math.Pow(state.Rules.DominantSideId == performer.SideId ? .9f : .65f, repeats) * (phaseState?.GetActionScoreModifier(state, action) ?? 1f));
+        }
+
+        private static float TacticalFit(MatchEngineState state, MatchEngineAction action, MatchEngineParticipant a, MatchEngineParticipant b)
+        {
+            var fit = 0f;
+            var tired = Math.Max(0, (a.Fatigue - 45) / 55);
+            var vulnerable = Math.Min(1, (b.Stun + b.LastImpact * 2) / 50);
+            var recent = state.ElapsedSeconds - b.LastImpactTime < 15;
+            switch (action.Type)
+            {
+                case MatchActionType.Rest: case MatchActionType.Retreat:
+                    fit = tired * 1.6f - (b.IsDowned && recent ? vulnerable * .7f : 0); break;
+                case MatchActionType.HeavyStrike: case MatchActionType.Grapple: case MatchActionType.Climb: case MatchActionType.RopeRun:
+                    fit = -tired * .7f + (b.IsDowned && recent ? .25f : 0); break;
+                case MatchActionType.IrishWhip: case MatchActionType.CornerWhip:
+                    fit = (b.Stun > 5 ? .35f : 0) - tired * .6f - Math.Max(0, (b.LegDamage - 50) / 50); break;
+                case MatchActionType.Pin:
+                    fit = !MatchHealth.LegalCover(state, a, b) ? -3 :
+                        MatchHealth.PinRisk(state, a, b) >= .16f ? 1 + MatchHealth.PinRisk(state, a, b) * 4 : -1.1f;
+                    if (recent && b.LastImpactWasFinisher && MatchHealth.LegalCover(state, a, b)) fit += 2;
+                    break;
+                case MatchActionType.Reposition:
+                    if (action.PartnerId == null && b.Position is MatchPosition.Center or MatchPosition.Ropes or MatchPosition.Corner)
+                        fit = Math.Clamp((MatchMovement.DistanceFromCenter(b) - .6f) / .3f, 0, 1) * 3 -
+                            (recent && b.LastImpactWasFinisher ? 1.5f : 0) - tired * .5f;
+                    break;
+                case MatchActionType.LimbAttack:
+                    fit = .5f - MatchPhysics.Damage(b, a.TargetRegion) / 80f; break;
+                case MatchActionType.Submission: case MatchActionType.StandingHold:
+                    fit = Math.Min(1, MatchPhysics.Damage(b, a.TargetRegion) / 50); break;
+                case MatchActionType.Signature: case MatchActionType.Finisher:
+                    fit = vulnerable + Math.Min(1, state.ElapsedSeconds / (float)state.TargetDurationSeconds) - .5f - tired;
+                    if (action.Type == MatchActionType.Finisher && action.MoveId == a.PlannedFinisherMoveId && !string.IsNullOrEmpty(action.MoveId)) fit += .6f;
+                    var previous = state.Events.LastOrDefault(e => e.PerformerId == a.Id && e.Type == MatchActionType.Finisher &&
+                        e.ReceiverId == b.Id && e.MoveId == action.MoveId && e.Result is MatchActionResult.FullSuccess or MatchActionResult.PartialSuccess);
+                    if (previous != null && b.Stun < 20 && state.ElapsedSeconds - previous.MatchTimeSeconds < 150)
+                    {
+                        var prior = previous.After?.Participants.FirstOrDefault(p => p.Id == b.Id);
+                        float priorDamage = prior == null ? 0 : previous.TargetRegion switch { BodyRegion.Head => prior.HeadDamage,
+                            BodyRegion.Arms => prior.ArmDamage, BodyRegion.Legs => prior.LegDamage, _ => prior.BodyDamage };
+                        fit -= MatchPhysics.Damage(b, previous.TargetRegion) - priorDamage < 8 ? 1.1f : .3f;
+                    }
+                    break;
+                case MatchActionType.Lift: case MatchActionType.TurnOver:
+                    if (!string.IsNullOrEmpty(a.PlannedFinisherMoveId) && a.MatchControl >= 66) fit = .9f - tired;
+                    break;
+                case MatchActionType.Taunt:
+                    fit = b.IsDowned && b.Stun > 20 ? .5f : -.8f;
+                    if (b.LastImpactWasFinisher && recent) fit -= 1.2f;
+                    break;
+                case MatchActionType.Probe:
+                    fit = -state.Events.TakeLast(3).Count(x => x.PerformerId == a.Id && x.Type == MatchActionType.Probe) * .6f; break;
+            }
+            if (!string.IsNullOrEmpty(a.PlannedFinisherMoveId) && state.FindMove?.Invoke(a.PlannedFinisherMoveId) is MatchMoveRules goal)
+            {
+                if (action.Type == MatchActionType.LimbAttack && MatchPhysics.Damage(b, a.TargetRegion) < 60) fit += .45f;
+                if (MatchPhysics.Damage(b, a.TargetRegion) >= 60)
+                {
+                    if (action.Type == MatchActionType.LimbAttack) fit -= 1.1f;
+                    if (MatchHealth.IsPreparation(action.Type) && !MatchPhysics.CanMove(state, a, b, a.PlannedFinisherMoveId)) fit += 1.8f;
+                }
+                if (action.Type == MatchActionType.Climb && action.MoveId == a.PlannedFinisherMoveId) fit += .9f;
+                if (!b.IsDowned && MatchTechniques.IsGrounded(goal.Situation) && action.Type is MatchActionType.HeavyStrike or MatchActionType.Grapple) fit += .55f;
+            }
+            return Math.Max(.1f, 1 + fit * a.Attributes.RingPsychology / 20);
         }
     }
 
@@ -355,7 +491,7 @@ namespace PWManager.Domain.Services
             if (actions == null || actions.Count == 0) throw new ArgumentException("At least one action is required.", nameof(actions));
             if (random == null) throw new ArgumentNullException(nameof(random));
             if (temperature <= 0f) throw new ArgumentOutOfRangeException(nameof(temperature));
-            var weights = actions.Select(x => Math.Exp(Math.Min(40d, x.Score / temperature))).ToArray();
+            var weights = actions.Select(x => Math.Pow(Math.Max(.01f, x.Score), 18d / temperature)).ToArray();
             return actions[PerformerSelector.WeightedIndex(weights, random)];
         }
     }
@@ -364,89 +500,16 @@ namespace PWManager.Domain.Services
     {
         public static MatchEngineEvent Resolve(MatchEngineState state, MatchEngineAction action, Random random)
         {
-            var performer = state.GetParticipant(action.PerformerId);
-            var receiver = state.GetParticipant(action.ReceiverId);
-            if (action.Type == MatchActionType.Rest) return Rest(state, performer, receiver);
-            if (action.Type == MatchActionType.Pin) return Pin(state, performer, receiver, random);
-            if (action.Type == MatchActionType.Submission) return Submission(state, performer, receiver, random);
-
-            var ability = Ability(performer, action.Type) - performer.Fatigue * .08f;
-            var executionChance = Clamp(.58f + (ability - 10f) * .025f, .25f, .92f);
-            var receptionChance = Clamp(.72f + (receiver.Attributes.Selling - 10f) * .02f - receiver.Fatigue * .002f, .35f, .95f);
-            var execution = random.NextDouble() < executionChance;
-            var reception = random.NextDouble() < receptionChance;
-            var result = !execution ? MatchActionResult.ExecutionFailure : reception ? MatchActionResult.FullSuccess : MatchActionResult.ReceptionFailure;
-            var impact = execution ? Impact(action.Type) * (reception ? 1f : 1.2f) : 1f;
-            var control = execution ? Math.Min(12f, impact * .65f) : -6f;
-            receiver.Fatigue = Clamp(receiver.Fatigue + impact, 0f, 100f);
-            performer.Fatigue = Clamp(performer.Fatigue + impact * .18f, 0f, 100f);
-            performer.MatchControl = Clamp(performer.MatchControl + control, 0f, 100f);
-            receiver.MatchControl = Clamp(receiver.MatchControl - control, 0f, 100f);
-            receiver.IsDowned = execution && impact >= 7f;
-            return Event(state, action, result, impact, control, action.Type >= MatchActionType.Signature);
-        }
-
-        private static MatchEngineEvent Rest(MatchEngineState state, MatchEngineParticipant performer, MatchEngineParticipant receiver)
-        {
-            performer.Fatigue = Clamp(performer.Fatigue - 4f, 0f, 100f);
-            performer.IsDowned = false;
-            return Event(state, new MatchEngineAction { Type = MatchActionType.Rest, PerformerId = performer.Id, ReceiverId = receiver.Id }, MatchActionResult.FullSuccess, 0f, -2f, false);
-        }
-
-        private static MatchEngineEvent Pin(MatchEngineState state, MatchEngineParticipant performer, MatchEngineParticipant receiver, Random random)
-        {
-            var lastImpact = state.Events.LastOrDefault(x => x.ReceiverId == receiver.Id)?.Impact ?? 0f;
-            var finisher = state.Events.LastOrDefault(x => x.ReceiverId == receiver.Id)?.Type == MatchActionType.Finisher;
-            var chance = state.Booking == null ? PinfallChance(state, performer, receiver, lastImpact, finisher) : 0f;
-            var roll = random.NextDouble();
-            var result = roll < chance ? MatchActionResult.Pinfall : roll < chance + .12f ? MatchActionResult.NearFall : roll < chance + .42f ? MatchActionResult.TwoCount : MatchActionResult.OneCount;
-            if (result == MatchActionResult.Pinfall) { state.IsFinished = true; state.WinnerId = performer.Id; }
-            else { receiver.IsDowned = false; receiver.MatchControl = Clamp(receiver.MatchControl + 8f, 0f, 100f); }
-            return Event(state, new MatchEngineAction { Type = MatchActionType.Pin, PerformerId = performer.Id, ReceiverId = receiver.Id }, result, 0f, 0f, result >= MatchActionResult.NearFall);
+            return MatchPhysics.Resolve(state, action, random);
         }
 
         public static float PinfallChance(MatchEngineState state, MatchEngineParticipant performer, MatchEngineParticipant receiver, float recentImpact, bool afterFinisher)
         {
-            var chance = .01f + receiver.Fatigue * .0048f + recentImpact * .012f + performer.MatchControl * .001f - receiver.MatchControl * .0015f;
-            if (afterFinisher) chance += .22f;
+            var chance = .005f + receiver.Fatigue * .002f + receiver.Stun * .005f + recentImpact * .007f + receiver.BodyDamage * .002f;
+            if (afterFinisher) chance += .20f;
             if (state.Phase == MatchPhase.Opening) chance *= .08f;
-            else if (state.Phase >= MatchPhase.Climax) chance += .08f;
-            return Clamp(chance, .001f, .94f);
+            return Math.Max(.001f, Math.Min(.92f, chance));
         }
-
-        private static MatchEngineEvent Submission(MatchEngineState state, MatchEngineParticipant performer, MatchEngineParticipant receiver, Random random)
-        {
-            var chance = Clamp(.005f + receiver.Fatigue * .0035f + (performer.Attributes.Technical - receiver.Attributes.Technical) * .008f + (state.Phase >= MatchPhase.Climax ? .08f : 0f), .001f, .7f);
-            var submitted = random.NextDouble() < chance && state.Booking == null;
-            if (submitted) { state.IsFinished = true; state.WinnerId = performer.Id; }
-            else { receiver.Fatigue = Clamp(receiver.Fatigue + 3f, 0f, 100f); receiver.IsDowned = false; }
-            return Event(state, new MatchEngineAction { Type = MatchActionType.Submission, PerformerId = performer.Id, ReceiverId = receiver.Id }, submitted ? MatchActionResult.Submitted : MatchActionResult.Countered, 3f, submitted ? 8f : -4f, submitted);
-        }
-
-        private static MatchEngineEvent Event(MatchEngineState state, MatchEngineAction action, MatchActionResult result, float impact, float control, bool major) => new()
-        {
-            Type = action.Type, Result = result, PerformerId = action.PerformerId, ReceiverId = action.ReceiverId, MoveId = action.MoveId,
-            MatchTimeSeconds = state.ElapsedSeconds, Phase = state.Phase, Impact = impact, FatigueChange = impact,
-            MatchControlChange = control, CrowdReaction = major ? 8f : impact * .3f,
-            DramaChange = major ? 10f : impact * .2f, IntensityChange = impact * .25f,
-            IsMajorMoment = major, CommentaryKey = $"match.{action.Type.ToString().ToLowerInvariant()}.{result.ToString().ToLowerInvariant()}"
-        };
-
-        private static float Ability(MatchEngineParticipant performer, MatchActionType type) => type switch
-        {
-            MatchActionType.BasicStrike or MatchActionType.HeavyStrike or MatchActionType.GroundAttack => performer.Attributes.Brawling,
-            MatchActionType.Grapple => performer.Attributes.Technical,
-            MatchActionType.Signature or MatchActionType.Finisher => Math.Max(performer.Attributes.Power, Math.Max(performer.Attributes.Technical, performer.Attributes.HighFlying)),
-            _ => performer.Attributes.RingPsychology
-        };
-
-        private static float Impact(MatchActionType type) => type switch
-        {
-            MatchActionType.BasicStrike => 3f, MatchActionType.Grapple => 4f, MatchActionType.HeavyStrike => 7f,
-            MatchActionType.GroundAttack => 5f, MatchActionType.Signature => 12f, MatchActionType.Finisher => 18f, _ => 1f
-        };
-
-        private static float Clamp(float value, float minimum, float maximum) => Math.Max(minimum, Math.Min(maximum, value));
     }
 
     public static class CrowdSimulator
@@ -454,8 +517,8 @@ namespace PWManager.Domain.Services
         public static void Apply(MatchEngineState state, MatchEngineEvent matchEvent)
         {
             state.CrowdHeat = Clamp(state.CrowdHeat + matchEvent.CrowdReaction - (matchEvent.Type == MatchActionType.Rest ? 2f : 0f), 0f, 100f);
-            state.Drama = Clamp(state.Drama + matchEvent.DramaChange, 0f, 100f);
-            state.Intensity = Clamp(state.Intensity * .75f + matchEvent.IntensityChange, 0f, 100f);
+            state.Drama = Clamp(state.Drama * .995f + matchEvent.DramaChange, 0f, 100f);
+            state.Intensity = Clamp(state.Intensity * .8f + matchEvent.IntensityChange, 0f, 100f);
         }
 
         private static float Clamp(float value, float minimum, float maximum) => Math.Max(minimum, Math.Min(maximum, value));

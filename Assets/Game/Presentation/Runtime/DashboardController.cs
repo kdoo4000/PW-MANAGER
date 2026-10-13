@@ -29,6 +29,7 @@ namespace PWManager.Presentation
         private VisualElement saveLoadRows;
         private TextField manualSaveName;
         private Label saveLoadMessage;
+        private Focusable saveLoadReturnFocus;
         private DashboardInboxController inboxController;
         private ShowSimulationPlayer simulationPlayer;
         private VisualElement profileReturnOverlay;
@@ -45,7 +46,7 @@ namespace PWManager.Presentation
             var toolbar = root.Q(className: "topbar");
             void AddAction(string text, Action action)
             {
-                var button = new Button(() => { if (!advancingShow) action(); }) { text = text };
+                var button = new Button(() => { if (!advancingShow && !DashboardSession.IsShowRunning) action(); }) { text = text };
                 button.AddToClassList("small-button");
                 toolbar.Insert(toolbar.childCount - 1, button);
             }
@@ -68,6 +69,10 @@ namespace PWManager.Presentation
             inboxController = new DashboardInboxController(document.rootVisualElement, () => ShowSchedulePage(), id => ShowPlanningPage(id));
             ApplyIcons();
             document.rootVisualElement.RegisterCallback<ClickEvent>(OnClick);
+            document.rootVisualElement.RegisterCallback<PointerDownEvent>(BlockShowInteraction, TrickleDown.TrickleDown);
+            document.rootVisualElement.RegisterCallback<PointerUpEvent>(BlockShowInteraction, TrickleDown.TrickleDown);
+            document.rootVisualElement.RegisterCallback<ClickEvent>(BlockShowInteraction, TrickleDown.TrickleDown);
+            document.rootVisualElement.RegisterCallback<NavigationSubmitEvent>(BlockShowInteraction, TrickleDown.TrickleDown);
             rosterController = new DashboardRosterController(document.rootVisualElement);
             facilitiesController = new DashboardFacilitiesController(document.rootVisualElement);
             BindClick("advance-time", AdvanceDay);
@@ -82,11 +87,19 @@ namespace PWManager.Presentation
 
         private void OnDisable()
         {
+            saveLoadOverlay?.UnregisterCallback<KeyDownEvent>(OnSaveLoadKeyDown, TrickleDown.TrickleDown);
+            saveLoadOverlay?.UnregisterCallback<NavigationMoveEvent>(OnSaveLoadNavigation, TrickleDown.TrickleDown);
             simulationPlayer?.Dispose();
             simulationPlayer = null;
             DashboardSession.SaveChanged -= Bind;
             if (document != null && document.rootVisualElement != null)
+            {
                 document.rootVisualElement.UnregisterCallback<ClickEvent>(OnClick);
+                document.rootVisualElement.UnregisterCallback<PointerDownEvent>(BlockShowInteraction, TrickleDown.TrickleDown);
+                document.rootVisualElement.UnregisterCallback<PointerUpEvent>(BlockShowInteraction, TrickleDown.TrickleDown);
+                document.rootVisualElement.UnregisterCallback<ClickEvent>(BlockShowInteraction, TrickleDown.TrickleDown);
+                document.rootVisualElement.UnregisterCallback<NavigationSubmitEvent>(BlockShowInteraction, TrickleDown.TrickleDown);
+            }
             if (instance == this) instance = null;
         }
 
@@ -97,6 +110,10 @@ namespace PWManager.Presentation
             saveLoadRows = document.rootVisualElement.Q<VisualElement>("dashboard-save-load-rows");
             manualSaveName = document.rootVisualElement.Q<TextField>("manual-save-name");
             saveLoadMessage = document.rootVisualElement.Q<Label>("save-load-message");
+            saveLoadOverlay?.UnregisterCallback<KeyDownEvent>(OnSaveLoadKeyDown, TrickleDown.TrickleDown);
+            saveLoadOverlay?.RegisterCallback<KeyDownEvent>(OnSaveLoadKeyDown, TrickleDown.TrickleDown);
+            saveLoadOverlay?.UnregisterCallback<NavigationMoveEvent>(OnSaveLoadNavigation, TrickleDown.TrickleDown);
+            saveLoadOverlay?.RegisterCallback<NavigationMoveEvent>(OnSaveLoadNavigation, TrickleDown.TrickleDown);
             BindClick("nav-settings", OpenSaveLoadMenu);
             BindClick("dashboard-save-load-close", CloseSaveLoadMenu);
             BindClick("manual-save-submit", SaveManual);
@@ -104,13 +121,45 @@ namespace PWManager.Presentation
 
         private void OpenSaveLoadMenu()
         {
-            if (saveLoadOverlay == null) return;
+            if (saveLoadOverlay == null || DashboardSession.IsShowRunning) return;
+            if (saveLoadOverlay.ClassListContains("hidden"))
+                saveLoadReturnFocus = document.rootVisualElement.focusController?.focusedElement;
             saveLoadMessage.text = string.Empty;
             RenderSaveSlots();
             saveLoadOverlay.RemoveFromClassList("hidden");
+            manualSaveName?.Focus();
         }
 
-        private void CloseSaveLoadMenu() => saveLoadOverlay?.AddToClassList("hidden");
+        private void CloseSaveLoadMenu()
+        {
+            saveLoadOverlay?.AddToClassList("hidden");
+            saveLoadReturnFocus?.Focus();
+            saveLoadReturnFocus = null;
+        }
+
+        private void OnSaveLoadKeyDown(KeyDownEvent evt)
+        {
+            if (evt.keyCode != KeyCode.Escape) return;
+            CloseSaveLoadMenu();
+            evt.StopPropagation();
+            saveLoadOverlay.focusController?.IgnoreEvent(evt);
+        }
+
+        private void OnSaveLoadNavigation(NavigationMoveEvent evt)
+        {
+            if (evt.direction != NavigationMoveEvent.Direction.Next && evt.direction != NavigationMoveEvent.Direction.Previous) return;
+            var controls = saveLoadOverlay.Query<VisualElement>()
+                .Where(e => (e is Button || e is TextField) && e.enabledInHierarchy).ToList();
+            if (controls.Count == 0) return;
+            var focused = saveLoadOverlay.focusController?.focusedElement as VisualElement;
+            var current = controls.FindIndex(e => e == focused || (focused != null && e.Contains(focused)));
+            var reverse = evt.direction == NavigationMoveEvent.Direction.Previous;
+            var next = current < 0 ? (reverse ? controls.Count - 1 : 0)
+                : (current + (reverse ? controls.Count - 1 : 1)) % controls.Count;
+            controls[next].Focus();
+            evt.StopPropagation();
+            saveLoadOverlay.focusController?.IgnoreEvent(evt);
+        }
 
         private void SaveManual()
         {
@@ -229,12 +278,18 @@ namespace PWManager.Presentation
             scheduleController.Render(boundSave);
             facilitiesController.Render(boundSave);
             showPlanningController.Bind(boundSave, showTestMode);
+            foreach (var button in document.rootVisualElement.Query<Button>().ToList().Where(x => x.name.StartsWith("nav-", StringComparison.Ordinal) || x.name == "notifications"))
+                button.SetEnabled(!DashboardSession.IsShowRunning);
+            foreach (var name in new[] { "message-content", "roster-content", "show-schedule-content", "show-planning-content", "facilities-content" })
+                document.rootVisualElement.Q(name)?.SetEnabled(!DashboardSession.IsShowRunning);
+            UpdateNavigationButtons();
         }
 
 
 
         private void ShowPage(bool roster, bool recordNavigation = true)
         {
+            HideStoryPage();
             var overview = document.rootVisualElement.Q<VisualElement>("overview-content");
             var messageContent = document.rootVisualElement.Q<VisualElement>("message-content");
             var rosterContent = document.rootVisualElement.Q<VisualElement>("roster-content");
@@ -261,6 +316,7 @@ namespace PWManager.Presentation
 
         private void ShowMessagesPage(bool recordNavigation = true)
         {
+            HideStoryPage();
             document.rootVisualElement.Q<VisualElement>("overview-content").style.display = DisplayStyle.None;
             document.rootVisualElement.Q<VisualElement>("message-content").style.display = DisplayStyle.Flex;
             document.rootVisualElement.Q<VisualElement>("roster-content").style.display = DisplayStyle.None;
@@ -280,6 +336,7 @@ namespace PWManager.Presentation
 
         private void ShowSchedulePage(bool recordNavigation = true)
         {
+            HideStoryPage();
             document.rootVisualElement.Q<VisualElement>("overview-content").style.display = DisplayStyle.None;
             document.rootVisualElement.Q<VisualElement>("message-content").style.display = DisplayStyle.None;
             document.rootVisualElement.Q<VisualElement>("roster-content").style.display = DisplayStyle.None;
@@ -299,6 +356,7 @@ namespace PWManager.Presentation
 
         private void ShowPlanningPage(string showId = null, bool recordNavigation = true)
         {
+            HideStoryPage();
             document.rootVisualElement.Q<VisualElement>("overview-content").style.display = DisplayStyle.None;
             document.rootVisualElement.Q<VisualElement>("message-content").style.display = DisplayStyle.None;
             document.rootVisualElement.Q<VisualElement>("roster-content").style.display = DisplayStyle.None;
@@ -318,6 +376,7 @@ namespace PWManager.Presentation
 
         private void ShowProfilePage()
         {
+            HideStoryPage();
             var editor = document.rootVisualElement.Q("show-editor-overlay");
             if (editor != null && !editor.ClassListContains("hidden"))
             {
@@ -348,6 +407,7 @@ namespace PWManager.Presentation
 
         private void ShowFacilitiesPage(bool recordNavigation = true)
         {
+            HideStoryPage();
             foreach (var name in new[] { "overview-content", "message-content", "roster-content", "wrestler-profile-content", "show-schedule-content", "show-planning-content" })
             {
                 var content = document.rootVisualElement.Q<VisualElement>(name);
@@ -360,6 +420,47 @@ namespace PWManager.Presentation
             Set("dashboard-page-title", "시설·스태프");
             facilitiesController.Render(boundSave);
             if (recordNavigation) RecordNavigation(new NavigationEntry(DashboardPage.Facilities));
+        }
+
+        private void HideStoryPage()
+        {
+            document.rootVisualElement.Q("dashboard-workspace")?.Q("story-management")?.RemoveFromHierarchy();
+            document.rootVisualElement.Q("dashboard-workspace")?.Q("championship-management")?.RemoveFromHierarchy();
+            document.rootVisualElement.Q<Button>("nav-title")?.EnableInClassList("active", false);
+            document.rootVisualElement.Q<Button>("nav-story")?.EnableInClassList("active", false);
+            document.rootVisualElement.Q<Button>("nav-teams")?.EnableInClassList("active", false);
+        }
+
+        private void ShowStoryPage(bool groups, bool recordNavigation = true)
+        {
+            HideStoryPage();
+            foreach (var name in new[] { "overview-content", "message-content", "roster-content", "wrestler-profile-content", "show-schedule-content", "show-planning-content", "facilities-content" })
+            {
+                var content = document.rootVisualElement.Q<VisualElement>(name);
+                if (content != null) content.style.display = DisplayStyle.None;
+            }
+            foreach (var name in new[] { "nav-home", "nav-message", "nav-roster", "nav-show", "nav-staff", "nav-story", "nav-teams" })
+                document.rootVisualElement.Q<Button>(name)?.EnableInClassList("active", name == (groups ? "nav-teams" : "nav-story"));
+            Set("dashboard-page-title", groups ? "로스터 / 태그팀·스테이블" : "쇼 / 스토리라인");
+            var workspace = document.rootVisualElement.Q<VisualElement>("dashboard-workspace");
+            if (groups) StoryManagementView.OpenGroups(workspace);
+            else StoryManagementView.Open(workspace);
+            if (recordNavigation) RecordNavigation(new NavigationEntry(groups ? DashboardPage.Teams : DashboardPage.Story));
+        }
+
+        private void ShowChampionshipPage(bool recordNavigation = true)
+        {
+            HideStoryPage();
+            foreach (var name in new[] { "overview-content", "message-content", "roster-content", "wrestler-profile-content", "show-schedule-content", "show-planning-content", "facilities-content" })
+            {
+                var content = document.rootVisualElement.Q<VisualElement>(name);
+                if (content != null) content.style.display = DisplayStyle.None;
+            }
+            foreach (var name in new[] { "nav-home", "nav-message", "nav-roster", "nav-show", "nav-staff", "nav-story", "nav-teams", "nav-title" })
+                document.rootVisualElement.Q<Button>(name)?.EnableInClassList("active", name == "nav-title");
+            Set("dashboard-page-title", "챔피언십");
+            ChampionshipManagementView.Open(document.rootVisualElement.Q<VisualElement>("dashboard-workspace"));
+            if (recordNavigation) RecordNavigation(new NavigationEntry(DashboardPage.Championships));
         }
 
         private void RecordNavigation(NavigationEntry entry)
@@ -379,6 +480,14 @@ namespace PWManager.Presentation
 
         private void NavigateBack()
         {
+            if (DashboardSession.IsShowRunning)
+            {
+                WrestlerProfileController.CloseOpenProfile(false);
+                ShowPage(false);
+                simulationPlayer?.ViewProfile(false);
+                UpdateNavigationButtons();
+                return;
+            }
             if (navigationIndex <= 0) return;
             navigationIndex--;
             ApplyNavigation(navigationHistory[navigationIndex]);
@@ -392,6 +501,7 @@ namespace PWManager.Presentation
 
         private void NavigateForward()
         {
+            if (DashboardSession.IsShowRunning) return;
             if (navigationIndex < 0 || navigationIndex >= navigationHistory.Count - 1) return;
             navigationIndex++;
             ApplyNavigation(navigationHistory[navigationIndex]);
@@ -411,13 +521,16 @@ namespace PWManager.Presentation
                     case DashboardPage.ShowSchedule: ShowSchedulePage(false); break;
                     case DashboardPage.ShowPlanning: ShowPlanningPage(entry.ContextId, false); break;
                     case DashboardPage.Facilities: ShowFacilitiesPage(false); break;
+                    case DashboardPage.Story: ShowStoryPage(false, false); break;
+                    case DashboardPage.Teams: ShowStoryPage(true, false); break;
+                    case DashboardPage.Championships: ShowChampionshipPage(false); break;
                     case DashboardPage.WrestlerProfile:
-                    {
-                        var wrestler = boundSave?.Wrestlers?.FirstOrDefault(x => x?.Id == entry.ContextId);
-                        if (wrestler != null) WrestlerProfileController.Open(wrestler);
-                        else ShowPage(true, false);
-                        break;
-                    }
+                        {
+                            var wrestler = boundSave?.Wrestlers?.FirstOrDefault(x => x?.Id == entry.ContextId);
+                            if (wrestler != null) WrestlerProfileController.Open(wrestler);
+                            else ShowPage(true, false);
+                            break;
+                        }
                 }
             }
             finally
@@ -429,8 +542,9 @@ namespace PWManager.Presentation
 
         private void UpdateNavigationButtons()
         {
-            document?.rootVisualElement?.Q<Button>("dashboard-back")?.SetEnabled(navigationIndex > 0);
-            document?.rootVisualElement?.Q<Button>("dashboard-forward")?.SetEnabled(navigationIndex >= 0 && navigationIndex < navigationHistory.Count - 1);
+            document?.rootVisualElement?.Q<Button>("dashboard-back")?.SetEnabled(DashboardSession.IsShowRunning ?
+                navigationIndex >= 0 && navigationHistory[navigationIndex].Page == DashboardPage.WrestlerProfile : navigationIndex > 0);
+            document?.rootVisualElement?.Q<Button>("dashboard-forward")?.SetEnabled(!DashboardSession.IsShowRunning && navigationIndex >= 0 && navigationIndex < navigationHistory.Count - 1);
         }
 
 
@@ -517,7 +631,7 @@ namespace PWManager.Presentation
                     switch (show.Status)
                     {
                         case ShowStatus.Confirmed:
-                            show.Status = ShowStatus.InProgress;
+                            StorylineService.StartShow(boundSave, show);
                             if (showTestMode) goto case ShowStatus.InProgress;
                             break;
                         case ShowStatus.InProgress:
@@ -662,7 +776,8 @@ namespace PWManager.Presentation
                 {
                     var latest = boundSave?.ShowResults?.LastOrDefault(x => x != null);
                     if (latest != null && !advancingShow) OpenShowSimulation(latest);
-                }) { name = "show-simulation", text = "쇼 다시 보기" };
+                })
+                { name = "show-simulation", text = "쇼 다시 보기" };
                 button.AddToClassList("show-action-button");
                 card.Add(button);
             }
@@ -746,9 +861,24 @@ namespace PWManager.Presentation
             if (button.name == "nav-roster") { WrestlerProfileController.CloseOpenProfile(false); ShowPage(true); evt.StopPropagation(); return; }
             if (button.name == "nav-show") { WrestlerProfileController.CloseOpenProfile(false); ShowSchedulePage(); evt.StopPropagation(); return; }
             if (button.name == "nav-staff") { WrestlerProfileController.CloseOpenProfile(false); ShowFacilitiesPage(); evt.StopPropagation(); return; }
+            if (button.name == "nav-story") { WrestlerProfileController.CloseOpenProfile(false); ShowStoryPage(false); evt.StopPropagation(); return; }
+            if (button.name == "nav-teams") { WrestlerProfileController.CloseOpenProfile(false); ShowStoryPage(true); evt.StopPropagation(); return; }
+            if (button.name == "nav-title") { WrestlerProfileController.CloseOpenProfile(false); ShowChampionshipPage(); evt.StopPropagation(); return; }
             Debug.Log($"Dashboard action selected: {button.name}");
         }
-        private enum DashboardPage { Home, Messages, Roster, WrestlerProfile, ShowSchedule, ShowPlanning, Facilities }
+        private void BlockShowInteraction(EventBase evt)
+        {
+            if (!DashboardSession.IsShowRunning) return;
+            var target = evt.target as VisualElement;
+            var button = target as Button ?? target?.GetFirstAncestorOfType<Button>();
+            if (button == null) return;
+            if (button.name is "advance-time" or "show-simulation" or "dashboard-back" or "wrestler-profile-back" or "wp-open-overview" or "wp-open-relationships") return;
+            if (button.ClassListContains("wrestler-link") || button.ClassListContains("wrestler-portrait-link") || button.ClassListContains("wrestler-portrait-name-link")) return;
+            for (var parent = button.parent; parent != null; parent = parent.parent)
+                if (parent.name == "simulation-screen") return;
+            evt.StopImmediatePropagation();
+        }
+        private enum DashboardPage { Home, Messages, Roster, WrestlerProfile, ShowSchedule, ShowPlanning, Facilities, Story, Teams, Championships }
         private sealed class NavigationEntry
         {
             public readonly DashboardPage Page;

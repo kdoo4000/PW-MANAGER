@@ -134,6 +134,7 @@ namespace PWManager.Presentation
                 .OrderBy(x => x.Date.Year).ThenBy(x => x.Date.Month).ThenBy(x => x.Date.Day).ToList();
             for (var index = 0; index < shows.Count; index++)
             {
+                if (shows[index].Status is not (ShowStatus.Draft or ShowStatus.Preparing or ShowStatus.Review)) continue;
                 var title = editingRegularTitles
                     ? save.SeasonPolicy.RegularShowName
                     : save.SeasonPolicy.PpvShowTitles.Single(x => x.Month == shows[index].Date.Month).Title;

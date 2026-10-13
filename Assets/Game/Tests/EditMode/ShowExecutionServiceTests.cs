@@ -9,6 +9,49 @@ namespace PWManager.Tests
 {
     public sealed class ShowExecutionServiceTests
     {
+        [Test]
+        public void GroupFormation_PreservesSaveUntilConfirmation_AndSurvivesReload()
+        {
+            var save = CreateSave();
+            foreach (var wrestler in save.Wrestlers) wrestler.PromotionId = save.Promotion.Id;
+            var promo = save.PromoPlans[0];
+            promo.Purpose = PromoPurpose.TeamFormation;
+            promo.GroupType = StoryPartyType.TagTeam;
+            promo.GroupName = "첫 태그팀";
+            promo.ParticipantIds = new() { "a", "b" };
+            var result = Service().Execute(save, "show", 73, 1000, 100);
+            Assert.That(save.TagTeams, Is.Empty);
+            Assert.That(save.Wrestlers.All(x => string.IsNullOrEmpty(x.Roster.ActiveTagTeamId)), Is.True);
+            Assert.That(result.GroupChanges, Has.Count.EqualTo(1));
+            var restored = UnityEngine.JsonUtility.FromJson<GameSave>(UnityEngine.JsonUtility.ToJson(save));
+            restored.Shows[0].Status = ShowStatus.ResultsReviewed;
+            new ShowResultApplicationService().Apply(restored, result.Id);
+            Assert.That(restored.TagTeams, Has.Count.EqualTo(1));
+            Assert.That(restored.TagTeams[0].Id, Is.EqualTo(result.GroupChanges[0].GroupId));
+            Assert.That(restored.Wrestlers.All(x => x.Roster.ActiveTagTeamId == restored.TagTeams[0].Id), Is.True);
+            Assert.Throws<InvalidOperationException>(() => new ShowResultApplicationService().Apply(restored, result.Id));
+            Assert.That(restored.TagTeams, Has.Count.EqualTo(1));
+        }
+
+        [Test]
+        public void DuplicateGroupResult_IsRejectedBeforeSettlement()
+        {
+            var save = CreateSave();
+            foreach (var wrestler in save.Wrestlers) wrestler.PromotionId = save.Promotion.Id;
+            var promo = save.PromoPlans[0];
+            promo.Purpose = PromoPurpose.TeamFormation;
+            promo.GroupType = StoryPartyType.TagTeam;
+            promo.GroupName = "팀";
+            promo.ParticipantIds = new() { "a", "b" };
+            var result = Service().Execute(save, "show", 73, 1000, 100);
+            result.GroupChanges.Add(result.GroupChanges[0]);
+            save.Shows[0].Status = ShowStatus.ResultsReviewed;
+            Assert.Throws<InvalidOperationException>(() => new ShowResultApplicationService().Apply(save, result.Id));
+            Assert.That(save.TagTeams, Is.Empty);
+            Assert.That(save.Transactions, Is.Empty);
+            Assert.That(save.Shows[0].Status, Is.EqualTo(ShowStatus.ResultsReviewed));
+        }
+
         [TestCase(MatchFinishType.Submission)]
         [TestCase(MatchFinishType.RollUp)]
         [TestCase(MatchFinishType.Disqualification)]
@@ -50,7 +93,7 @@ namespace PWManager.Tests
             Assert.That(result.EngineState.IsFinished, Is.True);
             Assert.That(result.EngineState.WinnerId, Is.EqualTo(result.WinnerId).And.EqualTo("b"));
             Assert.That(result.EngineState.Events.Last().ReceiverId, Is.EqualTo(result.LoserTargetId));
-            Assert.That(result.EngineState.ElapsedSeconds, Is.EqualTo(result.ActualMatchDuration * 60));
+            Assert.That(result.ActualMatchDuration, Is.EqualTo((int)Math.Ceiling(result.EngineState.ElapsedSeconds / 60d)));
             Assert.That(save.Wrestlers[0].Condition.Condition, Is.EqualTo(condition), "Result review must not apply condition changes yet.");
             var engineBeats = result.SimulationBeats.Where(x => x.BeatType == MatchBeatType.EngineAction).ToList();
             Assert.That(engineBeats, Is.Not.Empty);
@@ -187,7 +230,7 @@ namespace PWManager.Tests
             string CreateId() => $"result-{++nextId}";
             return new ShowExecutionService(
                 new ShowPlanningService(rules, CreateId),
-                new MatchEvaluator(rules, rules, CreateId),
+                new MatchEvaluator(rules, rules, CreateId, accidentsEnabled: false),
                 new PromoEvaluator(CreateId),
                 CreateId);
         }

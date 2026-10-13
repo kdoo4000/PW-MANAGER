@@ -18,6 +18,8 @@ namespace PWManager.Data.Definitions
         [EnumToggleButtons] public MatchRuleOverride SubmissionRule;
         [EnumToggleButtons] public MatchRuleOverride DisqualificationRule;
         [EnumToggleButtons] public MatchRuleOverride CountOutRule;
+        [EnumToggleButtons] public MatchRuleOverride RopeBreakRule;
+        [Min(1)] public int CountOutSeconds = 10;
         [ListDrawerSettings] public List<MatchFinishType> AllowedSpecialFinishTypes = new();
     }
 }

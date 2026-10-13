@@ -48,6 +48,23 @@ namespace PWManager.Tests
         }
 
         [Test]
+        public void Load_UpgradesLegacyTitlePrestigeAndPreservesZeroOnSubsequentLoad()
+        {
+            var save = CreateValidSave("Legacy");
+            save.Championships.Add(new ChampionshipState { Id = GameEntityId.CreateRuntimeId(), PromotionId = save.Promotion.Id,
+                Name = "Legacy World Championship", IsWorldChampionship = true, HasPrestige = false, MatchHistory = null });
+            Directory.CreateDirectory(directory);
+            File.WriteAllText(Path.Combine(directory, "slot_1.json"), JsonUtility.ToJson(save));
+            var restored = service.Load("slot_1");
+            Assert.That(restored.Championships[0].HasPrestige, Is.True);
+            Assert.That(restored.Championships[0].Prestige, Is.EqualTo(60));
+            Assert.That(restored.Championships[0].MatchHistory, Is.Empty);
+            restored.Championships[0].Prestige = 0;
+            service.Save("slot_1", restored);
+            Assert.That(service.Load("slot_1").Championships[0].Prestige, Is.Zero);
+        }
+
+        [Test]
         public void SecondSave_CreatesLoadableBackupOfPreviousState()
         {
             service.Save("slot_1", CreateValidSave("First"));

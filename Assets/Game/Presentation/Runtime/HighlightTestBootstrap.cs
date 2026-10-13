@@ -117,8 +117,7 @@ namespace PWManager.Presentation
             card.AddToClassList(className);
             Text(card, role, "highlight-role");
             var portrait = new Image { scaleMode = ScaleMode.ScaleToFit, pickingMode = PickingMode.Ignore };
-            var path = wrestler.Presentation?.PortraitResourcePath;
-            if (!string.IsNullOrEmpty(path)) portrait.image = Resources.Load<Texture2D>(path);
+            portrait.image = PortraitRenderer.Get(wrestler);
             if (portrait.image == null)
             {
                 portrait.image = Resources.Load<Texture2D>("PWManagerUI/Wrestlers/Dummy/processed/single-1");

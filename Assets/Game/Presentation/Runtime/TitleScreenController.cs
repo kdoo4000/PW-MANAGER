@@ -78,6 +78,7 @@ namespace PWManager.Presentation
         private Button nextButton;
         private VisualElement loadOverlay;
         private VisualElement loadRows;
+        private Focusable loadReturnFocus;
         private SaveService saveService;
         private StaticContentCatalog catalog;
         private List<WrestlerState> candidates = new();
@@ -86,6 +87,7 @@ namespace PWManager.Presentation
         private readonly List<RosterSortCriterion> rosterSorts = new() { new RosterSortCriterion("name", true) };
         private int seed;
         private int step;
+        private PortraitEditorView playerAppearance;
 
         private string SaveDirectory => Path.Combine(Application.persistentDataPath, "Saves");
 
@@ -142,24 +144,27 @@ namespace PWManager.Presentation
             BindButton("birth-date-button", ToggleBirthDateCalendar);
             BindButton("calendar-previous", () => ShiftCalendarMonth(-1));
             BindButton("calendar-next", () => ShiftCalendarMonth(1));
-            BindButton("settings", () => ShowStatus("설정 화면은 다음 개발 단계에서 연결됩니다."));
-            BindButton("credits", () => ShowStatus("PW MANAGER · 개발 중인 플레이 버전"));
             BindButton("exit-game", Application.Quit);
+            loadOverlay.RegisterCallback<KeyDownEvent>(OnLoadMenuKeyDown, TrickleDown.TrickleDown);
+            loadOverlay.RegisterCallback<NavigationMoveEvent>(OnLoadMenuNavigation, TrickleDown.TrickleDown);
             promotionName.RegisterValueChangedCallback(_ => RefreshSummary());
             promotionAbbreviation.RegisterValueChangedCallback(_ => RefreshSummary());
             playerName.RegisterValueChangedCallback(_ => RefreshSummary());
             playerRole.RegisterValueChangedCallback(_ => { RefreshStyleChoices(); RefreshPlayerAbilities(); RefreshSummary(); });
-            playerGender.RegisterValueChangedCallback(_ => { RefreshStyleChoices(); RefreshPlayerAbilities(); });
+            playerGender.RegisterValueChangedCallback(_ => { RefreshStyleChoices(); RefreshPlayerAbilities(); RefreshPlayerAppearance(true); });
             playerReputation.RegisterValueChangedCallback(_ => RefreshSummary());
             playerReputation.RegisterValueChangedCallback(_ => RefreshPlayerAbilities());
             playerWrestlingType.RegisterValueChangedCallback(_ => { RefreshPlayerAbilities(); RefreshSummary(); });
             playerWrestlingStyle.RegisterValueChangedCallback(_ => RefreshPlayerAbilities());
             playerBirthDate.isReadOnly = true;
             playerBirthDate.RegisterCallback<ClickEvent>(_ => ToggleBirthDateCalendar());
-            playerHeight.RegisterValueChangedCallback(_ => { RefreshStyleChoices(); RefreshPlayerAbilities(); });
+            playerHeight.RegisterValueChangedCallback(_ => { RefreshStyleChoices(); RefreshPlayerAbilities(); RefreshPlayerAppearance(); });
+            playerWeight.RegisterValueChangedCallback(_ => RefreshPlayerAppearance());
             calendarYear.RegisterValueChangedCallback(_ => ChangeCalendarPeriod());
             calendarMonth.RegisterValueChangedCallback(_ => ChangeCalendarPeriod());
             regularFrequency.RegisterValueChangedCallback(_ => RefreshSummary());
+            Ui<ScrollView>("roster-list").contentViewport.RegisterCallback<GeometryChangedEvent>(evt =>
+                Ui<VisualElement>("roster-table-header").style.width = evt.newRect.width);
 
             dashboard.style.display = DisplayStyle.None;
             root.style.display = DisplayStyle.Flex;
@@ -192,6 +197,7 @@ namespace PWManager.Presentation
                 playerReputation.choices = ReputationChoices.ToList(); playerReputation.index = 2;
                 playerWrestlingType.choices = WrestlingTypeChoices.ToList(); playerWrestlingType.index = 1;
                 playerBirthDate.value = "1994-06-01"; playerHeight.value = 180; playerWeight.value = 90;
+                RefreshPlayerAppearance(true);
                 birthDateCalendar.AddToClassList("hidden");
                 RefreshStyleChoices("style_007");
                 RefreshPlayerAbilities();
@@ -211,6 +217,18 @@ namespace PWManager.Presentation
                 ShowStep(0);
             }
             catch (Exception exception) { Debug.LogException(exception); ShowStatus($"새 게임 준비에 실패했습니다: {exception.Message}", true); }
+        }
+
+        private void RefreshPlayerAppearance(bool reset = false)
+        {
+            var host = Ui<VisualElement>("player-appearance-workspace");
+            if (host == null || playerGender.index < 0) return;
+            var appearance = !reset && playerAppearance != null ? playerAppearance.Appearance.Clone() : new PortraitAppearanceState();
+            appearance.BodyType = PortraitAppearanceRules.BodyType(playerHeight.value, playerWeight.value);
+            PortraitAppearanceRules.Normalize(appearance, SelectedPlayerGender());
+            host.Clear();
+            playerAppearance = new PortraitEditorView(appearance, SelectedPlayerGender());
+            host.Add(playerAppearance);
         }
 
         private void CloseWizard()
@@ -634,6 +652,7 @@ namespace PWManager.Presentation
                     PlayerWrestlingType = (PlayerWrestlingType)Mathf.Max(0, playerWrestlingType.index),
                     PlayerWrestlingStyleId = SelectedPlayerStyleId(),
                     PlayerBirthDate = ParsePlayerBirthDate(), PlayerHeightCm = playerHeight.value, PlayerWeightKg = playerWeight.value,
+                    PlayerAppearance = playerAppearance?.Appearance.Clone(),
                     PromotionName = promotionName.value.Trim(),
                     PromotionAbbreviation = promotionAbbreviation.value.Trim().ToUpperInvariant(),
                     InitialCash = InitialCash,
@@ -672,6 +691,8 @@ namespace PWManager.Presentation
 
         private void OpenLoadMenu()
         {
+            if (loadOverlay.ClassListContains("hidden"))
+                loadReturnFocus = root.focusController?.focusedElement;
             loadRows.Clear();
             var slots = saveService.ListSlots();
             foreach (var slot in slots)
@@ -696,9 +717,43 @@ namespace PWManager.Presentation
             }
             if (slots.Count == 0) { var empty = new Label("저장된 게임이 없습니다"); empty.AddToClassList("save-load-empty"); loadRows.Add(empty); }
             loadOverlay.RemoveFromClassList("hidden");
+            root.Q<Button>("title-load-close")?.Focus();
         }
 
-        private void CloseLoadMenu() => loadOverlay.AddToClassList("hidden");
+        private void CloseLoadMenu()
+        {
+            loadOverlay.AddToClassList("hidden");
+            loadReturnFocus?.Focus();
+            loadReturnFocus = null;
+        }
+
+        private void OnLoadMenuKeyDown(KeyDownEvent evt)
+        {
+            if (evt.keyCode != KeyCode.Escape) return;
+            CloseLoadMenu();
+            evt.StopPropagation();
+            loadOverlay.focusController?.IgnoreEvent(evt);
+        }
+
+        private void OnLoadMenuNavigation(NavigationMoveEvent evt)
+        {
+            if (evt.direction != NavigationMoveEvent.Direction.Next && evt.direction != NavigationMoveEvent.Direction.Previous) return;
+            var buttons = loadOverlay.Query<Button>().Where(b => b.enabledInHierarchy).ToList();
+            if (buttons.Count == 0) return;
+            var current = buttons.IndexOf(loadOverlay.focusController?.focusedElement as Button);
+            var reverse = evt.direction == NavigationMoveEvent.Direction.Previous;
+            var next = current < 0 ? (reverse ? buttons.Count - 1 : 0)
+                : (current + (reverse ? buttons.Count - 1 : 1)) % buttons.Count;
+            buttons[next].Focus();
+            evt.StopPropagation();
+            loadOverlay.focusController?.IgnoreEvent(evt);
+        }
+
+        private void OnDestroy()
+        {
+            loadOverlay?.UnregisterCallback<KeyDownEvent>(OnLoadMenuKeyDown, TrickleDown.TrickleDown);
+            loadOverlay?.UnregisterCallback<NavigationMoveEvent>(OnLoadMenuNavigation, TrickleDown.TrickleDown);
+        }
 
         private void LoadSlot(string slotName, bool backup = false)
         {

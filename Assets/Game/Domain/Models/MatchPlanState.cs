@@ -1,8 +1,10 @@
 using System;
 using System.Collections.Generic;
+using PWManager.Domain.Services;
 
 namespace PWManager.Domain.Models
 {
+    public enum MatchOpeningStyle { Automatic, Probe, Clash, Dominance, Ambush }
     public enum MatchFinishType
     {
         Pinfall, Submission, RollUp, Disqualification, CountOut, Draw,
@@ -31,6 +33,14 @@ namespace PWManager.Domain.Models
         public string MiddleSpot;
         public string ClosingSpot;
         public List<PlannedSpotState> Spots = new();
+        public List<PlannedStoryInjuryState> StoryInjuries = new();
+        public int FallsToWin = 1;
+        public bool IronMan, Elimination, Tornado;
+        public string DominantSideId;
+        public MatchOpeningStyle OpeningStyle;
+        public string StorylineId;
+        public string ChampionshipId;
+        public StoryAction StoryAction;
 
         // Legacy save compatibility. New match plans use Sides and the fields above.
         public List<string> ParticipantIds = new();
@@ -38,5 +48,15 @@ namespace PWManager.Domain.Models
         public int TeamCount;
         public string WinnerId;
         public MatchFinishType FinishType;
+    }
+
+    [Serializable]
+    public sealed class PlannedStoryInjuryState
+    {
+        public string WrestlerId;
+        public BodyRegion Region = BodyRegion.Body;
+        public InjuryStatus Severity = InjuryStatus.Minor;
+        public int Days = 7;
+        public bool Absent;
     }
 }

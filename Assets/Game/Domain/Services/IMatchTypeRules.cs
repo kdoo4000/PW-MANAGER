@@ -12,6 +12,8 @@ namespace PWManager.Domain.Services
         public readonly MatchRuleOverride SubmissionRule;
         public readonly MatchRuleOverride DisqualificationRule;
         public readonly MatchRuleOverride CountOutRule;
+        public readonly MatchRuleOverride RopeBreakRule;
+        public readonly int CountOutSeconds;
         public readonly System.Collections.Generic.IReadOnlyList<PWManager.Domain.Models.MatchFinishType> AllowedSpecialFinishTypes;
 
         public MatchGimmickRules(int minimumParticipants, int maximumParticipants,
@@ -20,7 +22,8 @@ namespace PWManager.Domain.Services
             MatchRuleOverride countOutRule = MatchRuleOverride.Default,
             MatchRuleOverride pinfallRule = MatchRuleOverride.Default,
             MatchRuleOverride submissionRule = MatchRuleOverride.Default,
-            System.Collections.Generic.IReadOnlyList<PWManager.Domain.Models.MatchFinishType> allowedSpecialFinishTypes = null)
+            System.Collections.Generic.IReadOnlyList<PWManager.Domain.Models.MatchFinishType> allowedSpecialFinishTypes = null,
+            MatchRuleOverride ropeBreakRule = MatchRuleOverride.Default, int countOutSeconds = 10)
         {
             MinimumParticipants = minimumParticipants;
             MaximumParticipants = maximumParticipants;
@@ -30,6 +33,8 @@ namespace PWManager.Domain.Services
             SubmissionRule = submissionRule;
             DisqualificationRule = disqualificationRule;
             CountOutRule = countOutRule;
+            RopeBreakRule = ropeBreakRule;
+            CountOutSeconds = countOutSeconds > 0 ? countOutSeconds : 10;
             AllowedSpecialFinishTypes = allowedSpecialFinishTypes;
         }
 

@@ -22,13 +22,16 @@ namespace PWManager.Presentation
         private readonly HashSet<string> editorParticipantIds = new(StringComparer.Ordinal);
         private readonly List<string> editorParticipantSlots = new();
         private int selectedParticipantSlotIndex = -1;
-        private string pendingParticipantId;
+        private readonly List<string> pendingParticipantIds = new();
+        private int SelectedTeamSize => Math.Max(1, selectedMatchRule?.MembersPerTeam ?? 1);
         private bool editorRosterAscending;
         private readonly List<MatchFinishType> editorFinishTypes = new();
         private readonly List<MatchSideState> editorFinishSides = new();
         private readonly List<string> editorFinishPerformers = new();
         private readonly List<string> editorFinishLosers = new();
         private MatchSpotEditor matchSpotEditor;
+        private List<StorylineState> editorStories = new();
+        private List<string> editorStoryParticipants = new();
         private ShowEditorMode showEditorMode;
         private ShowEditSection showEditSection;
         private string editingShowEventId;
@@ -249,7 +252,7 @@ namespace PWManager.Presentation
             editorParticipantIds.Clear();
             editorParticipantSlots.Clear();
             selectedParticipantSlotIndex = -1;
-            pendingParticipantId = null;
+            pendingParticipantIds.Clear();
             root.Q<Button>("show-editor-submit").text = "추가";
             var primary = root.Q<DropdownField>("show-editor-primary");
             var secondary = root.Q<DropdownField>("show-editor-secondary");
@@ -329,14 +332,16 @@ namespace PWManager.Presentation
             root.Q(className: "show-editor-dialog").EnableInClassList("spot-production", showEditSection == ShowEditSection.Producing);
             var matchRules = root.Q<VisualElement>("show-editor-match-rules");
             var showMatchRulePicker = showEditorMode == ShowEditorMode.Match && showEditSection == ShowEditSection.Rules;
-            var assignsSingleMatchSlot = showEditorMode == ShowEditorMode.Match && showEditSection == ShowEditSection.Participants;
+            var assignsMatchTeam = showEditorMode == ShowEditorMode.Match && showEditSection == ShowEditSection.Participants;
             var showRules = (showEditSection is ShowEditSection.Full or ShowEditSection.Rules) && !showMatchRulePicker;
             var showParticipants = showEditSection is ShowEditSection.Full or ShowEditSection.Participants;
             if (fields != null) fields.style.display = showRules ? DisplayStyle.Flex : DisplayStyle.None;
             if (matchRules != null) matchRules.style.display = showMatchRulePicker ? DisplayStyle.Flex : DisplayStyle.None;
             if (rosterHeading != null) rosterHeading.style.display = showParticipants ? DisplayStyle.Flex : DisplayStyle.None;
             if (rosterScroll != null) rosterScroll.style.display = showParticipants ? DisplayStyle.Flex : DisplayStyle.None;
+            root.Q("show-editor-team-slots")?.EnableInClassList("hidden", !assignsMatchTeam);
             if (spots != null) spots.style.display = showEditSection == ShowEditSection.Producing ? DisplayStyle.Flex : DisplayStyle.None;
+            if (showEditSection == ShowEditSection.Producing) BuildStoryControls(spots);
             root.Q("show-editor-finish").EnableInClassList("hidden", showEditorMode != ShowEditorMode.Match);
             root.Q("show-editor-match-spots").EnableInClassList("hidden", showEditorMode != ShowEditorMode.Match);
             root.Q<TextField>("show-editor-opening-spot").label = showEditorMode == ShowEditorMode.Match ? "경기 전 스팟" : "오프닝 스팟";
@@ -346,8 +351,8 @@ namespace PWManager.Presentation
             if (submit != null)
             {
                 submit.style.display = DisplayStyle.Flex;
-                submit.SetEnabled(!assignsSingleMatchSlot || (!string.IsNullOrEmpty(pendingParticipantId) && !editorParticipantSlots.Contains(pendingParticipantId)));
-                if (assignsSingleMatchSlot) submit.text = "결정";
+                submit.SetEnabled(!assignsMatchTeam || pendingParticipantIds.Count == SelectedTeamSize);
+                if (assignsMatchTeam) submit.text = "결정";
             }
             var cancel = root.Q<Button>("show-editor-cancel");
             if (cancel != null) cancel.text = "취소";
@@ -429,6 +434,60 @@ namespace PWManager.Presentation
             RefreshFinishParticipants();
             SetEditorChoices("show-editor-finish-performer", editorFinishPerformers.Select(WrestlerName).ToList(), editorFinishPerformers.IndexOf(match.FinishPerformerId ?? match.WinnerId));
             SetEditorChoices("show-editor-loser", editorFinishLosers.Select(WrestlerName).ToList(), editorFinishLosers.IndexOf(match.LoserTargetId));
+            root.Q<IntegerField>("show-editor-falls-to-win").SetValueWithoutNotify(Math.Max(1, match.FallsToWin));
+            root.Q<Toggle>("show-editor-iron-man").SetValueWithoutNotify(match.IronMan);
+            root.Q<Toggle>("show-editor-elimination").SetValueWithoutNotify(match.Elimination);
+            var tornado = root.Q<Toggle>("show-editor-tornado");
+            tornado.SetValueWithoutNotify(match.Tornado);
+            tornado.SetEnabled(match.TeamCount > 0 && match.MembersPerTeam > 1);
+            var dominantSides = new List<string> { "균등" };
+            dominantSides.AddRange(editorFinishSides.Select((side, index) => $"{index + 1}. {string.Join(" & ", (side.MemberIds ?? new List<string>()).Select(WrestlerName))}"));
+            SetEditorChoices("show-editor-dominant-side", dominantSides, editorFinishSides.FindIndex(x => x.Id == match.DominantSideId) + 1);
+            InitializeStoryInjuries(match);
+        }
+
+        private void InitializeStoryInjuries(MatchPlanState match)
+        {
+            root.Q<VisualElement>("show-editor-story-injuries")?.RemoveFromHierarchy();
+            var host = root.Q<TextField>("show-editor-closing-spot")?.parent;
+            if (host == null) return;
+            var panel = new Foldout { name = "show-editor-story-injuries", text = "경기 후에도 이어지는 각본상 부상", value = match.StoryInjuries?.Count > 0 };
+            foreach (var id in match.Sides.SelectMany(s => s.MemberIds).Concat(match.ParticipantIds).Distinct())
+            {
+                var wrestler = save.Wrestlers.FirstOrDefault(w => w.Id == id);
+                if (wrestler == null) continue;
+                var planned = match.StoryInjuries?.FirstOrDefault(i => i.WrestlerId == id);
+                var row = new VisualElement { userData = id };
+                row.AddToClassList("show-editor-finish-row");
+                row.style.flexWrap = Wrap.Wrap;
+                row.Add(WrestlerProfileController.CreateLink(wrestler, "show-editor-wrestler-name"));
+                var severity = new DropdownField("각본상 심각도", new List<string> { "없음", "경상", "부상", "중상" }, (int)(planned?.Severity ?? InjuryStatus.None)) { name = "story-injury-severity" };
+                var region = new DropdownField("부위", new List<string> { "머리", "몸통", "팔", "다리" }, (int)(planned?.Region ?? BodyRegion.Body)) { name = "story-injury-region" };
+                var days = new IntegerField("복귀까지 일수") { name = "story-injury-days", value = planned?.Days ?? 7 };
+                var absent = new Toggle("각본상 결장") { name = "story-injury-absent", value = planned?.Absent ?? false };
+                foreach (var field in new VisualElement[] { severity, region, days, absent })
+                { field.AddToClassList("show-editor-field"); field.style.flexBasis = Length.Percent(45); field.style.flexGrow = 1; row.Add(field); }
+                panel.Add(row);
+            }
+            host.Add(panel);
+        }
+
+        private List<PlannedStoryInjuryState> ReadStoryInjuries()
+        {
+            var injuries = new List<PlannedStoryInjuryState>();
+            var panel = root.Q<Foldout>("show-editor-story-injuries");
+            if (panel == null) return injuries;
+            foreach (var row in panel.contentContainer.Children())
+            {
+                var severity = row.Q<DropdownField>("story-injury-severity").index;
+                if (severity == 0) continue;
+                var days = row.Q<IntegerField>("story-injury-days").value;
+                if (days < 1 || days > 365) throw new InvalidOperationException("각본상 복귀 기간은 1~365일로 입력하세요.");
+                injuries.Add(new PlannedStoryInjuryState { WrestlerId = (string)row.userData, Severity = (InjuryStatus)severity,
+                    Region = (BodyRegion)row.Q<DropdownField>("story-injury-region").index, Days = days,
+                    Absent = row.Q<Toggle>("story-injury-absent").value });
+            }
+            return injuries;
         }
 
         private IEnumerable<MatchFinishType> AllowedFinishTypes(MatchPlanState match)
@@ -478,6 +537,9 @@ namespace PWManager.Presentation
             if (finishIndex < 0 || finishIndex >= editorFinishTypes.Count) throw new InvalidOperationException("결말 방식을 선택하세요.");
             var finish = editorFinishTypes[finishIndex];
             if (!AllowedFinishTypes(match).Contains(finish)) throw new InvalidOperationException("이 경기 규칙에서 사용할 수 없는 결말입니다.");
+            var ironMan = root.Q<Toggle>("show-editor-iron-man").value;
+            var elimination = root.Q<Toggle>("show-editor-elimination").value;
+            if (ironMan && elimination) throw new InvalidOperationException("아이언맨 방식과 탈락 방식은 동시에 사용할 수 없습니다.");
             string sideId = null, performer = null, loser = null;
             if (finish != MatchFinishType.Draw)
             {
@@ -500,6 +562,12 @@ namespace PWManager.Presentation
             match.FinishPerformerId = performer;
             match.WinnerId = performer;
             match.LoserTargetId = loser;
+            match.FallsToWin = Math.Max(1, root.Q<IntegerField>("show-editor-falls-to-win").value);
+            match.IronMan = ironMan;
+            match.Elimination = elimination;
+            match.Tornado = match.MembersPerTeam > 1 && root.Q<Toggle>("show-editor-tornado").value;
+            var dominantIndex = root.Q<DropdownField>("show-editor-dominant-side").index - 1;
+            match.DominantSideId = dominantIndex >= 0 && dominantIndex < editorFinishSides.Count ? editorFinishSides[dominantIndex].Id : null;
         }
 
         private void RenderShowEditorRoster(ShowState show)
@@ -508,6 +576,7 @@ namespace PWManager.Presentation
             if (host == null || show == null) return;
             host.Clear();
             var usesMatchSlots = showEditorMode == ShowEditorMode.Match && showEditSection == ShowEditSection.Participants;
+            if (usesMatchSlots) RenderEditorTeamSlots(show);
             var sortIndex = root.Q<DropdownField>("show-editor-roster-sort").index;
             var sortKey = new[] { "name", "match", "promo", "momentum", "condition", "satisfaction" }[Math.Max(0, sortIndex)];
             var wrestlers = (save.Wrestlers ?? new List<WrestlerState>()).Where(x => x != null &&
@@ -518,25 +587,67 @@ namespace PWManager.Presentation
             {
                 var button = CreateWrestlerSelectionCard(wrestler);
                 button.userData = wrestler.Id;
-                var assigned = usesMatchSlots && editorParticipantSlots.Contains(wrestler.Id);
-                button.SetEnabled(!assigned);
-                if (assigned) button.tooltip = "이미 이 경기에 배정된 선수입니다";
-                button.EnableInClassList("selected", usesMatchSlots
-                    ? pendingParticipantId == wrestler.Id
-                    : editorParticipantIds.Contains(wrestler.Id));
+                var selected = usesMatchSlots ? pendingParticipantIds.Contains(wrestler.Id) : editorParticipantIds.Contains(wrestler.Id);
+                var assignedElsewhere = usesMatchSlots && editorParticipantSlots.Where((_, index) =>
+                    index < selectedParticipantSlotIndex || index >= selectedParticipantSlotIndex + SelectedTeamSize).Contains(wrestler.Id);
+                var full = usesMatchSlots && !selected && pendingParticipantIds.Count >= SelectedTeamSize;
+                button.SetEnabled(!assignedElsewhere && !full);
+                if (assignedElsewhere) button.tooltip = "상대 진영에 배정된 선수입니다";
+                else if (full) button.tooltip = "선택한 선수를 해제하면 다른 선수를 고를 수 있습니다";
+                button.EnableInClassList("selected", selected);
                 var id = wrestler.Id;
                 button.clicked += () =>
                 {
-                    if (usesMatchSlots) { pendingParticipantId = id; RenderShowEditorRoster(show); }
+                    if (usesMatchSlots)
+                    {
+                        if (assignedElsewhere) return;
+                        if (!pendingParticipantIds.Remove(id) && pendingParticipantIds.Count < SelectedTeamSize) pendingParticipantIds.Add(id);
+                        RenderShowEditorRoster(show);
+                        host.Children().OfType<Button>().FirstOrDefault(x => (string)x.userData == id)?.Focus();
+                    }
                     else { if (!editorParticipantIds.Remove(id)) editorParticipantIds.Add(id); RenderShowEditorRoster(show); }
                 };
                 host.Add(button);
             }
             Set("show-editor-selected-count", usesMatchSlots
-                ? $"{editorParticipantSlots.Count(x => !string.IsNullOrEmpty(x))}/{editorParticipantSlots.Count}명 배정"
+                ? $"진영 {selectedParticipantSlotIndex / SelectedTeamSize + 1} · {pendingParticipantIds.Count}/{SelectedTeamSize}명 선택"
                 : $"{editorParticipantIds.Count}명 선택");
             root.Q<Button>("show-editor-submit").SetEnabled(!usesMatchSlots ||
-                (!string.IsNullOrEmpty(pendingParticipantId) && !editorParticipantSlots.Contains(pendingParticipantId)));
+                pendingParticipantIds.Count == SelectedTeamSize);
+        }
+
+        private void SelectEditorTeam(int slotIndex, ShowState show)
+        {
+            selectedParticipantSlotIndex = slotIndex / SelectedTeamSize * SelectedTeamSize;
+            pendingParticipantIds.Clear();
+            pendingParticipantIds.AddRange(editorParticipantSlots.Skip(selectedParticipantSlotIndex).Take(SelectedTeamSize)
+                .Where(x => !string.IsNullOrEmpty(x)).Distinct(StringComparer.Ordinal));
+            RenderShowEditorRoster(show);
+        }
+
+        private void RenderEditorTeamSlots(ShowState show)
+        {
+            var host = root.Q("show-editor-team-slots");
+            if (host == null) return;
+            host.Clear();
+            for (var start = 0; start < editorParticipantSlots.Count; start += SelectedTeamSize)
+            {
+                var slot = start;
+                var active = slot == selectedParticipantSlotIndex;
+                var count = active ? pendingParticipantIds.Count : editorParticipantSlots.Skip(slot).Take(SelectedTeamSize).Count(x => !string.IsNullOrEmpty(x));
+                var button = new Button(() =>
+                {
+                    SelectEditorTeam(slot, show);
+                    host.Q<Button>($"show-editor-team-{slot / SelectedTeamSize}")?.Focus();
+                })
+                {
+                    name = $"show-editor-team-{slot / SelectedTeamSize}",
+                    text = $"진영 {slot / SelectedTeamSize + 1} · {count}/{SelectedTeamSize}명"
+                };
+                button.AddToClassList("show-editor-team-slot");
+                button.EnableInClassList("selected", active);
+                host.Add(button);
+            }
         }
 
         private static Button CreateWrestlerSelectionCard(WrestlerState wrestler)
@@ -545,8 +656,7 @@ namespace PWManager.Presentation
             card.AddToClassList("show-editor-wrestler");
             var portrait = new VisualElement();
             portrait.AddToClassList("show-editor-wrestler-portrait");
-            var portraitPath = wrestler.Presentation?.PortraitResourcePath;
-            var texture = string.IsNullOrWhiteSpace(portraitPath) ? null : Resources.Load<Texture2D>(portraitPath);
+            var texture = PortraitRenderer.Get(wrestler);
             if (texture != null)
             {
                 var image = new Image { image = texture, scaleMode = ScaleMode.ScaleAndCrop, pickingMode = PickingMode.Ignore };
@@ -611,40 +721,74 @@ namespace PWManager.Presentation
             }
             selectedParticipantSlotIndex = editorParticipantSlots.FindIndex(string.IsNullOrEmpty);
             if (selectedParticipantSlotIndex < 0 && editorParticipantSlots.Count > 0) selectedParticipantSlotIndex = 0;
-            pendingParticipantId = null;
+            SelectEditorTeam(Math.Max(0, selectedParticipantSlotIndex), NextPlanningShow());
         }
 
-        private void AssignWrestlerToSelectedSlot(string wrestlerId, ShowState show)
+        private void AssignSelectedTeam(ShowState show)
         {
+            if (selectedParticipantSlotIndex < 0 || selectedParticipantSlotIndex >= editorParticipantSlots.Count)
+                throw new InvalidOperationException("배치할 진영을 먼저 선택하세요.");
+            if (!IsShowEditable(show)) throw new InvalidOperationException("편집 가능한 쇼가 아닙니다.");
+            if (DashboardSession.ActiveSave != save) throw new InvalidOperationException("현재 저장 데이터를 다시 불러오세요.");
+            if (pendingParticipantIds.Count != SelectedTeamSize || pendingParticipantIds.Distinct(StringComparer.Ordinal).Count() != SelectedTeamSize)
+                throw new InvalidOperationException($"진영당 {SelectedTeamSize}명의 선수를 선택하세요.");
+            if (pendingParticipantIds.Any(id => string.IsNullOrEmpty(id) || !save.Wrestlers.Any(x => x?.Id == id)) ||
+                editorParticipantSlots.Where((_, index) => index < selectedParticipantSlotIndex || index >= selectedParticipantSlotIndex + SelectedTeamSize)
+                    .Any(id => !string.IsNullOrEmpty(id) && pendingParticipantIds.Contains(id)))
+                throw new InvalidOperationException("상대 진영에 배정된 선수는 선택할 수 없습니다.");
+            var showEvent = save.ShowEvents.FirstOrDefault(x => x?.Id == editingShowEventId && x.ShowId == show?.Id)
+                ?? throw new InvalidOperationException("편집할 경기를 찾을 수 없습니다.");
+            var match = save.MatchPlans.FirstOrDefault(x => x?.Id == showEvent.DetailId)
+                ?? throw new InvalidOperationException("경기 세부 정보를 찾을 수 없습니다.");
+            if (match.MembersPerTeam != SelectedTeamSize || selectedParticipantSlotIndex % SelectedTeamSize != 0 ||
+                editorParticipantSlots.Count != match.TeamCount * match.MembersPerTeam)
+                throw new InvalidOperationException("경기 인원 구성이 변경되었습니다. 다시 선택하세요.");
+            var slots = editorParticipantSlots.ToList();
+            for (var index = 0; index < SelectedTeamSize; index++) slots[selectedParticipantSlotIndex + index] = pendingParticipantIds[index];
+            var selectedTeam = selectedParticipantSlotIndex / SelectedTeamSize;
+            var previousTeam = match.Sides?.ElementAtOrDefault(selectedTeam);
+            var participantsChanged = !new HashSet<string>(previousTeam?.MemberIds ?? new List<string>(), StringComparer.Ordinal).SetEquals(pendingParticipantIds);
+            var sides = Enumerable.Range(0, match.TeamCount).Select(teamIndex =>
+            {
+                var previous = match.Sides?.ElementAtOrDefault(teamIndex);
+                if (teamIndex != selectedTeam && previous != null) return previous;
+                return new MatchSideState
+                {
+                    Id = !string.IsNullOrEmpty(previous?.Id) ? previous.Id : PWManager.Domain.Identifiers.EntityId.CreateRuntimeId(),
+                    MemberIds = slots.Skip(teamIndex * match.MembersPerTeam).Take(match.MembersPerTeam).ToList(),
+                    RepresentedTagTeamId = participantsChanged ? null : previous?.RepresentedTagTeamId
+                };
+            }).ToList();
+            if (sides.Where((_, teamIndex) => teamIndex != selectedTeam).Any(side => side.MemberIds.Any(pendingParticipantIds.Contains)))
+                throw new InvalidOperationException("상대 진영에 배정된 선수는 선택할 수 없습니다.");
+            var previousSides = match.Sides;
+            var previousParticipants = match.ParticipantIds;
+            var previousFinish = new[] { match.WinningSideId, match.FinishPerformerId, match.LoserTargetId, match.WinnerId };
             try
             {
-                if (selectedParticipantSlotIndex < 0 || selectedParticipantSlotIndex >= editorParticipantSlots.Count)
-                    throw new InvalidOperationException("배치할 참가자 슬롯을 먼저 선택하세요.");
-                if (!IsShowEditable(show)) throw new InvalidOperationException("편집 가능한 쇼가 아닙니다.");
-                if (string.IsNullOrEmpty(wrestlerId) || editorParticipantSlots.Contains(wrestlerId))
-                    throw new InvalidOperationException("이미 이 경기에 배정된 선수는 선택할 수 없습니다.");
-                var showEvent = save.ShowEvents.FirstOrDefault(x => x?.Id == editingShowEventId && x.ShowId == show?.Id)
-                    ?? throw new InvalidOperationException("편집할 경기를 찾을 수 없습니다.");
-                var match = save.MatchPlans.FirstOrDefault(x => x?.Id == showEvent.DetailId)
-                    ?? throw new InvalidOperationException("경기 세부 정보를 찾을 수 없습니다.");
-                editorParticipantSlots[selectedParticipantSlotIndex] = wrestlerId;
-                match.Sides = Enumerable.Range(0, match.TeamCount).Select(teamIndex => new MatchSideState
+                match.Sides = sides;
+                match.ParticipantIds = new List<string>();
+                if (participantsChanged)
                 {
-                    Id = match.Sides != null && teamIndex < match.Sides.Count && !string.IsNullOrEmpty(match.Sides[teamIndex]?.Id)
-                        ? match.Sides[teamIndex].Id
-                        : PWManager.Domain.Identifiers.EntityId.CreateRuntimeId(),
-                    MemberIds = editorParticipantSlots.Skip(teamIndex * match.MembersPerTeam).Take(match.MembersPerTeam).ToList()
-                }).ToList();
-                match.ParticipantIds.Clear();
-                match.WinningSideId = null;
-                match.FinishPerformerId = null;
-                match.LoserTargetId = null;
-                match.WinnerId = null;
+                    match.WinningSideId = null;
+                    match.FinishPerformerId = null;
+                    match.LoserTargetId = null;
+                    match.WinnerId = null;
+                }
                 DashboardSession.PersistActive();
-                CloseShowEditor();
-                RenderShowPlanning();
             }
-            catch (Exception exception) { Set("show-editor-message", exception.Message); }
+            catch
+            {
+                match.Sides = previousSides;
+                match.ParticipantIds = previousParticipants;
+                match.WinningSideId = previousFinish[0]; match.FinishPerformerId = previousFinish[1];
+                match.LoserTargetId = previousFinish[2]; match.WinnerId = previousFinish[3];
+                throw;
+            }
+            editorParticipantSlots.Clear();
+            editorParticipantSlots.AddRange(slots);
+            CloseShowEditor();
+            RenderShowPlanning();
         }
 
         private void CloseShowEditor() => root.Q<VisualElement>("show-editor-overlay")?.AddToClassList("hidden");
@@ -657,8 +801,7 @@ namespace PWManager.Presentation
                 if (!IsShowEditable(show)) throw new InvalidOperationException("편집 가능한 쇼가 아닙니다.");
                 if (!string.IsNullOrEmpty(editingShowEventId) && showEditorMode == ShowEditorMode.Match && showEditSection == ShowEditSection.Participants)
                 {
-                    if (string.IsNullOrEmpty(pendingParticipantId)) throw new InvalidOperationException("배정할 선수를 선택하세요.");
-                    AssignWrestlerToSelectedSlot(pendingParticipantId, show);
+                    AssignSelectedTeam(show);
                     return;
                 }
                 var primary = root.Q<DropdownField>("show-editor-primary");
@@ -761,6 +904,8 @@ namespace PWManager.Presentation
                         match.FinishPerformerId = null;
                         match.LoserTargetId = null;
                         match.WinnerId = null;
+                        match.DominantSideId = null;
+                        if (rule.MembersPerTeam <= 1) match.Tornado = false;
                     }
                 }
                 else if (showEditSection == ShowEditSection.Participants)
@@ -776,12 +921,21 @@ namespace PWManager.Presentation
                     match.FinishPerformerId = null;
                     match.LoserTargetId = null;
                     match.WinnerId = null;
+                    match.DominantSideId = null;
                 }
                 else
                 {
                     var plannedSpots = matchSpotEditor.Read();
+                    var storyInjuries = ReadStoryInjuries();
                     SaveProduction(match); SaveSpots(match);
                     match.Spots = plannedSpots;
+                    match.StoryInjuries = storyInjuries;
+                    var storyLink = ReadStoryControls();
+                    match.StorylineId = storyLink.Id;
+                    match.StoryAction = storyLink.Action;
+                    var championship = root.Q<DropdownField>("match-championship");
+                    var titles = championship?.userData as List<ChampionshipState>;
+                    match.ChampionshipId = championship == null || championship.index <= 0 ? null : titles[championship.index - 1].Id;
                 }
             }
             else
@@ -790,7 +944,15 @@ namespace PWManager.Presentation
                     ?? throw new InvalidOperationException("프로모 세부 정보를 찾을 수 없습니다.");
                 if (showEditSection == ShowEditSection.Rules)
                 {
-                    promo.Purpose = (PromoPurpose)Math.Max(0, primary.index);
+                    var purpose = (PromoPurpose)Math.Max(0, primary.index);
+                    if (purpose != promo.Purpose)
+                    {
+                        promo.GroupType = StoryPartyType.Wrestler;
+                        promo.GroupId = null;
+                        promo.GroupName = null;
+                        promo.GroupLeaderId = null;
+                    }
+                    promo.Purpose = purpose;
                     promo.Presentation = (PromoPresentation)Math.Max(0, secondary.index);
                     promo.SponsorRequirementId = promo.Purpose == PromoPurpose.SponsorAdvertisement ? "sponsor_requirement_runtime" : null;
                     showPlanningService.SetEventDuration(save, show.Id, showEvent.Id, duration);
@@ -800,8 +962,124 @@ namespace PWManager.Presentation
                     if (editorParticipantIds.Count == 0) throw new InvalidOperationException("프로모 출연 선수를 한 명 이상 선택하세요.");
                     promo.ParticipantIds = editorParticipantIds.ToList();
                 }
-                else SaveSpots(promo);
+                else
+                {
+                    var incident = (StoryIncident)Math.Max(0, root.Q<DropdownField>("story-incident").index);
+                    var actorIndex = root.Q<DropdownField>("story-actor").index;
+                    var targetIndex = root.Q<DropdownField>("story-target").index;
+                    var actor = actorIndex >= 0 && actorIndex < editorStoryParticipants.Count ? editorStoryParticipants[actorIndex] : null;
+                    var target = targetIndex >= 0 && targetIndex < editorStoryParticipants.Count ? editorStoryParticipants[targetIndex] : null;
+                    if (incident != StoryIncident.None && (actor == null || target == null || actor == target))
+                        throw new InvalidOperationException("사건을 진행할 서로 다른 두 선수를 선택하세요.");
+                    var storyLink = ReadStoryControls();
+                    SaveSpots(promo);
+                    promo.Incident = incident; promo.IncidentActorId = actor; promo.IncidentTargetId = target;
+                    ReadPromoGroupControls(promo);
+                    promo.StorylineId = storyLink.Id; promo.StoryAction = storyLink.Action;
+                }
             }
+        }
+
+        private void BuildStoryControls(VisualElement parent)
+        {
+            if (parent == null) return;
+            parent.Q("story-controls")?.RemoveFromHierarchy();
+            var showEvent = save.ShowEvents.FirstOrDefault(x => x.Id == editingShowEventId);
+            if (showEvent == null) return;
+            var match = showEvent.EventType == ShowEventType.Match ? save.MatchPlans.First(x => x.Id == showEvent.DetailId) : null;
+            var promo = showEvent.EventType == ShowEventType.Promo ? save.PromoPlans.First(x => x.Id == showEvent.DetailId) : null;
+            editorStoryParticipants = (match != null ? match.Sides.SelectMany(x => x.MemberIds) :
+                promo.ParticipantIds.Concat(promo.TargetIds ?? new())).Distinct().ToList();
+            editorStories = (save.Storylines ?? new()).Where(x => x.Status == StorylineStatus.Active &&
+                StorylineService.IncludesBothParties(save, x, editorStoryParticipants)).ToList();
+            var linkedId = match?.StorylineId ?? promo?.StorylineId;
+            var linked = editorStories.FirstOrDefault(x => x.Id == linkedId);
+            var panel = new VisualElement { name = "story-controls" };
+            panel.style.flexShrink = 0;
+            if (match != null)
+            {
+                var titles = (save.Championships ?? new()).Where(x => x.PromotionId == save.Promotion.Id).ToList();
+                var titleChoices = new List<string> { "일반 경기" }; titleChoices.AddRange(titles.Select(x => x.Name));
+                panel.Add(new DropdownField("챔피언십", titleChoices, titles.FindIndex(x => x.Id == match.ChampionshipId) + 1)
+                    { name = "match-championship", userData = titles });
+            }
+            var choices = new List<string> { "연결 없음", "새 스토리" };
+            choices.AddRange(editorStories.Select((x, index) => $"{index + 1}. {x.Name}"));
+            var selection = new DropdownField("스토리", choices, linked == null ? 0 : editorStories.IndexOf(linked) + 2) { name = "story-selection" };
+            var name = new TextField("스토리 이름") { name = "story-name", value = linked?.Name ?? "" };
+            var context = new TextField("스토리 맥락") { name = "story-context", value = linked?.Context ?? "", multiline = true };
+            var action = new DropdownField("전개", new List<string> { "진행", "종료" },
+                (match?.StoryAction ?? promo.StoryAction) == StoryAction.End ? 1 : 0) { name = "story-action" };
+            panel.Add(selection); panel.Add(name); panel.Add(context); panel.Add(action);
+            void Refresh()
+            {
+                name.style.display = selection.index == 1 ? DisplayStyle.Flex : DisplayStyle.None;
+                context.SetEnabled(selection.index > 0); action.SetEnabled(selection.index > 0);
+            }
+            selection.RegisterValueChangedCallback(_ =>
+            {
+                context.value = selection.index >= 2 ? editorStories[selection.index - 2].Context ?? "" : "";
+                Refresh();
+            });
+            Refresh();
+            if (promo != null)
+            {
+                if (promo.Purpose == PromoPurpose.TeamFormation)
+                {
+                    panel.Add(new DropdownField("그룹 반영", new List<string> { "설명만", "태그팀 결성", "스테이블 결성" }, (int)promo.GroupType) { name = "promo-group-type" });
+                    panel.Add(new TextField("그룹 이름") { name = "promo-group-name", value = promo.GroupName ?? "" });
+                    var leaders = promo.ParticipantIds.Select((id, i) => $"{i + 1}. {WrestlerName(id)}").ToList();
+                    if (leaders.Count > 0) panel.Add(new DropdownField("스테이블 리더", leaders, Math.Max(0, promo.ParticipantIds.IndexOf(promo.GroupLeaderId))) { name = "promo-group-leader" });
+                }
+                else if (promo.Purpose == PromoPurpose.TeamBreakup)
+                {
+                    var ids = new List<string> { "" };
+                    var labels = new List<string> { "설명만" };
+                    foreach (var team in save.TagTeams.Where(x => x.Status == TagTeamStatus.Active && x.MemberIds.Intersect(promo.ParticipantIds).Any()))
+                    { ids.Add(team.Id); labels.Add($"{ids.Count - 1}. 태그팀 · {team.Name ?? "태그팀"}"); }
+                    foreach (var stable in save.Stables.Where(x => x.Status == TagTeamStatus.Active && x.MemberIds.Intersect(promo.ParticipantIds).Any()))
+                    { ids.Add(stable.Id); labels.Add($"{ids.Count - 1}. 스테이블 · {stable.Name}"); }
+                    panel.Add(new DropdownField("해체할 그룹", labels, Math.Max(0, ids.IndexOf(promo.GroupId))) { name = "promo-group-existing", userData = ids });
+                }
+                panel.Add(new DropdownField("사건", new List<string> { "목적에 따름", "경쟁", "도전", "도발", "공격", "배신", "구출", "존중", "화해" },
+                    (int)promo.Incident) { name = "story-incident" });
+                var names = editorStoryParticipants.Select((id, index) => $"{index + 1}. {WrestlerName(id)}").ToList();
+                if (names.Count == 0) names.Add("선수 없음");
+                panel.Add(new DropdownField("행동 선수", names, Math.Max(0, editorStoryParticipants.IndexOf(promo.IncidentActorId))) { name = "story-actor" });
+                panel.Add(new DropdownField("상대 선수", names, Math.Max(0, promo.IncidentTargetId == null ? Math.Min(1, names.Count - 1) :
+                    editorStoryParticipants.IndexOf(promo.IncidentTargetId))) { name = "story-target" });
+            }
+            parent.Add(panel);
+        }
+
+        private void ReadPromoGroupControls(PromoPlanState promo)
+        {
+            var type = root.Q<DropdownField>("promo-group-type");
+            var group = root.Q<DropdownField>("promo-group-existing");
+            promo.GroupType = type != null ? (StoryPartyType)type.index : StoryPartyType.Wrestler;
+            promo.GroupName = root.Q<TextField>("promo-group-name")?.value;
+            var leader = root.Q<DropdownField>("promo-group-leader");
+            promo.GroupLeaderId = leader != null && leader.index >= 0 ? promo.ParticipantIds[leader.index] : null;
+            promo.GroupId = group != null ? ((List<string>)group.userData)[group.index] : null;
+            if (!string.IsNullOrEmpty(promo.GroupId))
+                promo.GroupType = save.TagTeams.Any(x => x.Id == promo.GroupId) ? StoryPartyType.TagTeam : StoryPartyType.Stable;
+        }
+
+        private (string Id, StoryAction Action) ReadStoryControls()
+        {
+            var index = root.Q<DropdownField>("story-selection").index;
+            if (index <= 0) return (null, StoryAction.None);
+            StorylineState story;
+            if (index == 1)
+            {
+                if (editorStoryParticipants.Count != 2)
+                    throw new InvalidOperationException("새 스토리는 두 선수가 출연하는 경기 또는 프로모에서 시작하세요.");
+                story = new StorylineService().Create(save, root.Q<TextField>("story-name").value,
+                    editorStoryParticipants[0], editorStoryParticipants[1]);
+            }
+            else story = editorStories[index - 2];
+            story.Context = root.Q<TextField>("story-context").value;
+            return (story.Id, root.Q<DropdownField>("story-action").index == 1 ? StoryAction.End : StoryAction.Progress);
         }
 
         private void SaveSpots(MatchPlanState plan)
@@ -1045,24 +1323,64 @@ namespace PWManager.Presentation
             var slotIndex = 0;
             for (var sideIndex = 0; sideIndex < sides.Count; sideIndex++)
             {
-                for (var memberIndex = 0; memberIndex < sides[sideIndex].Count; memberIndex++)
+                var portraitCard = AddMatchSidePortrait(host, sides[sideIndex], slotIndex, editable);
+                portraitCards.Add(portraitCard);
+                if (sideIndex > 0)
                 {
-                    var portraitCard = AddParticipantPortrait(host, sides[sideIndex][memberIndex], slotIndex, editable);
-                    portraitCards.Add(portraitCard);
-                    if (sideIndex > 0 && memberIndex == 0)
-                    {
-                        var versus = new Label("VS") { pickingMode = PickingMode.Ignore };
-                        versus.AddToClassList("show-match-versus");
-                        portraitCard.Add(versus);
-                    }
-                    slotIndex++;
+                    var versus = new Label("VS") { pickingMode = PickingMode.Ignore };
+                    versus.AddToClassList("show-match-versus");
+                    portraitCard.Add(versus);
                 }
+                slotIndex += sides[sideIndex].Count;
             }
             if (portraitCards.Count > 0)
             {
                 portraitCards[0].IsFirst = true;
                 portraitCards[portraitCards.Count - 1].IsLast = true;
             }
+        }
+
+        private TrapezoidPortraitCard AddMatchSidePortrait(VisualElement host, List<string> memberIds, int slotIndex, bool editable)
+        {
+            if (memberIds.Count == 1) return AddParticipantPortrait(host, memberIds[0], slotIndex, editable);
+            var wrestlers = memberIds.Select(id => save.Wrestlers?.FirstOrDefault(x => x?.Id == id)).ToList();
+            var card = new TrapezoidPortraitCard
+            {
+                Portraits = wrestlers.Select(wrestler => wrestler == null ? null : PortraitRenderer.Get(wrestler)).ToArray()
+            };
+            var names = new VisualElement();
+            names.AddToClassList("show-team-names");
+            foreach (var wrestler in wrestlers)
+            {
+                if (wrestler == null)
+                {
+                    var empty = new Label("+ 선수 배정") { pickingMode = PickingMode.Ignore };
+                    empty.AddToClassList("show-team-member-name");
+                    names.Add(empty);
+                }
+                else
+                {
+                    var link = WrestlerProfileController.CreateLink(wrestler, "show-team-member-name");
+                    link.tooltip = WrestlerNameText.DisplayName(wrestler);
+                    names.Add(link);
+                }
+            }
+            card.Add(names);
+            card.RegisterCallback<PointerUpEvent>(evt =>
+            {
+                if (evt.button != 0) return;
+                if (editable) OpenParticipantTeam(slotIndex);
+                evt.StopPropagation();
+            });
+            host.Add(card);
+            return card;
+        }
+
+        private void OpenParticipantTeam(int slotIndex)
+        {
+            OpenSelectedEventEditor(ShowEditSection.Participants);
+            if (showEditorMode == ShowEditorMode.Match && slotIndex >= 0 && slotIndex < editorParticipantSlots.Count)
+                SelectEditorTeam(slotIndex, NextPlanningShow());
         }
 
         private void RenderPromoCast(VisualElement host, ShowEventState showEvent, bool editable)
@@ -1091,19 +1409,18 @@ namespace PWManager.Presentation
                 empty.AddToClassList("show-participant-empty-label");
                 card.Add(empty);
             }
-            else card.Add(WrestlerProfileController.CreatePortraitDisplayWithNameLink(wrestler, "show-participant-portrait"));
+            else
+            {
+                card.Portrait = PortraitRenderer.Get(wrestler);
+                var name = WrestlerProfileController.CreateLink(wrestler, "show-participant-portrait-name");
+                card.Add(name);
+            }
             card.RegisterCallback<PointerUpEvent>(evt =>
             {
                 if (evt.button != 0) return;
                 if (editParticipantsOnCardClick)
                 {
-                    OpenSelectedEventEditor(ShowEditSection.Participants);
-                    if (showEditorMode == ShowEditorMode.Match && slotIndex >= 0 && slotIndex < editorParticipantSlots.Count)
-                    {
-                        selectedParticipantSlotIndex = slotIndex;
-                        pendingParticipantId = null;
-                        RenderShowEditorRoster(NextPlanningShow());
-                    }
+                    OpenParticipantTeam(slotIndex);
                 }
                 evt.StopPropagation();
             });
@@ -1183,7 +1500,8 @@ namespace PWManager.Presentation
                 var rule = MatchRuleOptions().FirstOrDefault(x => x.MatchTypeId == match.MatchTypeId && x.TeamCount == match.TeamCount && x.MembersPerTeam == match.MembersPerTeam);
                 var ruleLabel = rule?.Label ?? MatchTypeText(match.MatchTypeId);
                 var gimmick = staticContent?.MatchGimmicks.Values.FirstOrDefault(x => x.Id == match.MatchGimmickId);
-                return $"{ruleLabel} · {MatchGimmickText(gimmick)}";
+                var title = (save.Championships ?? new()).FirstOrDefault(x => x.Id == match.ChampionshipId);
+                return $"{ruleLabel} · {MatchGimmickText(gimmick)}" + (title == null ? "" : $" · {title.Name}");
             }
             var promo = save.PromoPlans?.FirstOrDefault(x => x?.Id == showEvent.DetailId);
             return promo == null ? "프로모 세부 데이터가 없습니다" : $"{PromoPresentationText(promo.Presentation)} · {PromoPurposeText(promo.Purpose)}";

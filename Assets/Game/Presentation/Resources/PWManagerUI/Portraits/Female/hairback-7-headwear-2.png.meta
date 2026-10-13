@@ -1,0 +1,429 @@
+fileFormatVersion: 2
+guid: 666c90e14ee1f814c9bc70476e0b1d33
+TextureImporter:
+  internalIDToNameTable:
+  - first:
+      213: 4935791576450187935
+    second: hairback-7-headwear-2_0
+  - first:
+      213: -5295256595844347175
+    second: hairback-7-headwear-2_1
+  - first:
+      213: 5694862355894647387
+    second: hairback-7-headwear-2_2
+  - first:
+      213: -543928642877114739
+    second: hairback-7-headwear-2_3
+  - first:
+      213: 1336443175207574925
+    second: hairback-7-headwear-2_4
+  - first:
+      213: 7073704689330226931
+    second: hairback-7-headwear-2_5
+  - first:
+      213: -3497578640435212221
+    second: hairback-7-headwear-2_6
+  - first:
+      213: 7750807074466813842
+    second: hairback-7-headwear-2_7
+  - first:
+      213: 6776795988552280047
+    second: hairback-7-headwear-2_8
+  - first:
+      213: 4688156234289789480
+    second: hairback-7-headwear-2_9
+  - first:
+      213: 3568422532232133775
+    second: hairback-7-headwear-2_10
+  - first:
+      213: 3495384803413041889
+    second: hairback-7-headwear-2_11
+  externalObjects: {}
+  serializedVersion: 13
+  mipmaps:
+    mipMapMode: 0
+    enableMipMap: 0
+    sRGBTexture: 1
+    linearTexture: 0
+    fadeOut: 0
+    borderMipMap: 0
+    mipMapsPreserveCoverage: 0
+    alphaTestReferenceValue: 0.5
+    mipMapFadeDistanceStart: 1
+    mipMapFadeDistanceEnd: 3
+  bumpmap:
+    convertToNormalMap: 0
+    externalNormalMap: 0
+    heightScale: 0.25
+    normalMapFilter: 0
+    flipGreenChannel: 0
+  isReadable: 0
+  streamingMipmaps: 0
+  streamingMipmapsPriority: 0
+  vTOnly: 0
+  ignoreMipmapLimit: 0
+  grayScaleToAlpha: 0
+  generateCubemap: 6
+  cubemapConvolution: 0
+  seamlessCubemap: 0
+  textureFormat: 1
+  maxTextureSize: 2048
+  textureSettings:
+    serializedVersion: 2
+    filterMode: 1
+    aniso: 1
+    mipBias: 0
+    wrapU: 1
+    wrapV: 1
+    wrapW: 1
+  nPOTScale: 0
+  lightmap: 0
+  compressionQuality: 50
+  spriteMode: 2
+  spriteExtrude: 1
+  spriteMeshType: 1
+  alignment: 0
+  spritePivot: {x: 0.5, y: 0.5}
+  spritePixelsToUnits: 100
+  spriteBorder: {x: 0, y: 0, z: 0, w: 0}
+  spriteGenerateFallbackPhysicsShape: 1
+  alphaUsage: 1
+  alphaIsTransparency: 1
+  spriteTessellationDetail: -1
+  textureType: 0
+  textureShape: 1
+  singleChannelComponent: 0
+  flipbookRows: 1
+  flipbookColumns: 1
+  maxTextureSizeSet: 0
+  compressionQualitySet: 0
+  textureFormatSet: 0
+  ignorePngGamma: 0
+  applyGammaDecoding: 0
+  swizzle: 50462976
+  cookieLightType: 0
+  platformSettings:
+  - serializedVersion: 4
+    buildTarget: DefaultTexturePlatform
+    maxTextureSize: 1024
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 2
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: Standalone
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  spriteSheet:
+    serializedVersion: 2
+    sprites:
+    - serializedVersion: 2
+      name: hairback-7-headwear-2_0
+      rect:
+        serializedVersion: 2
+        x: 213
+        y: 64
+        width: 184
+        height: 444
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: f92cdafa9447f7440800000000000000
+      internalID: 4935791576450187935
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: hairback-7-headwear-2_1
+      rect:
+        serializedVersion: 2
+        x: 353
+        y: 328
+        width: 8
+        height: 11
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 9da472a7e287386b0800000000000000
+      internalID: -5295256595844347175
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: hairback-7-headwear-2_2
+      rect:
+        serializedVersion: 2
+        x: 353
+        y: 319
+        width: 7
+        height: 10
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: b5a38d7d327380f40800000000000000
+      internalID: 5694862355894647387
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: hairback-7-headwear-2_3
+      rect:
+        serializedVersion: 2
+        x: 410
+        y: 65
+        width: 160
+        height: 444
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: d86362af7c39378f0800000000000000
+      internalID: -543928642877114739
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: hairback-7-headwear-2_4
+      rect:
+        serializedVersion: 2
+        x: 427
+        y: 309
+        width: 9
+        height: 8
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: d8d1eb0bcfffb8210800000000000000
+      internalID: 1336443175207574925
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: hairback-7-headwear-2_5
+      rect:
+        serializedVersion: 2
+        x: 359
+        y: 273
+        width: 8
+        height: 10
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 3f60b85dfe8da2260800000000000000
+      internalID: 7073704689330226931
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: hairback-7-headwear-2_6
+      rect:
+        serializedVersion: 2
+        x: 417
+        y: 278
+        width: 10
+        height: 12
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 3409ddae1ca167fc0800000000000000
+      internalID: -3497578640435212221
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: hairback-7-headwear-2_7
+      rect:
+        serializedVersion: 2
+        x: 364
+        y: 224
+        width: 6
+        height: 11
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 297dd2cf7f5609b60800000000000000
+      internalID: 7750807074466813842
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: hairback-7-headwear-2_8
+      rect:
+        serializedVersion: 2
+        x: 397
+        y: 211
+        width: 7
+        height: 7
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: fe763fceb040c0e50800000000000000
+      internalID: 6776795988552280047
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: hairback-7-headwear-2_9
+      rect:
+        serializedVersion: 2
+        x: 358
+        y: 172
+        width: 16
+        height: 23
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 82a3064914daf0140800000000000000
+      internalID: 4688156234289789480
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: hairback-7-headwear-2_10
+      rect:
+        serializedVersion: 2
+        x: 345
+        y: 119
+        width: 13
+        height: 24
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: f8c32320365958130800000000000000
+      internalID: 3568422532232133775
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: hairback-7-headwear-2_11
+      rect:
+        serializedVersion: 2
+        x: 356
+        y: 120
+        width: 13
+        height: 14
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 1e2abb895f9128030800000000000000
+      internalID: 3495384803413041889
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    outline: []
+    customData: 
+    physicsShape: []
+    bones: []
+    spriteID: 
+    internalID: 0
+    vertices: []
+    indices: 
+    edges: []
+    weights: []
+    secondaryTextures: []
+    spriteCustomMetadata:
+      entries: []
+    nameFileIdTable:
+      hairback-7-headwear-2_0: 4935791576450187935
+      hairback-7-headwear-2_1: -5295256595844347175
+      hairback-7-headwear-2_10: 3568422532232133775
+      hairback-7-headwear-2_11: 3495384803413041889
+      hairback-7-headwear-2_2: 5694862355894647387
+      hairback-7-headwear-2_3: -543928642877114739
+      hairback-7-headwear-2_4: 1336443175207574925
+      hairback-7-headwear-2_5: 7073704689330226931
+      hairback-7-headwear-2_6: -3497578640435212221
+      hairback-7-headwear-2_7: 7750807074466813842
+      hairback-7-headwear-2_8: 6776795988552280047
+      hairback-7-headwear-2_9: 4688156234289789480
+  mipmapLimitGroupName: 
+  pSDRemoveMatte: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 

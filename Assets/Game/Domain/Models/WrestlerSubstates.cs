@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using PWManager.Domain.Services;
 
 namespace PWManager.Domain.Models
 {
@@ -8,9 +9,27 @@ namespace PWManager.Domain.Models
     {
         public float Condition = 100f;
         public InjuryStatus InjuryStatus;
+        public BodyRegion InjuryRegion = BodyRegion.Body;
         public OptionalGameDate RecoveryDate;
+        public bool InjuryControlsAvailability;
+        public WrestlerAvailability AvailabilityBeforeInjury;
         public float Satisfaction;
         public WrestlerAvailability Availability;
+
+        public WrestlerConditionState Copy() => (WrestlerConditionState)MemberwiseClone();
+    }
+
+    [Serializable]
+    public sealed class KayfabeInjuryState
+    {
+        public InjuryStatus Severity;
+        public BodyRegion Region = BodyRegion.Body;
+        public GameDate StartDate;
+        public OptionalGameDate ReturnDate;
+        public bool Absent;
+        public string SourceResultId;
+
+        public KayfabeInjuryState Copy() => (KayfabeInjuryState)MemberwiseClone();
     }
 
     [Serializable]

@@ -21,14 +21,6 @@
                         <ui:Label text="불러오기" class="title-button-text"/>
                         <ui:Label text="›" class="title-button-arrow"/>
                     </ui:Button>
-                    <ui:Button name="settings" class="title-button">
-                        <ui:Label text="설정" class="title-button-text"/>
-                        <ui:Label text="›" class="title-button-arrow"/>
-                    </ui:Button>
-                    <ui:Button name="credits" class="title-button">
-                        <ui:Label text="제작진" class="title-button-text"/>
-                        <ui:Label text="›" class="title-button-arrow"/>
-                    </ui:Button>
                     <ui:Button name="exit-game" class="title-button quiet">
                         <ui:Label text="게임 종료" class="title-button-text"/>
                         <ui:Label text="›" class="title-button-arrow"/>

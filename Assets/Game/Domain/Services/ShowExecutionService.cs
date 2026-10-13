@@ -50,14 +50,18 @@ namespace PWManager.Domain.Services
             var matchResults = new List<MatchResultState>();
             var promoResults = new List<PromoResultState>();
             var timelineResultIds = new List<string>();
+            var storySimulation = save.CopyForStorySimulation();
+            var pendingStories = new ShowResultState();
             foreach (var eventId in eventIds)
             {
                 var showEvent = save.ShowEvents.SingleOrDefault(x => x?.Id == eventId && x.ShowId == show.Id)
                     ?? throw new InvalidOperationException("Show timeline references a missing event.");
                 var eventSeed = CreateEventSeed(resultSeed, show.ShowVersion, showEvent.Id);
+                var eventStories = new ShowResultState();
+                GroupResultChangeState groupChange = null;
                 if (showEvent.EventType == ShowEventType.Match)
                 {
-                    var result = matchEvaluator.EvaluateTechnical(save, showEvent.Id, 0f, eventSeed, matchResults);
+                    var result = matchEvaluator.EvaluateTechnical(storySimulation, showEvent.Id, 0f, eventSeed, matchResults);
                     var plan = save.MatchPlans.Single(x => x.Id == result.MatchPlanId);
                     var narration = new MatchNarrationService();
                     result.SimulationBeats = narration.CreateBeats(plan, result, save);
@@ -67,24 +71,58 @@ namespace PWManager.Domain.Services
                         return wrestler == null ? "선수" : string.IsNullOrWhiteSpace(wrestler.Identity.RingName) ? wrestler.Identity.LegalName : wrestler.Identity.RingName;
                     }, save);
                     matchResults.Add(result);
+                    foreach (var change in result.WrestlerConditionChanges)
+                    {
+                        var wrestler = storySimulation.Wrestlers.Single(w => w.Id == change.WrestlerId);
+                        wrestler.Condition.Condition = Math.Clamp(wrestler.Condition.Condition + change.ConditionDelta, 0, 100);
+                    }
+                    MatchHealth.ApplyResult(storySimulation, result, show.Date);
                     timelineResultIds.Add(result.Id);
+                    if (string.IsNullOrEmpty(result.CancellationReason)) StorylineService.Evaluate(storySimulation, eventStories, new[] { result }, Array.Empty<PromoResultState>());
                 }
                 else if (showEvent.EventType == ShowEventType.Promo)
                 {
-                    var result = promoEvaluator.Evaluate(save, CreatePromoInput(save, showEvent, eventSeed));
+                    var promoPlan = storySimulation.PromoPlans.Single(p => p.Id == showEvent.DetailId);
+                    var cancelled = promoPlan.ParticipantIds.Any(id => storySimulation.Wrestlers.Single(w => w.Id == id).Condition.Availability == WrestlerAvailability.Unavailable);
+                    var result = cancelled ? new PromoResultState { Id = createId(), ShowId = show.Id, ShowVersion = show.ShowVersion,
+                        ShowEventId = showEvent.Id, PromoPlanId = promoPlan.Id, CancellationReason = "실제 부상으로 프로모 취소", ResultSeed = eventSeed } :
+                        promoEvaluator.Evaluate(storySimulation, CreatePromoInput(storySimulation, showEvent, eventSeed));
                     promoResults.Add(result);
                     timelineResultIds.Add(result.Id);
+                    if (!cancelled)
+                    {
+                        StorylineService.Evaluate(storySimulation, eventStories, Array.Empty<MatchResultState>(), new[] { result });
+                        groupChange = WrestlerGroupService.FromPromo(storySimulation, promoPlan, result.Id);
+                    }
+                    result.RelationshipChanges.AddRange(eventStories.RelationshipChanges.Select(x => new ResultChangeState
+                    {
+                        TargetId = x.SecondWrestlerId, ValueKey = "관계", Amount = x.ValueChange,
+                        Reason = StorylineService.PromoIncident(save.PromoPlans.Single(p => p.Id == result.PromoPlanId)).ToString()
+                    }));
                 }
                 else
                 {
                     throw new InvalidOperationException("Show event type is not supported.");
                 }
+                StorylineService.Apply(storySimulation, eventStories, show.Date);
+                if (groupChange != null)
+                {
+                    WrestlerGroupService.ApplyPromoChange(storySimulation, groupChange);
+                    pendingStories.GroupChanges.Add(groupChange);
+                }
+                pendingStories.StorylineChanges.AddRange(eventStories.StorylineChanges);
+                pendingStories.RelationshipChanges.AddRange(eventStories.RelationshipChanges);
+                pendingStories.StoryCandidates.AddRange(eventStories.StoryCandidates);
             }
 
             var showResult = new ShowResultState
             {
                 Id = createId(), ShowId = show.Id, ShowVersion = show.ShowVersion,
                 TimelineResultIds = timelineResultIds,
+                StorylineChanges = pendingStories.StorylineChanges,
+                RelationshipChanges = pendingStories.RelationshipChanges,
+                StoryCandidates = pendingStories.StoryCandidates,
+                GroupChanges = pendingStories.GroupChanges,
                 MatchResultIds = matchResults.Select(x => x.Id).ToList(),
                 PromoResultIds = promoResults.Select(x => x.Id).ToList(),
                 ShowEvaluation = CreateShowEvaluation(save, eventIds, matchResults, promoResults),
@@ -98,6 +136,17 @@ namespace PWManager.Domain.Services
                 }
             };
             FanAudienceService.Evaluate(save, show, showResult, matchResults, promoResults);
+            StorylineService.Validate(save, showResult);
+            foreach (var change in showResult.StorylineChanges)
+            {
+                var story = save.Storylines.Single(x => x.Id == change.StorylineId);
+                showResult.StoryChanges.Add(new ResultChangeState { TargetId = story.Id, ValueKey = "긴장도",
+                    Amount = change.TensionChange, Reason = story.Name });
+                showResult.StoryChanges.Add(new ResultChangeState { TargetId = story.Id, ValueKey = "관심도",
+                    Amount = change.InterestChange, Reason = story.Name });
+                showResult.StoryChanges.Add(new ResultChangeState { TargetId = story.Id, ValueKey = "피로도",
+                    Amount = change.FatigueChange, Reason = story.Name });
+            }
             save.MatchResults.AddRange(matchResults);
             save.PromoResults.AddRange(promoResults);
             save.ShowResults.Add(showResult);
@@ -119,6 +168,8 @@ namespace PWManager.Domain.Services
             foreach (var eventId in eventIds)
             {
                 var showEvent = save.ShowEvents.Single(x => x.Id == eventId);
+                if (matchResults.Any(x => x.ShowEventId == eventId && !string.IsNullOrEmpty(x.CancellationReason)) ||
+                    promoResults.Any(x => x.ShowEventId == eventId && !string.IsNullOrEmpty(x.CancellationReason))) continue;
                 var score = showEvent.EventType == ShowEventType.Match ? matchScores[eventId] : promoScores[eventId];
                 weightedScore += score * showEvent.PlannedDuration;
                 totalDuration += showEvent.PlannedDuration;
@@ -127,7 +178,7 @@ namespace PWManager.Domain.Services
             return new ShowEvaluationState
             {
                 Score = showScore,
-                CriticReview = CriticReviewCalculator.Show(matchResults.Select(x => x.CriticReview).ToList()),
+                CriticReview = CriticReviewCalculator.Show(matchResults.Where(x => string.IsNullOrEmpty(x.CancellationReason) && x.CriticReview != null).Select(x => x.CriticReview).ToList()),
                 EvaluationReasons = new List<EvaluationReasonState>
                 {
                     new() { Code = "show.event-quality", Contribution = showScore }
@@ -146,12 +197,16 @@ namespace PWManager.Domain.Services
             }).ToList();
             var isProductionOnly = promo.Presentation == PromoPresentation.VideoPackage ||
                 promo.Purpose == PromoPurpose.SponsorAdvertisement;
+            var story = (save.Storylines ?? new()).FirstOrDefault(x => x.Id == promo.StorylineId && x.Status == StorylineStatus.Active);
             return new PromoEvaluationInput
             {
                 ShowEventId = showEvent.Id,
                 PrimarySpeakerId = isProductionOnly ? null : promo.ParticipantIds.FirstOrDefault(),
                 ParticipantPerformances = performances,
                 ProductionPerformance = performances.Count == 0 ? 0f : performances.Average(x => x.Score),
+                // ponytail: bounded initial story-context modifier; tune weights after multi-show playtesting.
+                StoryContext = story == null ? 0f : Math.Max(-10f, Math.Min(15f,
+                    (story.Interest - 25f) / 10f + (story.Tension - 25f) / 20f - story.Fatigue / 10f)),
                 ResultSeed = resultSeed
             };
         }

@@ -1,0 +1,40 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 92ce33d374916a64eab27f7d3c88fa16, type: 3}
+  m_Name: move_121_snapmare
+  m_EditorClassIdentifier: PWMANAGER.Data::PWManager.Data.Definitions.MoveDefinition
+  id: move_121
+  koreanName: "\uC2A4\uB0C5\uBA54\uC5B4"
+  englishName: Snapmare
+  BrawlingWeight: 0
+  PowerWeight: 0
+  TechnicalWeight: 1
+  HighFlyingWeight: 0
+  ExecutionDifficulty: 6
+  SellingDifficulty: 7
+  RequiredStat: 0
+  RequiredStatValue: 0
+  ScenarioGroupId: 
+  Kind: 2
+  TargetRegion: 1
+  Enabled: 1
+  CanUseGenerally: 1
+  CanBeSignature: 1
+  CanBeFinisher: 1
+  TechniqueKey: snapmare
+  AllowedStyleIds: []
+  Action: 2
+  Situation: 6
+  MotionProfile: 9
+  ExecutionStyle: 0
+  EndPosture: 3
+  TravelDistance: 0.23

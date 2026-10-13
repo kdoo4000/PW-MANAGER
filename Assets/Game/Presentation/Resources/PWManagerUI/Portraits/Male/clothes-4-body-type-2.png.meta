@@ -1,0 +1,637 @@
+fileFormatVersion: 2
+guid: 44427a0a345327f48957a4f06452110f
+TextureImporter:
+  internalIDToNameTable:
+  - first:
+      213: -9099154296377534267
+    second: clothes-4-body-type-2_0
+  - first:
+      213: -4799880390865571704
+    second: clothes-4-body-type-2_1
+  - first:
+      213: 3023039642046198991
+    second: clothes-4-body-type-2_2
+  - first:
+      213: 8484941564644927938
+    second: clothes-4-body-type-2_3
+  - first:
+      213: -7171014253976363280
+    second: clothes-4-body-type-2_4
+  - first:
+      213: 4053005128519145988
+    second: clothes-4-body-type-2_5
+  - first:
+      213: -2900789183699638347
+    second: clothes-4-body-type-2_6
+  - first:
+      213: -4624943725559464377
+    second: clothes-4-body-type-2_7
+  - first:
+      213: -1010061738807138078
+    second: clothes-4-body-type-2_8
+  - first:
+      213: 4726124186178263978
+    second: clothes-4-body-type-2_9
+  - first:
+      213: -4865415217799978582
+    second: clothes-4-body-type-2_10
+  - first:
+      213: 5243109553216417532
+    second: clothes-4-body-type-2_11
+  - first:
+      213: -5674571541081092369
+    second: clothes-4-body-type-2_12
+  - first:
+      213: -8687902719162033791
+    second: clothes-4-body-type-2_13
+  - first:
+      213: 8234418866207068658
+    second: clothes-4-body-type-2_14
+  - first:
+      213: -5292243679786521785
+    second: clothes-4-body-type-2_15
+  - first:
+      213: 594248080603619154
+    second: clothes-4-body-type-2_16
+  - first:
+      213: 6561059989982965788
+    second: clothes-4-body-type-2_17
+  - first:
+      213: 1162824584526413126
+    second: clothes-4-body-type-2_18
+  - first:
+      213: 3962531756941617485
+    second: clothes-4-body-type-2_19
+  externalObjects: {}
+  serializedVersion: 13
+  mipmaps:
+    mipMapMode: 0
+    enableMipMap: 0
+    sRGBTexture: 1
+    linearTexture: 0
+    fadeOut: 0
+    borderMipMap: 0
+    mipMapsPreserveCoverage: 0
+    alphaTestReferenceValue: 0.5
+    mipMapFadeDistanceStart: 1
+    mipMapFadeDistanceEnd: 3
+  bumpmap:
+    convertToNormalMap: 0
+    externalNormalMap: 0
+    heightScale: 0.25
+    normalMapFilter: 0
+    flipGreenChannel: 0
+  isReadable: 0
+  streamingMipmaps: 0
+  streamingMipmapsPriority: 0
+  vTOnly: 0
+  ignoreMipmapLimit: 0
+  grayScaleToAlpha: 0
+  generateCubemap: 6
+  cubemapConvolution: 0
+  seamlessCubemap: 0
+  textureFormat: 1
+  maxTextureSize: 2048
+  textureSettings:
+    serializedVersion: 2
+    filterMode: 1
+    aniso: 1
+    mipBias: 0
+    wrapU: 1
+    wrapV: 1
+    wrapW: 1
+  nPOTScale: 0
+  lightmap: 0
+  compressionQuality: 50
+  spriteMode: 2
+  spriteExtrude: 1
+  spriteMeshType: 1
+  alignment: 0
+  spritePivot: {x: 0.5, y: 0.5}
+  spritePixelsToUnits: 100
+  spriteBorder: {x: 0, y: 0, z: 0, w: 0}
+  spriteGenerateFallbackPhysicsShape: 1
+  alphaUsage: 1
+  alphaIsTransparency: 1
+  spriteTessellationDetail: -1
+  textureType: 0
+  textureShape: 1
+  singleChannelComponent: 0
+  flipbookRows: 1
+  flipbookColumns: 1
+  maxTextureSizeSet: 0
+  compressionQualitySet: 0
+  textureFormatSet: 0
+  ignorePngGamma: 0
+  applyGammaDecoding: 0
+  swizzle: 50462976
+  cookieLightType: 0
+  platformSettings:
+  - serializedVersion: 4
+    buildTarget: DefaultTexturePlatform
+    maxTextureSize: 1024
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 2
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: Standalone
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  spriteSheet:
+    serializedVersion: 2
+    sprites:
+    - serializedVersion: 2
+      name: clothes-4-body-type-2_0
+      rect:
+        serializedVersion: 2
+        x: 54
+        y: 0
+        width: 347
+        height: 474
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 5c892f7706f49b180800000000000000
+      internalID: -9099154296377534267
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: clothes-4-body-type-2_1
+      rect:
+        serializedVersion: 2
+        x: 353
+        y: 314
+        width: 9
+        height: 25
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 88038122736636db0800000000000000
+      internalID: -4799880390865571704
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: clothes-4-body-type-2_2
+      rect:
+        serializedVersion: 2
+        x: 407
+        y: 0
+        width: 321
+        height: 665
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: fc47616a98ef3f920800000000000000
+      internalID: 3023039642046198991
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: clothes-4-body-type-2_3
+      rect:
+        serializedVersion: 2
+        x: 420
+        y: 296
+        width: 9
+        height: 9
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 2c9ab9cd56190c570800000000000000
+      internalID: 8484941564644927938
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: clothes-4-body-type-2_4
+      rect:
+        serializedVersion: 2
+        x: 47
+        y: 245
+        width: 10
+        height: 12
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 0fed97897807b7c90800000000000000
+      internalID: -7171014253976363280
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: clothes-4-body-type-2_5
+      rect:
+        serializedVersion: 2
+        x: 428
+        y: 244
+        width: 9
+        height: 10
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 40a583ec0ba2f3830800000000000000
+      internalID: 4053005128519145988
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: clothes-4-body-type-2_6
+      rect:
+        serializedVersion: 2
+        x: 415
+        y: 209
+        width: 13
+        height: 21
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 5b7a9414b935eb7d0800000000000000
+      internalID: -2900789183699638347
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: clothes-4-body-type-2_7
+      rect:
+        serializedVersion: 2
+        x: 361
+        y: 199
+        width: 9
+        height: 7
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 74e3bd38f26e0dfb0800000000000000
+      internalID: -4624943725559464377
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: clothes-4-body-type-2_8
+      rect:
+        serializedVersion: 2
+        x: 404
+        y: 191
+        width: 9
+        height: 15
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 2e8ef29333a8bf1f0800000000000000
+      internalID: -1010061738807138078
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: clothes-4-body-type-2_9
+      rect:
+        serializedVersion: 2
+        x: 417
+        y: 190
+        width: 7
+        height: 8
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: aab998148e0969140800000000000000
+      internalID: 4726124186178263978
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: clothes-4-body-type-2_10
+      rect:
+        serializedVersion: 2
+        x: 398
+        y: 161
+        width: 11
+        height: 13
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: aa1a04233a29a7cb0800000000000000
+      internalID: -4865415217799978582
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: clothes-4-body-type-2_11
+      rect:
+        serializedVersion: 2
+        x: 407
+        y: 171
+        width: 9
+        height: 16
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: cfeebe50c5443c840800000000000000
+      internalID: 5243109553216417532
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: clothes-4-body-type-2_12
+      rect:
+        serializedVersion: 2
+        x: 436
+        y: 171
+        width: 8
+        height: 10
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: fee0251af3fdf31b0800000000000000
+      internalID: -5674571541081092369
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: clothes-4-body-type-2_13
+      rect:
+        serializedVersion: 2
+        x: 388
+        y: 94
+        width: 14
+        height: 40
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 1895235e18e5e6780800000000000000
+      internalID: -8687902719162033791
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: clothes-4-body-type-2_14
+      rect:
+        serializedVersion: 2
+        x: 416
+        y: 115
+        width: 11
+        height: 9
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 2f11c0cb458864270800000000000000
+      internalID: 8234418866207068658
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: clothes-4-body-type-2_15
+      rect:
+        serializedVersion: 2
+        x: 375
+        y: 54
+        width: 14
+        height: 13
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 74ba489a96c2e86b0800000000000000
+      internalID: -5292243679786521785
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: clothes-4-body-type-2_16
+      rect:
+        serializedVersion: 2
+        x: 389
+        y: 53
+        width: 9
+        height: 7
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 25f16d81b713f3800800000000000000
+      internalID: 594248080603619154
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: clothes-4-body-type-2_17
+      rect:
+        serializedVersion: 2
+        x: 394
+        y: 59
+        width: 14
+        height: 10
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: c1076f48c419d0b50800000000000000
+      internalID: 6561059989982965788
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: clothes-4-body-type-2_18
+      rect:
+        serializedVersion: 2
+        x: 418
+        y: 60
+        width: 7
+        height: 8
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 64db9c87cce232010800000000000000
+      internalID: 1162824584526413126
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: clothes-4-body-type-2_19
+      rect:
+        serializedVersion: 2
+        x: 409
+        y: 48
+        width: 10
+        height: 9
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: d49a5b773adbdf630800000000000000
+      internalID: 3962531756941617485
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    outline: []
+    customData: 
+    physicsShape: []
+    bones: []
+    spriteID: 
+    internalID: 0
+    vertices: []
+    indices: 
+    edges: []
+    weights: []
+    secondaryTextures: []
+    spriteCustomMetadata:
+      entries: []
+    nameFileIdTable:
+      clothes-4-body-type-2_0: -9099154296377534267
+      clothes-4-body-type-2_1: -4799880390865571704
+      clothes-4-body-type-2_10: -4865415217799978582
+      clothes-4-body-type-2_11: 5243109553216417532
+      clothes-4-body-type-2_12: -5674571541081092369
+      clothes-4-body-type-2_13: -8687902719162033791
+      clothes-4-body-type-2_14: 8234418866207068658
+      clothes-4-body-type-2_15: -5292243679786521785
+      clothes-4-body-type-2_16: 594248080603619154
+      clothes-4-body-type-2_17: 6561059989982965788
+      clothes-4-body-type-2_18: 1162824584526413126
+      clothes-4-body-type-2_19: 3962531756941617485
+      clothes-4-body-type-2_2: 3023039642046198991
+      clothes-4-body-type-2_3: 8484941564644927938
+      clothes-4-body-type-2_4: -7171014253976363280
+      clothes-4-body-type-2_5: 4053005128519145988
+      clothes-4-body-type-2_6: -2900789183699638347
+      clothes-4-body-type-2_7: -4624943725559464377
+      clothes-4-body-type-2_8: -1010061738807138078
+      clothes-4-body-type-2_9: 4726124186178263978
+  mipmapLimitGroupName: 
+  pSDRemoveMatte: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 

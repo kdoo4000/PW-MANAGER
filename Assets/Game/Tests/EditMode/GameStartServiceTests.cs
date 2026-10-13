@@ -59,7 +59,7 @@ namespace PWManager.Tests
             Assert.That(save.SeasonPolicy.PpvShowTitles, Has.Count.EqualTo(4));
             Assert.That(save.SeasonPolicy.PpvShowTitles.Select(x => x.Title), Is.Unique);
             Assert.That(save.SeasonPolicy.RegularShowDurationMinutes, Is.EqualTo(120));
-            Assert.That(save.SeasonPolicy.PpvShowTitles, Has.All.Property(nameof(PpvTitlePolicyState.DurationMinutes)).EqualTo(120));
+            Assert.That(save.SeasonPolicy.PpvShowTitles, Has.All.Matches<PpvTitlePolicyState>(x => x.DurationMinutes == 120));
             Assert.That(save.Schedules, Has.All.Matches<ScheduleState>(x => x.Status == ScheduleStatus.Confirmed));
             Assert.That(save.Shows, Has.Count.EqualTo(save.Schedules.Count));
             Assert.That(save.Shows.Select(x => x.ScheduleId), Is.EquivalentTo(save.Schedules.Select(x => x.Id)));

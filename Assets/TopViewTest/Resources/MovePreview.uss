@@ -1,0 +1,39 @@
+.move-preview { flex-grow: 1; color: rgb(238, 242, 248); font-size: 18px; }
+.header { background-color: rgb(12, 17, 24); padding: 18px 28px; }
+.heading { font-size: 30px; margin: 0; }
+.body { flex-direction: row; flex-grow: 1; min-height: 0; }
+.sidebar { width: 32%; min-width: 280px; background-color: rgb(20, 27, 37); padding: 22px 20px; }
+.right { flex-grow: 1; flex-shrink: 1; min-width: 0; }
+.info { background-color: rgb(20, 27, 37); padding: 20px 28px; flex-direction: row; align-items: center; }
+.move-description { flex-grow: 1; flex-shrink: 1; min-width: 0; }
+.move-target { width: 110px; flex-shrink: 0; margin-left: 20px; align-items: center; }
+.target-body { width: 84px; height: 108px; margin: 4px 0; }
+.move-title { font-size: 28px; white-space: normal; margin: 0 0 4px 0; }
+.muted { color: rgb(181, 194, 211); margin: 6px 0; white-space: normal; }
+.details { white-space: normal; margin: 10px 0 0 0; font-size: 17px; }
+.viewport { flex-grow: 1; min-height: 160px; align-items: center; justify-content: center; }
+.unavailable-message { white-space: normal; background-color: rgb(20, 27, 37); padding: 20px; margin: 20px; }
+.legend { position: absolute; bottom: 12px; flex-direction: row; background-color: rgb(12, 17, 24); padding: 8px 18px; }
+.actor { color: rgb(113, 187, 255); margin-right: 26px; }
+.receiver { color: rgb(255, 149, 154); }
+.controls { background-color: rgb(20, 27, 37); padding: 18px 28px; }
+.control-row { flex-direction: row; align-items: center; flex-wrap: wrap; margin-top: 12px; }
+Button { background-color: rgb(37, 49, 65); color: rgb(238, 242, 248); border-color: rgb(129, 146, 168); border-width: 1px; border-radius: 3px; padding: 8px 16px; margin: 0 10px 6px 0; min-height: 38px; }
+Button:hover { background-color: rgb(53, 70, 93); }
+Button:focus { border-color: rgb(113, 187, 255); border-width: 2px; }
+TextField, DropdownField { margin: 0 0 12px 0; }
+.unity-base-field__label { min-width: 78px; color: rgb(238, 242, 248); }
+.unity-base-field__input { background-color: rgb(12, 17, 24); color: rgb(238, 242, 248); border-color: rgb(129, 146, 168); border-width: 1px; border-radius: 2px; min-height: 34px; }
+.unity-base-field__input:focus { border-color: rgb(113, 187, 255); }
+.unity-list-view { flex-grow: 1; min-height: 0; margin-top: 10px; background-color: rgb(12, 17, 24); }
+.unity-list-view__item { padding-left: 12px; padding-right: 12px; justify-content: center; }
+#preview-moves Label { height: 100%; margin: 0; -unity-text-align: middle-left; }
+.unity-list-view__item:hover { background-color: rgb(37, 49, 65); }
+.unity-list-view__item--selected, .unity-collection-view__item--selected { background-color: rgb(43, 75, 111); }
+.unity-list-view:focus { border-width: 2px; border-color: rgb(113, 187, 255); }
+.unavailable-row { color: rgb(181, 194, 211); }
+Toggle { margin: 0 18px 6px 0; }
+#preview-speed, #preview-shape { margin: 0 14px 6px 0; min-width: 144px; }
+#preview-speed .unity-base-field__label, #preview-shape .unity-base-field__label { min-width: 44px; }
+#preview-timeline { margin: 0; }
+#preview-timeline .unity-base-field__input { border-width: 0; background-color: transparent; }

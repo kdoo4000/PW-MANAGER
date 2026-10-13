@@ -23,7 +23,7 @@ namespace PWManager.Tests
             Assert.That(save.Wrestlers.Select(x => x.Identity.RingName), Does.Contain("Cody Rhodes"));
             Assert.That(save.Wrestlers.Count(x => x.Identity.Gender == WrestlerGender.Male), Is.EqualTo(67));
             Assert.That(save.Wrestlers.Count(x => x.Identity.Gender == WrestlerGender.Female), Is.EqualTo(38));
-            Assert.That(save.Wrestlers.Select(x => x.Identity.RingName).Distinct(), Has.Count.EqualTo(105));
+            Assert.That(save.Wrestlers.Select(x => x.Identity.RingName).Distinct().Count(), Is.EqualTo(105));
             Assert.That(WrestlerOverallCalculator.Match(save.Wrestlers.Single(x => x.Identity.RingName == "Gunther")),
                 Is.GreaterThan(WrestlerOverallCalculator.Match(save.Wrestlers.Single(x => x.Identity.RingName == "Akira Tozawa"))));
             Assert.That(save.Wrestlers, Has.All.Matches<WrestlerState>(x =>
@@ -54,7 +54,7 @@ namespace PWManager.Tests
                 .Execute(save, show.Id, 73, venue.Capacity, venue.BaseTicketPrice);
             Assert.That(save.MatchResults.Single().NarrativeLines, Is.Not.Empty);
             Assert.That(save.MatchResults.Single().SimulationBeats.All(x => x.DurationSeconds > 0), Is.True);
-            Assert.That(save.MatchResults.Single().MoveResults, Has.Count.EqualTo(4));
+            Assert.That(save.MatchResults.Single().MoveResults.Count, Is.EqualTo(save.MatchResults.Single().EngineState.Events.Count(x => !string.IsNullOrEmpty(x.MoveId))));
             var restored = JsonUtility.FromJson<GameSave>(JsonUtility.ToJson(save));
             Assert.That(restored.MatchResults.Single().MoveResults.Select(x => (x.MoveId, x.ActorId, x.TargetId, x.Result)),
                 Is.EqualTo(save.MatchResults.Single().MoveResults.Select(x => (x.MoveId, x.ActorId, x.TargetId, x.Result))));

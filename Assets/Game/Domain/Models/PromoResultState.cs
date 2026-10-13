@@ -11,6 +11,7 @@ namespace PWManager.Domain.Models
         public int ShowVersion;
         public string ShowEventId;
         public string PromoPlanId;
+        public string CancellationReason;
         public float PromoScore;
         public FanReactionResultState FanReaction = new();
         public List<ResultChangeState> StoryChanges = new();

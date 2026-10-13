@@ -31,7 +31,7 @@
             <ui:Button name="nav-world" class="nav"><ui:VisualElement name="icon-world" class="nav-icon"/><ui:Label text="월드" class="nav-label"/></ui:Button>
             <ui:Button name="nav-history" class="nav"><ui:VisualElement name="icon-history" class="nav-icon"/><ui:Label text="기록" class="nav-label"/></ui:Button>
             <ui:VisualElement class="sidebar-spacer"/>
-            <ui:Button name="nav-settings" class="nav"><ui:VisualElement name="icon-settings" class="nav-icon"/><ui:Label text="설정" class="nav-label"/></ui:Button>
+            <ui:Button name="nav-settings" class="nav"><ui:VisualElement name="icon-settings" class="nav-icon"/><ui:Label text="저장 / 불러오기" class="nav-label"/></ui:Button>
         </ui:VisualElement>
         <ui:VisualElement name="dashboard-workspace" class="workspace">
             <ui:VisualElement class="topbar">

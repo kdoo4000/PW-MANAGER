@@ -1,6 +1,7 @@
 using System;
 using System.IO;
 using System.Collections.Generic;
+using System.Linq;
 using PWManager.Domain.Models;
 using PWManager.Infrastructure.Save;
 using UnityEngine;
@@ -11,10 +12,13 @@ namespace PWManager.Presentation
     {
         public static GameSave ActiveSave { get; private set; }
         public static bool IsTransient { get; private set; }
+        public static bool IsShowRunning => ActiveSave?.Shows?.Any(x => x != null &&
+            x.Status is ShowStatus.InProgress or ShowStatus.ResultReview or ShowStatus.ResultsReviewed) == true;
         public static event Action<GameSave> SaveChanged;
 
         public static void SetActiveSave(GameSave save, bool transient = false)
         {
+            PortraitRenderer.ClearCache();
             IsTransient = transient;
             ActiveSave = save;
             SaveChanged?.Invoke(save);
@@ -24,6 +28,7 @@ namespace PWManager.Presentation
         {
             if (ActiveSave == null) return;
             if (!IsTransient) Service().Save("autosave", ActiveSave);
+            PortraitRenderer.Prune(ActiveSave);
             SaveChanged?.Invoke(ActiveSave);
         }
 

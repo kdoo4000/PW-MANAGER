@@ -24,3 +24,17 @@ MonoBehaviour:
   RequiredStat: 3
   RequiredStatValue: 9
   ScenarioGroupId: 
+  Kind: 4
+  TargetRegion: 0
+  Enabled: 1
+  CanUseGenerally: 1
+  CanBeSignature: 1
+  CanBeFinisher: 1
+  TechniqueKey: crossface
+  AllowedStyleIds: []
+  Action: 4
+  Situation: 10
+  MotionProfile: 14
+  ExecutionStyle: 0
+  EndPosture: 2
+  TravelDistance: 0

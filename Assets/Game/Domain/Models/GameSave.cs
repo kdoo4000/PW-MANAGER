@@ -42,7 +42,13 @@ namespace PWManager.Domain.Models
         public PlayerCharacterState Player;
         public List<LocalizedNameState> SystemNames;
         public List<WrestlerState> Wrestlers;
+        public List<StoryRelationshipState> StoryRelationships = new();
+        public List<StorylineState> Storylines = new();
+        public List<StoryCandidateState> StoryCandidates = new();
+        public int RelationshipSchemaVersion;
         public List<TagTeamState> TagTeams;
+        public List<ChampionshipState> Championships = new();
+        public List<StableState> Stables = new();
         public List<ManagerState> Managers;
         public List<ContractState> Contracts;
         public List<StaffDepartmentState> StaffDepartments;
@@ -104,6 +110,32 @@ namespace PWManager.Domain.Models
                 WorldSeed = worldSeed,
                 CurrentDate = new GameDate(2026, 6, 1)
             };
+        }
+
+        public GameSave CopyForStorySimulation()
+        {
+            var copy = (GameSave)MemberwiseClone();
+            copy.TagTeams = new();
+            foreach (var team in TagTeams ?? new())
+                copy.TagTeams.Add(new TagTeamState { Id = team.Id, PromotionId = team.PromotionId, Name = team.Name,
+                    MemberIds = new(team.MemberIds), Status = team.Status, Chemistry = team.Chemistry });
+            copy.Stables = new();
+            foreach (var stable in Stables ?? new())
+                copy.Stables.Add(new StableState { Id = stable.Id, PromotionId = stable.PromotionId, Name = stable.Name,
+                    MemberIds = new(stable.MemberIds), LeaderId = stable.LeaderId, Status = stable.Status, Chemistry = stable.Chemistry });
+            copy.Wrestlers = new();
+            foreach (var wrestler in Wrestlers) copy.Wrestlers.Add(wrestler.CopyForGroupSimulation());
+            copy.StoryRelationships = new();
+            foreach (var pair in StoryRelationships ?? new())
+                copy.StoryRelationships.Add(pair == null ? null : new StoryRelationshipState
+                {
+                    FirstWrestlerId = pair.FirstWrestlerId, SecondWrestlerId = pair.SecondWrestlerId,
+                    Value = pair.Value, Hostility = pair.Hostility
+                });
+            copy.Storylines = new();
+            foreach (var story in Storylines ?? new())
+                copy.Storylines.Add(story?.CopyForSimulation());
+            return copy;
         }
     }
 }

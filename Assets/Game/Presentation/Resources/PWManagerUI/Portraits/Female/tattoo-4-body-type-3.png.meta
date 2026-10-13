@@ -1,0 +1,793 @@
+fileFormatVersion: 2
+guid: 1e43e0428a0750045bbd49ed2867b94a
+TextureImporter:
+  internalIDToNameTable:
+  - first:
+      213: 8933249668374388508
+    second: tattoo-4-body-type-3_0
+  - first:
+      213: 1473567450639354494
+    second: tattoo-4-body-type-3_1
+  - first:
+      213: 774434217266404324
+    second: tattoo-4-body-type-3_2
+  - first:
+      213: -6191805814649899091
+    second: tattoo-4-body-type-3_3
+  - first:
+      213: 4593385026921861958
+    second: tattoo-4-body-type-3_4
+  - first:
+      213: -8641412180455982267
+    second: tattoo-4-body-type-3_5
+  - first:
+      213: -4786255453796889533
+    second: tattoo-4-body-type-3_6
+  - first:
+      213: -299626121435498873
+    second: tattoo-4-body-type-3_7
+  - first:
+      213: -4369997261651024575
+    second: tattoo-4-body-type-3_8
+  - first:
+      213: 2815430767183472409
+    second: tattoo-4-body-type-3_9
+  - first:
+      213: 5828118678948083172
+    second: tattoo-4-body-type-3_10
+  - first:
+      213: -296883737835558929
+    second: tattoo-4-body-type-3_11
+  - first:
+      213: 3377338233998928176
+    second: tattoo-4-body-type-3_12
+  - first:
+      213: -1232039414046088469
+    second: tattoo-4-body-type-3_13
+  - first:
+      213: -7622786631523662799
+    second: tattoo-4-body-type-3_14
+  - first:
+      213: 3090843070422047556
+    second: tattoo-4-body-type-3_15
+  - first:
+      213: 4966557023398706530
+    second: tattoo-4-body-type-3_16
+  - first:
+      213: -8745267735534941164
+    second: tattoo-4-body-type-3_17
+  - first:
+      213: -5555581534007336264
+    second: tattoo-4-body-type-3_18
+  - first:
+      213: -7376185640633975582
+    second: tattoo-4-body-type-3_19
+  - first:
+      213: 6574879160433933217
+    second: tattoo-4-body-type-3_20
+  - first:
+      213: 8266348213712623997
+    second: tattoo-4-body-type-3_21
+  - first:
+      213: -8996894939716166593
+    second: tattoo-4-body-type-3_22
+  - first:
+      213: -7052848974013168189
+    second: tattoo-4-body-type-3_23
+  - first:
+      213: 2923249952832819028
+    second: tattoo-4-body-type-3_24
+  - first:
+      213: 7790590680406479349
+    second: tattoo-4-body-type-3_25
+  externalObjects: {}
+  serializedVersion: 13
+  mipmaps:
+    mipMapMode: 0
+    enableMipMap: 0
+    sRGBTexture: 1
+    linearTexture: 0
+    fadeOut: 0
+    borderMipMap: 0
+    mipMapsPreserveCoverage: 0
+    alphaTestReferenceValue: 0.5
+    mipMapFadeDistanceStart: 1
+    mipMapFadeDistanceEnd: 3
+  bumpmap:
+    convertToNormalMap: 0
+    externalNormalMap: 0
+    heightScale: 0.25
+    normalMapFilter: 0
+    flipGreenChannel: 0
+  isReadable: 0
+  streamingMipmaps: 0
+  streamingMipmapsPriority: 0
+  vTOnly: 0
+  ignoreMipmapLimit: 0
+  grayScaleToAlpha: 0
+  generateCubemap: 6
+  cubemapConvolution: 0
+  seamlessCubemap: 0
+  textureFormat: 1
+  maxTextureSize: 2048
+  textureSettings:
+    serializedVersion: 2
+    filterMode: 1
+    aniso: 1
+    mipBias: 0
+    wrapU: 1
+    wrapV: 1
+    wrapW: 1
+  nPOTScale: 0
+  lightmap: 0
+  compressionQuality: 50
+  spriteMode: 2
+  spriteExtrude: 1
+  spriteMeshType: 1
+  alignment: 0
+  spritePivot: {x: 0.5, y: 0.5}
+  spritePixelsToUnits: 100
+  spriteBorder: {x: 0, y: 0, z: 0, w: 0}
+  spriteGenerateFallbackPhysicsShape: 1
+  alphaUsage: 1
+  alphaIsTransparency: 1
+  spriteTessellationDetail: -1
+  textureType: 0
+  textureShape: 1
+  singleChannelComponent: 0
+  flipbookRows: 1
+  flipbookColumns: 1
+  maxTextureSizeSet: 0
+  compressionQualitySet: 0
+  textureFormatSet: 0
+  ignorePngGamma: 0
+  applyGammaDecoding: 0
+  swizzle: 50462976
+  cookieLightType: 0
+  platformSettings:
+  - serializedVersion: 4
+    buildTarget: DefaultTexturePlatform
+    maxTextureSize: 1024
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 2
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: Standalone
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  spriteSheet:
+    serializedVersion: 2
+    sprites:
+    - serializedVersion: 2
+      name: tattoo-4-body-type-3_0
+      rect:
+        serializedVersion: 2
+        x: 256
+        y: 266
+        width: 49
+        height: 25
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: c1fd4553e3749fb70800000000000000
+      internalID: 8933249668374388508
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: tattoo-4-body-type-3_1
+      rect:
+        serializedVersion: 2
+        x: 304
+        y: 286
+        width: 51
+        height: 53
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: e7acfeff9c9237410800000000000000
+      internalID: 1473567450639354494
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: tattoo-4-body-type-3_2
+      rect:
+        serializedVersion: 2
+        x: 414
+        y: 245
+        width: 90
+        height: 93
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 4eb521641d75fba00800000000000000
+      internalID: 774434217266404324
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: tattoo-4-body-type-3_3
+      rect:
+        serializedVersion: 2
+        x: 505
+        y: 273
+        width: 7
+        height: 8
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: da7389bca69421aa0800000000000000
+      internalID: -6191805814649899091
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: tattoo-4-body-type-3_4
+      rect:
+        serializedVersion: 2
+        x: 507
+        y: 271
+        width: 11
+        height: 7
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 643964e585bfebf30800000000000000
+      internalID: 4593385026921861958
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: tattoo-4-body-type-3_5
+      rect:
+        serializedVersion: 2
+        x: 210
+        y: 251
+        width: 26
+        height: 16
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 54bff22f769831880800000000000000
+      internalID: -8641412180455982267
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: tattoo-4-body-type-3_6
+      rect:
+        serializedVersion: 2
+        x: 233
+        y: 258
+        width: 7
+        height: 7
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 34c0920060ec39db0800000000000000
+      internalID: -4786255453796889533
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: tattoo-4-body-type-3_7
+      rect:
+        serializedVersion: 2
+        x: 243
+        y: 262
+        width: 9
+        height: 10
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 786b86a41a387dbf0800000000000000
+      internalID: -299626121435498873
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: tattoo-4-body-type-3_8
+      rect:
+        serializedVersion: 2
+        x: 531
+        y: 247
+        width: 76
+        height: 23
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 1456cddc4a6aa53c0800000000000000
+      internalID: -4369997261651024575
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: tattoo-4-body-type-3_9
+      rect:
+        serializedVersion: 2
+        x: 109
+        y: 217
+        width: 75
+        height: 38
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 9172dafad5b621720800000000000000
+      internalID: 2815430767183472409
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: tattoo-4-body-type-3_10
+      rect:
+        serializedVersion: 2
+        x: 184
+        y: 249
+        width: 24
+        height: 11
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 4e5f48f4f03a1e050800000000000000
+      internalID: 5828118678948083172
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: tattoo-4-body-type-3_11
+      rect:
+        serializedVersion: 2
+        x: 581
+        y: 118
+        width: 115
+        height: 134
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: fe7a8ba30d141ebf0800000000000000
+      internalID: -296883737835558929
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: tattoo-4-body-type-3_12
+      rect:
+        serializedVersion: 2
+        x: 91
+        y: 195
+        width: 8
+        height: 8
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 039e9dbda37bede20800000000000000
+      internalID: 3377338233998928176
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: tattoo-4-body-type-3_13
+      rect:
+        serializedVersion: 2
+        x: 96
+        y: 201
+        width: 14
+        height: 19
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: be2a0883eaae6eee0800000000000000
+      internalID: -1232039414046088469
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: tattoo-4-body-type-3_14
+      rect:
+        serializedVersion: 2
+        x: 74
+        y: 147
+        width: 16
+        height: 40
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 1348f6522fb663690800000000000000
+      internalID: -7622786631523662799
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: tattoo-4-body-type-3_15
+      rect:
+        serializedVersion: 2
+        x: 86
+        y: 186
+        width: 9
+        height: 10
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 44bdbf48561e4ea20800000000000000
+      internalID: 3090843070422047556
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: tattoo-4-body-type-3_16
+      rect:
+        serializedVersion: 2
+        x: 53
+        y: 108
+        width: 24
+        height: 30
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 26db6608c41cce440800000000000000
+      internalID: 4966557023398706530
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: tattoo-4-body-type-3_17
+      rect:
+        serializedVersion: 2
+        x: 155
+        y: 9
+        width: 82
+        height: 133
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 41c41c5345192a680800000000000000
+      internalID: -8745267735534941164
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: tattoo-4-body-type-3_18
+      rect:
+        serializedVersion: 2
+        x: 691
+        y: 113
+        width: 33
+        height: 71
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 8b2e5c0970c96e2b0800000000000000
+      internalID: -5555581534007336264
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: tattoo-4-body-type-3_19
+      rect:
+        serializedVersion: 2
+        x: 48
+        y: 82
+        width: 13
+        height: 27
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 2ecbca49d3682a990800000000000000
+      internalID: -7376185640633975582
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: tattoo-4-body-type-3_20
+      rect:
+        serializedVersion: 2
+        x: 557
+        y: 2
+        width: 105
+        height: 81
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 1ab78ced2c9ae3b50800000000000000
+      internalID: 6574879160433933217
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: tattoo-4-body-type-3_21
+      rect:
+        serializedVersion: 2
+        x: 722
+        y: 98
+        width: 10
+        height: 14
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: d79960447e7f7b270800000000000000
+      internalID: 8266348213712623997
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: tattoo-4-body-type-3_22
+      rect:
+        serializedVersion: 2
+        x: 727
+        y: 70
+        width: 13
+        height: 28
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: f3c55bc48bb942380800000000000000
+      internalID: -8996894939716166593
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: tattoo-4-body-type-3_23
+      rect:
+        serializedVersion: 2
+        x: 23
+        y: 0
+        width: 10
+        height: 11
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 3c58779c93f3f1e90800000000000000
+      internalID: -7052848974013168189
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: tattoo-4-body-type-3_24
+      rect:
+        serializedVersion: 2
+        x: 31
+        y: 11
+        width: 12
+        height: 17
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 45f07441858719820800000000000000
+      internalID: 2923249952832819028
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: tattoo-4-body-type-3_25
+      rect:
+        serializedVersion: 2
+        x: 116
+        y: 2
+        width: 24
+        height: 29
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 5f1d81092fcbd1c60800000000000000
+      internalID: 7790590680406479349
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    outline: []
+    customData: 
+    physicsShape: []
+    bones: []
+    spriteID: 
+    internalID: 0
+    vertices: []
+    indices: 
+    edges: []
+    weights: []
+    secondaryTextures: []
+    spriteCustomMetadata:
+      entries: []
+    nameFileIdTable:
+      tattoo-4-body-type-3_0: 8933249668374388508
+      tattoo-4-body-type-3_1: 1473567450639354494
+      tattoo-4-body-type-3_10: 5828118678948083172
+      tattoo-4-body-type-3_11: -296883737835558929
+      tattoo-4-body-type-3_12: 3377338233998928176
+      tattoo-4-body-type-3_13: -1232039414046088469
+      tattoo-4-body-type-3_14: -7622786631523662799
+      tattoo-4-body-type-3_15: 3090843070422047556
+      tattoo-4-body-type-3_16: 4966557023398706530
+      tattoo-4-body-type-3_17: -8745267735534941164
+      tattoo-4-body-type-3_18: -5555581534007336264
+      tattoo-4-body-type-3_19: -7376185640633975582
+      tattoo-4-body-type-3_2: 774434217266404324
+      tattoo-4-body-type-3_20: 6574879160433933217
+      tattoo-4-body-type-3_21: 8266348213712623997
+      tattoo-4-body-type-3_22: -8996894939716166593
+      tattoo-4-body-type-3_23: -7052848974013168189
+      tattoo-4-body-type-3_24: 2923249952832819028
+      tattoo-4-body-type-3_25: 7790590680406479349
+      tattoo-4-body-type-3_3: -6191805814649899091
+      tattoo-4-body-type-3_4: 4593385026921861958
+      tattoo-4-body-type-3_5: -8641412180455982267
+      tattoo-4-body-type-3_6: -4786255453796889533
+      tattoo-4-body-type-3_7: -299626121435498873
+      tattoo-4-body-type-3_8: -4369997261651024575
+      tattoo-4-body-type-3_9: 2815430767183472409
+  mipmapLimitGroupName: 
+  pSDRemoveMatte: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 

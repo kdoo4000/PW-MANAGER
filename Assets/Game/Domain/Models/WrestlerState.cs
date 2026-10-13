@@ -8,6 +8,7 @@ namespace PWManager.Domain.Models
         public WrestlerIdentityState Identity = new();
         public WrestlerAttributesState Attributes = new();
         public WrestlerConditionState Condition = new();
+        public KayfabeInjuryState KayfabeInjury = new();
         public WrestlerGrowthState Growth = new();
         public WrestlerStatusState Status = new();
         public WrestlerMomentumState Momentum = new();
@@ -19,6 +20,20 @@ namespace PWManager.Domain.Models
         {
             get => Identity.Id;
             set => Identity.Id = value;
+        }
+
+        public WrestlerState CopyForGroupSimulation()
+        {
+            var copy = (WrestlerState)MemberwiseClone();
+            copy.Condition = Condition.Copy();
+            copy.KayfabeInjury = KayfabeInjury?.Copy() ?? new();
+            copy.Roster = new WrestlerRosterState
+            {
+                PromotionId = Roster.PromotionId, Alignment = Roster.Alignment, ActivityState = Roster.ActivityState,
+                ActiveTagTeamId = Roster.ActiveTagTeamId, ActiveStableId = Roster.ActiveStableId,
+                LastMatchDate = Roster.LastMatchDate, LastAppearanceDate = Roster.LastAppearanceDate
+            };
+            return copy;
         }
 
         public string PromotionId

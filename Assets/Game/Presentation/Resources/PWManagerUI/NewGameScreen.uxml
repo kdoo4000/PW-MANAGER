@@ -49,14 +49,7 @@
                         </ui:VisualElement>
                         <ui:VisualElement class="appearance-card">
                             <ui:Label text="외형 설정" class="player-card-title"/>
-                            <ui:VisualElement class="appearance-workspace">
-                                <ui:VisualElement class="appearance-preview">
-                                    <ui:VisualElement class="appearance-silhouette">
-                                        <ui:Label text="PW" class="appearance-silhouette-mark"/>
-                                    </ui:VisualElement>
-                                </ui:VisualElement>
-                                <ui:VisualElement class="appearance-editor"/>
-                            </ui:VisualElement>
+                            <ui:VisualElement name="player-appearance-workspace" class="appearance-workspace"/>
                         </ui:VisualElement>
                         <ui:VisualElement name="birth-date-calendar" class="birth-date-calendar hidden">
                             <ui:VisualElement class="calendar-header">

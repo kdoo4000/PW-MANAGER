@@ -10,6 +10,11 @@ namespace PWManager.Domain.Validation
     public static class GameSaveValidator
     {
         private const float AbilityTolerance = .01f;
+        private static void ValidateInjuryDate(GameDate date, List<string> errors)
+        {
+            try { _ = new DateTime(date.Year, date.Month, date.Day); }
+            catch (ArgumentOutOfRangeException) { errors.Add("Injury recovery date is invalid."); }
+        }
 
         public static List<string> Validate(GameSave save)
         {
@@ -31,6 +36,10 @@ namespace PWManager.Domain.Validation
             ValidateWrestlers(save, errors);
             ValidateScouting(save, errors);
             ValidateTagTeams(save, errors);
+            try { ChampionshipService.ValidateState(save); }
+            catch (InvalidOperationException exception) { errors.Add(exception.Message); }
+            ValidateStables(save, errors);
+            ValidateStorylines(save, errors);
             ValidateManagers(save, errors);
             ValidateContracts(save, errors);
             ValidateOperations(save, errors);
@@ -53,6 +62,15 @@ namespace PWManager.Domain.Validation
                 if (match == null) { errors.Add("Match plan cannot be null."); continue; }
                 ValidateUniqueRuntimeId(match.Id, "MatchPlan", matchIds, errors);
                 ValidateStaticId(match.MatchTypeId, "matchtype_", "MatchTypeId", errors);
+                if (!string.IsNullOrEmpty(match.ChampionshipId) && !(save.Championships ?? new()).Any(x => x?.Id == match.ChampionshipId))
+                    errors.Add($"Match {match.Id} references a missing championship.");
+                var injuryParticipants = (match.Sides ?? new()).SelectMany(s => s.MemberIds).Concat(match.ParticipantIds ?? new()).ToHashSet();
+                var injuredIds = new HashSet<string>(StringComparer.Ordinal);
+                foreach (var injury in match.StoryInjuries ?? new())
+                    if (injury == null || !injuryParticipants.Contains(injury.WrestlerId) || !injuredIds.Add(injury.WrestlerId) ||
+                        !Enum.IsDefined(typeof(InjuryStatus), injury.Severity) || injury.Severity == InjuryStatus.None ||
+                        !Enum.IsDefined(typeof(BodyRegion), injury.Region) || injury.Days < 1 || injury.Days > 365)
+                        errors.Add($"Match {match.Id} has an invalid planned story injury.");
                 foreach (var spot in match.Spots ?? new List<PlannedSpotState>())
                     if (spot == null || SpecialMatchSpotCatalog.Find(spot.SpotId) == null || !Enum.IsDefined(typeof(MatchSpotPhase), spot.Phase))
                         errors.Add($"Match {match.Id} has an invalid spot definition or phase.");
@@ -234,6 +252,16 @@ namespace PWManager.Domain.Validation
                 ValidateAttributes(wrestler, errors);
                 ValidateRange(wrestler.Condition.Condition, 0, 100, "Condition", errors);
                 ValidateRange(wrestler.Condition.Satisfaction, 0, 100, "Satisfaction", errors);
+                if (!Enum.IsDefined(typeof(InjuryStatus), wrestler.Condition.InjuryStatus) ||
+                    !Enum.IsDefined(typeof(BodyRegion), wrestler.Condition.InjuryRegion) ||
+                    !Enum.IsDefined(typeof(WrestlerAvailability), wrestler.Condition.Availability) ||
+                    !Enum.IsDefined(typeof(WrestlerAvailability), wrestler.Condition.AvailabilityBeforeInjury))
+                    errors.Add($"Wrestler {wrestler.Id} has invalid medical state.");
+                var storyInjury = wrestler.KayfabeInjury;
+                if (storyInjury != null && (!Enum.IsDefined(typeof(InjuryStatus), storyInjury.Severity) ||
+                    !Enum.IsDefined(typeof(BodyRegion), storyInjury.Region))) errors.Add($"Wrestler {wrestler.Id} has invalid story injury.");
+                if (wrestler.Condition.RecoveryDate.HasValue) ValidateInjuryDate(wrestler.Condition.RecoveryDate.Value, errors);
+                if (storyInjury?.ReturnDate.HasValue == true) ValidateInjuryDate(storyInjury.ReturnDate.Value, errors);
                 ValidateRange(wrestler.Status.StatusValue, 0, 100, "StatusValue", errors);
                 ValidateRange(wrestler.Momentum.Momentum, 0, 100, "Momentum", errors);
                 ValidateRange(wrestler.FanReaction.ManiaFanReaction, -100, 100, "ManiaFanReaction", errors);
@@ -317,6 +345,59 @@ namespace PWManager.Domain.Validation
                 var team = (save.TagTeams ?? new List<TagTeamState>()).SingleOrDefault(x => x?.Id == activeTagTeamId);
                 if (team == null || team.Status != TagTeamStatus.Active || !team.MemberIds.Contains(wrestler.Id))
                     errors.Add($"Wrestler {wrestler.Id} references an invalid active tag team.");
+            }
+        }
+
+        private static void ValidateStables(GameSave save, List<string> errors)
+        {
+            var ids = new HashSet<string>(StringComparer.Ordinal);
+            var activeMembers = new HashSet<string>(StringComparer.Ordinal);
+            var wrestlers = new HashSet<string>((save.Wrestlers ?? new()).Where(x => x != null).Select(x => x.Id));
+            foreach (var stable in save.Stables ?? new())
+            {
+                if (stable == null) { errors.Add("Stable cannot be null."); continue; }
+                ValidateUniqueRuntimeId(stable.Id, "Stable", ids, errors);
+                if (stable.PromotionId != save.Promotion.Id) errors.Add("Stable references another promotion.");
+                if (string.IsNullOrWhiteSpace(stable.Name)) errors.Add("Stable requires a name.");
+                if (!Enum.IsDefined(typeof(TagTeamStatus), stable.Status)) errors.Add("Invalid stable status.");
+                var members = stable.MemberIds ?? new();
+                if (members.Count < 3 || members.Distinct().Count() != members.Count || members.Any(x => !wrestlers.Contains(x)))
+                    errors.Add("Stable requires at least three different existing wrestlers.");
+                if (!members.Contains(stable.LeaderId)) errors.Add("Stable leader must be a member.");
+                ValidateRange(stable.Chemistry, 0, 100, "Stable Chemistry", errors);
+                if (stable.Status != TagTeamStatus.Active) continue;
+                foreach (var id in members)
+                    if (!activeMembers.Add(id)) errors.Add("Wrestler belongs to multiple active stables.");
+                foreach (var team in save.TagTeams ?? new())
+                    if (team?.Status == TagTeamStatus.Active && team.MemberIds != null && team.MemberIds.Intersect(members).Any() && !team.MemberIds.All(members.Contains))
+                        errors.Add("An active tag team must belong to the same stable together.");
+            }
+            foreach (var wrestler in save.Wrestlers ?? new())
+            {
+                var id = wrestler?.Roster?.ActiveStableId;
+                if (string.IsNullOrEmpty(id)) continue;
+                if (!(save.Stables ?? new()).Any(x => x?.Id == id && x.Status == TagTeamStatus.Active && x.MemberIds?.Contains(wrestler.Id) == true))
+                    errors.Add("Wrestler references an invalid active stable.");
+            }
+        }
+
+        private static void ValidateStorylines(GameSave save, List<string> errors)
+        {
+            try { StorylineService.ValidateState(save); }
+            catch (InvalidOperationException exception) { errors.Add(exception.Message); }
+            var wrestlerIds = new HashSet<string>((save.Wrestlers ?? new List<WrestlerState>()).Where(x => x != null).Select(x => x.Id), StringComparer.Ordinal);
+            var storyIds = new HashSet<string>(StringComparer.Ordinal);
+            foreach (var story in save.Storylines ?? new List<StorylineState>())
+            {
+                if (story == null) { errors.Add("Storyline cannot be null."); continue; }
+                ValidateUniqueRuntimeId(story.Id, "Storyline", storyIds, errors);
+                if (story.PromotionId != save.Promotion.Id) errors.Add($"Storyline {story.Id} references another promotion.");
+                if (string.IsNullOrWhiteSpace(story.Name)) errors.Add($"Storyline {story.Id} requires a name.");
+                if (story.FirstWrestlerId == story.SecondWrestlerId || !wrestlerIds.Contains(story.FirstWrestlerId) || !wrestlerIds.Contains(story.SecondWrestlerId))
+                    errors.Add($"Storyline {story.Id} requires two different existing wrestlers.");
+                ValidateRange(story.Tension, 0, 100, "Storyline Tension", errors);
+                ValidateRange(story.Interest, 0, 100, "Storyline Interest", errors);
+                ValidateRange(story.Fatigue, 0, 100, "Storyline Fatigue", errors);
             }
         }
 

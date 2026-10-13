@@ -1,0 +1,31 @@
+.portrait-editor { flex-grow: 1; flex-direction: row; min-height: 0; }
+.portrait-preview { flex-grow: 0; flex-basis: 40%; min-width: 180px; min-height: 0; align-self: flex-start; background-color: rgb(8, 13, 21); }
+.portrait-controls { flex-grow: 1; flex-basis: 60%; min-width: 230px; margin-left: 16px; }
+.portrait-toolbar { flex-direction: row; flex-shrink: 0; margin-bottom: 10px; }
+.portrait-tabs { flex-grow: 1; flex-direction: row; }
+.portrait-editor Button { min-height: 32px; padding-left: 9px; padding-right: 9px; margin-left: 0; margin-right: 5px; background-color: rgb(27, 38, 54); color: rgb(231, 238, 248); border-width: 1px; border-color: rgb(59, 75, 99); }
+.portrait-editor Button.selected { background-color: rgb(34, 84, 116); border-color: rgb(93, 165, 206); }
+.portrait-editor Button:focus, .portrait-editor .unity-base-field__input:focus { border-width: 2px; border-color: rgb(93, 165, 206); }
+.portrait-fields { flex-grow: 1; min-height: 0; }
+.portrait-field { margin-bottom: 10px; }
+.portrait-part-selector { flex-direction:row; align-items:center; }
+.portrait-part-label { min-width:96px; font-size:13px; color:rgb(220, 229, 242); }
+.portrait-part-selection { flex-grow:1; min-width:0; flex-direction:row; align-items:center; }
+.portrait-part-value { flex-grow:1; min-width:0; color:rgb(240, 244, 250); font-size:14px; -unity-text-align:middle-center; }
+.portrait-editor .portrait-part-arrow { width:34px; min-width:34px; margin:0; padding:0; font-size:24px; }
+.portrait-editor .portrait-part-arrow:disabled { color:rgb(123, 136, 155); background-color:rgb(20, 28, 41); }
+.portrait-editor .unity-base-field__label { min-width: 96px; color: rgb(220, 229, 242); font-size: 13px; }
+.portrait-editor .unity-base-field__input { min-height: 32px; background-color: rgb(20, 28, 41); color: rgb(240, 244, 250); border-width: 1px; border-color: rgb(61, 76, 98); }
+.portrait-color-row { margin-top: 4px; margin-bottom: 10px; }
+.portrait-color-input .unity-base-field__input { max-width: 115px; }
+.portrait-color-input.invalid .unity-base-field__input { border-color: rgb(239, 106, 108); }
+.portrait-swatches { flex-direction: row; flex-wrap: wrap; margin-left: 99px; margin-top: 6px; }
+.portrait-editor .portrait-swatch { width: 26px; min-width: 26px; min-height: 28px; margin-bottom: 4px; border-color: rgb(179, 194, 214); }
+.portrait-editor .portrait-swatch.selected { border-width: 3px; border-color: white; }
+.portrait-palette { margin-top: 6px; color: rgb(220, 229, 242); }
+.portrait-palette-grid { flex-direction: row; flex-wrap: wrap; margin-top: 6px; }
+.portrait-editor .portrait-palette-color { width: 12.5%; min-width: 0; height: 30px; min-height: 30px; margin: 0; padding: 0; border-color: rgb(12, 17, 26); border-width: 2px; }
+.portrait-dialog { width: 900px; max-width: 94%; height: 620px; max-height: 90%; padding: 24px; background-color: rgb(12, 17, 26); border-width: 1px; border-color: rgb(64, 82, 108); }
+.portrait-dialog-title { font-size: 21px; -unity-font-style: bold; color: rgb(240, 244, 250); margin-bottom: 16px; }
+.portrait-dialog-actions { flex-direction: row; justify-content: flex-end; margin-top: 16px; }
+.portrait-dialog-actions Button { min-width: 100px; min-height: 36px; margin-left: 8px; }

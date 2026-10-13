@@ -45,6 +45,12 @@ Button:active {
     scale: 0.97 0.97;
 }
 
+.save-load-close:focus, .save-load-row:focus, .manual-save-button:focus,
+.manual-save-input .unity-base-text-field__input:focus {
+    border-color: var(--pw-accent);
+    background-color: #2b2419;
+}
+
 .brand-title, .card-title, .wp-brand-title, .wp-card-title,
 .title-button-text, .setup-title, .wizard-title, .cost-title,
 .venue-card-title, .roster-name, .roster-grade,

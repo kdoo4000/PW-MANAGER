@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using PWManager.Domain.Models;
 
 namespace PWManager.Domain.Services
 {
@@ -51,6 +52,20 @@ namespace PWManager.Domain.Services
             if (CurrentState == null) Initialize(context, context.Phase);
             else context.Phase = CurrentState.Phase;
             CurrentState.Update(context);
+            if (context.Exchange?.Kind == ExchangeKind.Comeback)
+            {
+                if (CurrentState.Phase != MatchPhase.Comeback) Initialize(context, MatchPhase.Comeback);
+                return;
+            }
+            if (context.BookingSequence)
+            {
+                if (CurrentState.Phase != MatchPhase.Finish) Initialize(context, MatchPhase.Finish);
+                return;
+            }
+            if (context.Exchange != null) return;
+            var trailing = context.Events.AsEnumerable().Reverse().TakeWhile(e => e.Phase == context.Phase).ToList();
+            if (CurrentState.Phase is not (MatchPhase.Opening or MatchPhase.Comeback) && trailing.Count > 0 &&
+                context.ElapsedSeconds - trailing[trailing.Count - 1].MatchTimeSeconds < Math.Clamp(context.TargetDurationSeconds / 40, 20, 45)) return;
             var candidates = CurrentState.EvaluateTransitions(context);
             if (candidates == null || candidates.Count == 0) return;
             var weights = candidates.Select(x => ValidWeight(x.Score)).ToArray();
@@ -76,11 +91,11 @@ namespace PWManager.Domain.Services
         public virtual void Update(MatchEngineState context) { }
         public virtual void Exit(MatchEngineState context) { }
 
-        public IReadOnlyList<PhaseTransitionCandidate> EvaluateTransitions(MatchEngineState context)
+        public virtual IReadOnlyList<PhaseTransitionCandidate> EvaluateTransitions(MatchEngineState context)
         {
             var result = new List<PhaseTransitionCandidate>(Phases.Length);
             for (var i = 0; i < Phases.Length; i++)
-                result.Add(new PhaseTransitionCandidate { Target = Phases[i], Score = Math.Max(.01f, BaseWeights[i] * TransitionModifier(context, Phases[i])) });
+                result.Add(new PhaseTransitionCandidate { Target = Phases[i], Score = Phases[i] == MatchPhase.Opening && context.Opening.Completed ? 0 : Math.Max(0f, BaseWeights[i] * TransitionModifier(context, Phases[i])) });
             return result;
         }
 
@@ -97,6 +112,10 @@ namespace PWManager.Domain.Services
             var last = recent.LastOrDefault();
             var nearFall = recent.Any(x => x.Result == MatchActionResult.NearFall);
             var decisive = last != null && (last.Type == MatchActionType.Finisher || last.Impact >= 15f);
+            if (target == MatchPhase.Comeback && context.Exchange?.Kind != ExchangeKind.Comeback) return 0;
+            if (target == MatchPhase.Finish && progress < .85f && !(nearFall && progress >= .65f) &&
+                !(context.Rules.DominantSideId != null && context.TargetDurationSeconds <= 600 && decisive)) return 0;
+            if (target == MatchPhase.Climax && progress < .55f && !decisive && !nearFall) return 0;
             var dominantPerformer = recent.Count >= 3 && recent.GroupBy(x => x.PerformerId).Max(x => x.Count()) >= recent.Count - 1;
             var repeatedlyHit = recent.Count >= 3 && recent.GroupBy(x => x.ReceiverId).Max(x => x.Count()) >= recent.Count - 1;
             var modifier = 1f;
@@ -128,9 +147,23 @@ namespace PWManager.Domain.Services
     {
         public override MatchPhase Phase => MatchPhase.Opening;
         protected override IReadOnlyList<float> BaseWeights { get; } = new[] { 120f, 100f, 50f, 5f, 15f, 4f, 1f };
-        public override float GetActionScoreModifier(MatchEngineState context, MatchEngineAction action) =>
-            Is(action, MatchActionType.BasicStrike, MatchActionType.Grapple) ? 1.35f : action.Type == MatchActionType.Pin ? .2f :
-            action.Type == MatchActionType.Signature ? .45f : action.Type == MatchActionType.Finisher ? .12f : 1f;
+        public override IReadOnlyList<PhaseTransitionCandidate> EvaluateTransitions(MatchEngineState context) =>
+            MatchOpening.CanLeave(context) ? base.EvaluateTransitions(context) : new[] { new PhaseTransitionCandidate { Target = Phase, Score = 1 } };
+        public override void Exit(MatchEngineState context) { context.Opening.Completed = true; }
+        public override float GetActionScoreModifier(MatchEngineState context, MatchEngineAction action)
+        {
+            var probe = context.Opening.Style is MatchOpeningStyle.Probe or MatchOpeningStyle.Automatic;
+            return action.Type switch
+            {
+                MatchActionType.Probe => probe ? 2f : .08f,
+                MatchActionType.TieUp => probe ? 4f : .08f,
+                MatchActionType.Pin => .2f,
+                MatchActionType.Finisher => probe ? .025f : context.Opening.Style == MatchOpeningStyle.Ambush ? 3f : .8f,
+                MatchActionType.Signature => probe ? .08f : 1f,
+                MatchActionType.HeavyStrike or MatchActionType.Grapple or MatchActionType.BasicStrike => probe ? .3f : 2f,
+                _ => 1f
+            };
+        }
     }
 
     public sealed class NeutralMatchState : MatchStateBase

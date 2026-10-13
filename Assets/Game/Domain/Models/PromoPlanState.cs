@@ -27,5 +27,14 @@ namespace PWManager.Domain.Models
         public string OpeningSpot;
         public string MiddleSpot;
         public string ClosingSpot;
+        public string StorylineId;
+        public StoryAction StoryAction;
+        public StoryIncident Incident;
+        public string IncidentActorId;
+        public string IncidentTargetId;
+        public string GroupName;
+        public string GroupId;
+        public StoryPartyType GroupType;
+        public string GroupLeaderId;
     }
 }

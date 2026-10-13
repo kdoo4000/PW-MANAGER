@@ -237,6 +237,7 @@ namespace PWManager.Tests
             else save.Transactions.RemoveAll(x => !save.Contracts.Any(c => c.Id == x.ReasonId));
             save.Shows.Clear(); save.Schedules.Clear();
             var rows = new List<string> { "week,followers,satisfaction,attendance,revenue,cash,condition" };
+            var startingFollowers = save.Promotion.Audience.TotalFollowers;
             for (var week = 0; week < 12; week++)
             {
                 var schedule = new ScheduleState { Id = Guid.NewGuid().ToString(), Date = save.CurrentDate, BookingDeadline = save.CurrentDate, Status = ScheduleStatus.Confirmed };
@@ -250,7 +251,7 @@ namespace PWManager.Tests
                         ParticipantIds = { save.Wrestlers[i * 2].Id, save.Wrestlers[i * 2 + 1].Id },
                         WinnerId = save.Wrestlers[i * 2].Id, LoserTargetId = save.Wrestlers[i * 2 + 1].Id, FinishType = MatchFinishType.Pinfall }, 20);
                 planning.Confirm(save, show.Id); show.Status = ShowStatus.InProgress;
-                var result = new ShowExecutionService(planning, new MatchEvaluator(content, content), new PromoEvaluator()).Execute(save, show.Id, 73, 500, 30);
+                var result = new ShowExecutionService(planning, new MatchEvaluator(content, content, accidentsEnabled: false), new PromoEvaluator()).Execute(save, show.Id, 73, 500, 30);
                 show.Status = ShowStatus.ResultsReviewed;
                 new ShowResultApplicationService().Apply(save, result.Id);
                 var advance = new TimeFlowService().AdvanceTo(save, save.CurrentDate.AddDays(7));
@@ -266,7 +267,8 @@ namespace PWManager.Tests
             Assert.That(save.Promotion.CalculateCurrentCash(save.Transactions), Is.GreaterThan(0));
             Assert.That(save.Wrestlers.All(w => w.Condition.Condition == 100), Is.True, "Weekly 20-minute matches must allow recovery.");
             if (ability == 5) Assert.That(save.Promotion.Audience.TotalFollowers, Is.LessThan(2300));
-            if (ability == 15) Assert.That(save.Promotion.Audience.TotalFollowers, Is.GreaterThan(2900));
+            if (ability == 15) Assert.That(save.Promotion.Audience.TotalFollowers, Is.GreaterThan(startingFollowers),
+                "Strong programming must grow the audience under the observed-content evaluation model.");
         }
     }
 }

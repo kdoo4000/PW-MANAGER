@@ -71,12 +71,13 @@ namespace PWManager.Domain.Services
                 var wrestlers = Participants(save, showEvent);
                 var match = matches.FirstOrDefault(x => x.ShowEventId == showEvent.Id);
                 var promo = promos.FirstOrDefault(x => x.ShowEventId == showEvent.Id);
+                var cancelled = !string.IsNullOrEmpty(match?.CancellationReason) || !string.IsNullOrEmpty(promo?.CancellationReason);
                 var quality = Clamp(match != null ? match.FinalMatchQuality * 5f : promo.PromoScore, 0, 100);
                 var reaction = match != null ? match.FanReaction : promo.FanReaction;
                 reaction.IsCalculated = true;
                 for (var group = 0; group < 3; group++)
                 {
-                    var performance = wrestlers.Count == 0 ? quality : wrestlers.Average(w =>
+                    var performance = cancelled ? 0 : wrestlers.Count == 0 ? quality : wrestlers.Average(w =>
                         (group == 0 ? (w.Roster.Alignment == KayfabeAlignment.Heel ? w.Attributes.HeelWork : w.Attributes.FaceWork) :
                          group == 1 ? w.Attributes.Charisma : w.Attributes.RingPsychology) * 5f);
                     var qualityWeight = group == 0 ? .7f : group == 1 ? .8f : .95f;
@@ -86,6 +87,7 @@ namespace PWManager.Domain.Services
                     Set(result.FanSatisfaction, group, Get(result.FanSatisfaction, group) + satisfaction * showEvent.PlannedDuration / duration);
                     foreach (var wrestler in wrestlers)
                     {
+                        if (cancelled) continue;
                         if (!changes.TryGetValue(wrestler.Id, out var change))
                             changes.Add(wrestler.Id, change = new WrestlerFanChangeState { WrestlerId = wrestler.Id });
                         var response = Response(wrestler, group);

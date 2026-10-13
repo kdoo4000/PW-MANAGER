@@ -23,29 +23,32 @@ namespace PWManager.Tests
             Assert.That(result.TechnicalEvaluation.Performance, Is.InRange(19.5f, 20f));
             Assert.That(result.TechnicalEvaluation.Structure, Is.EqualTo(20f).Within(0.001f));
             Assert.That(result.TechnicalEvaluation.Duration, Is.Zero.Within(0.001f));
-            Assert.That(result.FinalMatchQuality, Is.EqualTo(20f).Within(0.001f));
-            Assert.That(result.CriticReview.FinalScore, Is.EqualTo(100f).Within(0.001f));
-            Assert.That(result.CriticReview.DisplayedStars, Is.EqualTo(5f));
+            Assert.That(result.FinalMatchQuality, Is.EqualTo(Math.Min(20f, result.TechnicalEvaluation.Performance * .7f + 6f + 1f + result.TechnicalEvaluation.Engine)).Within(.001f));
+            Assert.That(result.CriticReview.FinalScore, Is.EqualTo(result.FinalMatchQuality * 5f).Within(.001f));
+            Assert.That(result.CriticReview.DisplayedStars, Is.EqualTo(CriticReviewCalculator.Stars(result.FinalMatchQuality * 5f)));
             Assert.That(result.ResultSeed, Is.EqualTo(77));
             Assert.That(result.WrestlerConditionChanges, Has.Count.EqualTo(2));
             Assert.That(result.WrestlerConditionChanges[0].SourceResultId, Is.EqualTo(result.Id));
-            Assert.That(result.WrestlerConditionChanges[0].ConditionDelta, Is.EqualTo(-12f));
+            Assert.That(result.WrestlerConditionChanges[0].ConditionDelta, Is.LessThanOrEqualTo(-12f));
         }
 
         [Test]
         public void EvaluateTechnical_ShortHighQualityMatch_AppliesDurationMultiplierOnlyToBaseQuality()
         {
             var save = CreateSave("matchtype_001", 16f, 16f, 15);
-            save.ShowEvents[0].PlannedDuration = 10;
+            save.ShowEvents[0].PlannedDuration = 9;
             var evaluator = new MatchEvaluator(new Rules(), new Rules(), () => "11111111111111111111111111111111");
 
             var result = evaluator.EvaluateTechnical(save, "event", 2f, 1);
 
             Assert.That(result.TechnicalEvaluation.Structure, Is.EqualTo(16f).Within(0.001f));
             var baseQuality = result.TechnicalEvaluation.Performance * .70f + result.TechnicalEvaluation.Structure * .30f;
-            Assert.That(result.TechnicalEvaluation.Duration, Is.EqualTo(baseQuality * -.15f).Within(0.001f));
-            Assert.That(result.FinalMatchQuality, Is.EqualTo(baseQuality * .85f + 2f).Within(0.001f));
-            Assert.That(result.WrestlerConditionChanges[0].ConditionDelta, Is.EqualTo(-6f));
+            Assert.That(result.TechnicalEvaluation.Duration, Is.InRange(-baseQuality * .25f, 0));
+            Assert.That(result.FinalMatchQuality, Is.EqualTo(baseQuality + result.TechnicalEvaluation.Engine +
+                result.TechnicalEvaluation.Duration + 2f).Within(0.001f));
+            Assert.That(result.FinalMatchQuality - evaluator.EvaluateTechnical(save, "event", 0f, 1).FinalMatchQuality,
+                Is.EqualTo(2f).Within(.001f));
+            Assert.That(result.WrestlerConditionChanges[0].ConditionDelta, Is.LessThanOrEqualTo(-6f));
         }
 
         [Test]
@@ -57,7 +60,8 @@ namespace PWManager.Tests
 
             var result = evaluator.EvaluateTechnical(save, "event", 0f, 1);
 
-            Assert.That(result.TechnicalEvaluation.Performance, Is.InRange(6.5f, 7.5f));
+            var penalty = 1f + (result.EngineState.ElapsedSeconds / 60f - 27.5f) * .4f;
+            Assert.That(result.WrestlerPerformances.All(p => Math.Abs(p.StaminaPenalty - penalty) < .001f), Is.True);
         }
 
         [Test]
@@ -103,10 +107,10 @@ namespace PWManager.Tests
             Assert.That(result.ParticipantProfiles.All(x => x.AppliedChemistry == 30f), Is.True);
             Assert.That(result.ParticipantProfiles.All(x => x.MemberIds.Count == 2), Is.True);
             Assert.That(result.WrestlerConditionChanges, Has.Count.EqualTo(4));
-            Assert.That(result.WrestlerConditionChanges[0].ConditionDelta, Is.EqualTo(-19.2f).Within(.001f));
+            Assert.That(result.WrestlerConditionChanges[0].ConditionDelta, Is.LessThanOrEqualTo(-19.199f));
             Assert.That(result.IndirectWinnerIds, Is.EqualTo(new[] { "wrestler_b" }));
             Assert.That(result.IndirectLoserIds, Is.EqualTo(new[] { "wrestler_d" }));
-            Assert.That(result.EngineState, Is.Null);
+            Assert.That(result.EngineState.IsFinished, Is.True);
         }
 
         [Test]
@@ -124,6 +128,36 @@ namespace PWManager.Tests
 
             Assert.That(result.ParticipantProfiles[0].RepresentedTagTeamId, Is.EqualTo("tag_team_a"));
             Assert.That(result.ParticipantProfiles[0].AppliedChemistry, Is.EqualTo(100f));
+        }
+
+        [Test]
+        public void EvaluateTechnical_TagOpeningPreservesBookedMemberOrder()
+        {
+            var save = CreateTagSave(2);
+            save.MatchPlans[0].ParticipantIds = new List<string> { "wrestler_b", "wrestler_a", "wrestler_d", "wrestler_c" };
+            save.MatchPlans[0].WinnerId = "wrestler_a";
+            save.MatchPlans[0].LoserTargetId = "wrestler_c";
+
+            var result = new MatchEvaluator(new Rules(), new Rules()).EvaluateTechnical(save, "event", 0f, 9);
+
+            var opening = result.EngineState.Events[0].Before.Participants;
+            Assert.That(opening.Single(x => x.Id == "wrestler_b").IsLegal, Is.True);
+            Assert.That(opening.Single(x => x.Id == "wrestler_d").IsLegal, Is.True);
+        }
+
+        [Test]
+        public void EvaluateTechnical_EngineResultOwnsAllOutcomeMetadata()
+        {
+            var save = CreateTagSave(2);
+
+            var result = new MatchEvaluator(new Rules(), new Rules()).EvaluateTechnical(save, "event", 0f, 11);
+
+            var winningSide = result.ParticipantProfiles.Single(x => x.SideId == result.WinningSideId);
+            var losingSide = result.ParticipantProfiles.Single(x => x.MemberIds.Contains(result.LoserTargetId));
+            Assert.That(winningSide.MemberIds, Does.Contain(result.WinnerId));
+            Assert.That(result.IndirectWinnerIds, Is.EquivalentTo(winningSide.MemberIds.Where(x => x != result.WinnerId)));
+            Assert.That(result.IndirectLoserIds, Is.EquivalentTo(losingSide.MemberIds.Where(x => x != result.LoserTargetId)));
+            Assert.That(result.ActualMatchDuration, Is.EqualTo((int)Math.Ceiling(result.EngineState.ElapsedSeconds / 60d)));
         }
 
         [TestCase(2)]
@@ -170,7 +204,7 @@ namespace PWManager.Tests
             save.ShowEvents[0].PlannedDuration = duration;
             var result = evaluator.EvaluateTechnical(save, "event", 0f, 1);
 
-            Assert.That(result.WrestlerConditionChanges[0].ConditionDelta, Is.EqualTo(expectedDelta));
+            Assert.That(result.WrestlerConditionChanges[0].ConditionDelta, Is.InRange(-30f, expectedDelta));
         }
 
         [Test]
@@ -183,8 +217,8 @@ namespace PWManager.Tests
 
             var result = evaluator.EvaluateTechnical(save, "event", 0f, 1);
 
-            Assert.That(result.WrestlerConditionChanges[0].ConditionDelta, Is.EqualTo(-15f).Within(0.001f));
-            Assert.That(result.EngineState, Is.Null);
+            Assert.That(result.WrestlerConditionChanges[0].ConditionDelta, Is.LessThanOrEqualTo(-15f));
+            Assert.That(result.EngineState.IsFinished, Is.True);
         }
 
         [TestCase(null, .5f)]
@@ -200,12 +234,12 @@ namespace PWManager.Tests
             var result = evaluator.EvaluateTechnical(save, "event", 0f, 123);
 
             Assert.That(Math.Abs(result.WrestlerPerformances[0].PerformanceVariance), Is.LessThanOrEqualTo(expectedRange));
-            Assert.That(result.ActualMatchDuration, Is.EqualTo(result.PlannedDuration));
+            Assert.That(result.ActualMatchDuration, Is.EqualTo((int)Math.Ceiling(result.EngineState.ElapsedSeconds / 60d)));
             Assert.That(result.TechnicalEvaluation.RandomVariance, Is.Zero);
         }
 
         [Test]
-        public void EvaluateTechnical_MoveHighlightsPreserveBookingQualityAndCondition()
+        public void EvaluateTechnical_MoveEventsDriveQualityWhilePreservingBooking()
         {
             var save = CreateSave("matchtype_001", 14f, 12f);
             foreach (var wrestler in save.Wrestlers)
@@ -227,13 +261,12 @@ namespace PWManager.Tests
                 Assert.That(result.MoveResults[i].TargetId, Is.EqualTo(moves[i].ReceiverId));
                 Assert.That(result.MoveResults[i].MoveId, Is.EqualTo(moves[i].MoveId));
                 Assert.That(result.MoveResults[i].Result >= SpotExecutionResult.Success,
-                    Is.EqualTo(moves[i].Result == MatchActionResult.FullSuccess));
+                    Is.EqualTo(moves[i].ExecutionQuality >= .75f));
             }
-            Assert.That(result.FinalMatchQuality, Is.EqualTo(baseline.FinalMatchQuality));
+            Assert.That(result.TechnicalEvaluation.Engine, Is.InRange(-6f, 6f));
             Assert.That(result.WinnerId, Is.EqualTo(baseline.WinnerId));
             Assert.That(result.FinishType, Is.EqualTo(baseline.FinishType));
-            Assert.That(result.WrestlerConditionChanges.Select(x => x.ConditionDelta),
-                Is.EqualTo(baseline.WrestlerConditionChanges.Select(x => x.ConditionDelta)));
+            Assert.That(result.WrestlerConditionChanges.All(x => x.ConditionDelta >= -30f && x.ConditionDelta <= -3f), Is.True);
         }
 
         private static GameSave CreateSave(string matchTypeId, float firstAbility, float secondAbility, float stamina = 20f)

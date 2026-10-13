@@ -36,7 +36,7 @@ namespace PWManager.Tests
             Assert.That(catalog.NamePool.JapaneseMaleGivenNames, Has.Count.EqualTo(3));
             Assert.That(catalog.NamePool.JapaneseFemaleGivenNames, Has.Count.EqualTo(3));
             Assert.That(catalog.NamePool.JapaneseFamilyNames, Has.Count.EqualTo(3));
-            Assert.That(registry.Moves, Has.Count.EqualTo(24));
+            Assert.That(registry.Moves, Has.Count.EqualTo(PWManager.Data.Loading.MoveTable.Load().Count));
             Assert.That(registry.Venues, Has.Count.EqualTo(6));
             Assert.That(registry.MatchTypes, Has.Count.EqualTo(2));
             Assert.That(registry.MatchGimmicks, Has.Count.EqualTo(5));

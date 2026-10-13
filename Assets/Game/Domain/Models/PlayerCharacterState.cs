@@ -23,5 +23,6 @@ namespace PWManager.Domain.Models
         public int WeightKg;
         public float MatchAbility;
         public float PromoAbility;
+        public PortraitAppearanceState Appearance;
     }
 }

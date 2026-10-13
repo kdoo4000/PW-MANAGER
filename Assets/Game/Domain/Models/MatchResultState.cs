@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using PWManager.Domain.Services;
 
 namespace PWManager.Domain.Models
 {
@@ -26,6 +27,8 @@ namespace PWManager.Domain.Models
         public float Duration;
         public float Spot;
         public float RandomVariance;
+        public float Engine;
+        public float ObservedExecution, ObservedStructure, ObservedDecisions, ObservedSelling;
     }
 
     [Serializable]
@@ -84,6 +87,9 @@ namespace PWManager.Domain.Models
         public List<string> IndirectLoserIds = new();
         public MatchFinishType FinishType;
         public bool WasStoppedBySpot;
+        public bool WasStoppedByInjury;
+        public string CancellationReason;
+        public List<MatchInjuryChangeState> InjuryChanges = new();
         public float FinalMatchQuality;
         public CriticReviewState CriticReview = new();
         public TechnicalEvaluationBreakdownState TechnicalEvaluation = new();
@@ -101,5 +107,16 @@ namespace PWManager.Domain.Models
         public List<MoveResultState> MoveResults = new();
         public List<NarrativeLineState> NarrativeLines = new();
         public int ResultSeed;
+    }
+
+    [Serializable]
+    public sealed class MatchInjuryChangeState
+    {
+        public string SourceResultId, WrestlerId;
+        public bool IsKayfabe;
+        public BodyRegion Region;
+        public InjuryStatus Severity;
+        public int RecoveryDays;
+        public bool Absent;
     }
 }

@@ -30,6 +30,7 @@ namespace PWManager.Domain.Services
         public GameDate PlayerBirthDate = new(1994, 6, 1);
         public int PlayerHeightCm = 180;
         public int PlayerWeightKg = 90;
+        public PortraitAppearanceState PlayerAppearance;
         public string PromotionName;
         public string PromotionAbbreviation;
         public long InitialCash;
@@ -215,8 +216,12 @@ namespace PWManager.Domain.Services
                 Name = playerName, Role = request.PlayerRole, Reputation = request.PlayerReputation,
                 WrestlingType = request.PlayerWrestlingType, WrestlingStyleId = build.WrestlingStyleId,
                 Gender = request.PlayerGender, BirthDate = request.PlayerBirthDate, HeightCm = request.PlayerHeightCm,
-                WeightKg = request.PlayerWeightKg, MatchAbility = build.MatchAbility, PromoAbility = build.PromoAbility
+                WeightKg = request.PlayerWeightKg, MatchAbility = build.MatchAbility, PromoAbility = build.PromoAbility,
+                Appearance = request.PlayerAppearance?.Clone() ?? PortraitAppearanceRules.Generate(
+                    new WrestlerIdentityState { Gender = request.PlayerGender, BodyType = PhysicalBodyType(request.PlayerHeightCm, request.PlayerWeightKg) },
+                    build.WrestlingStyleId, new Random(request.WorldSeed ^ 8719))
             };
+            PortraitAppearanceRules.Normalize(save.Player.Appearance, request.PlayerGender);
 
             if (request.PlayerRole == PlayerCareerRole.ProfessionalManager)
             {
@@ -251,7 +256,8 @@ namespace PWManager.Domain.Services
                     Id = createId(), LegalName = name, RingName = name, Background = WrestlerBackground.Veteran,
                     Gender = request.PlayerGender, BirthDate = request.PlayerBirthDate, CreatedDate = StartDate,
                     HeightCm = request.PlayerHeightCm, WeightKg = request.PlayerWeightKg,
-                    BodyType = WrestlerBodyType.Balanced, CareerYears = 10
+                    BodyType = save.Player.Appearance.BodyType == 2 ? WrestlerBodyType.Lightweight :
+                        save.Player.Appearance.BodyType == 3 ? WrestlerBodyType.Heavyweight : WrestlerBodyType.Balanced, CareerYears = 10
                 },
                 Attributes = build.Attributes,
                 Growth = new WrestlerGrowthState { MatchPotentialCap = 20, PromoPotentialCap = 20 },
@@ -261,10 +267,16 @@ namespace PWManager.Domain.Services
                 {
                     MatchArchetype = type == PlayerWrestlingType.Worker ? MatchArchetype.Technical : type == PlayerWrestlingType.Showman ? MatchArchetype.Spot : MatchArchetype.Balanced,
                     PromoArchetype = type == PlayerWrestlingType.Showman ? PromoArchetype.Charisma : PromoArchetype.Balanced,
-                    PromoDisposition = PromoDisposition.Balanced, WrestlingStyleId = build.WrestlingStyleId
+                    PromoDisposition = PromoDisposition.Balanced, WrestlingStyleId = build.WrestlingStyleId,
+                    Appearance = save.Player.Appearance.Clone()
                 }
             };
         }
+
+        private static WrestlerBodyType PhysicalBodyType(int height, int weight) => PortraitAppearanceRules.BodyType(height, weight) switch
+        {
+            2 => WrestlerBodyType.Lightweight, 3 => WrestlerBodyType.Heavyweight, _ => WrestlerBodyType.Balanced
+        };
 
         private void AddInitialStaff(GameSave save)
         {
@@ -327,6 +339,8 @@ namespace PWManager.Domain.Services
                 {
                     MatchArchetype = source.Presentation.MatchArchetype, PromoArchetype = source.Presentation.PromoArchetype, PromoDisposition = source.Presentation.PromoDisposition,
                     WrestlingStyleId = source.Presentation.WrestlingStyleId,
+                    PortraitResourcePath = source.Presentation.PortraitResourcePath,
+                    Appearance = source.Presentation.Appearance?.Clone(),
                     TraitIds = new List<string>(source.Presentation.TraitIds),
                     SignatureMoveIds = new List<string>(source.Presentation.SignatureMoveIds),
                     FinisherMoveIds = new List<string>(source.Presentation.FinisherMoveIds)

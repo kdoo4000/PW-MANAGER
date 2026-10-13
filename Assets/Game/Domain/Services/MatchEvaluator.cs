@@ -18,14 +18,16 @@ namespace PWManager.Domain.Services
         private readonly IWrestlingStyleRules styleRules;
         private readonly Func<string> createId;
         private readonly Func<string, MatchMoveRules> findMove;
+        private readonly bool accidentsEnabled;
 
         public MatchEvaluator(IMatchTypeRules matchTypeRules, IWrestlingStyleRules styleRules, Func<string> createId = null,
-            Func<string, MatchMoveRules> findMove = null)
+            Func<string, MatchMoveRules> findMove = null, bool accidentsEnabled = true)
         {
             this.matchTypeRules = matchTypeRules ?? throw new ArgumentNullException(nameof(matchTypeRules));
             this.styleRules = styleRules ?? throw new ArgumentNullException(nameof(styleRules));
             this.createId = createId ?? EntityId.CreateRuntimeId;
             this.findMove = findMove;
+            this.accidentsEnabled = accidentsEnabled;
         }
 
         public MatchResultState EvaluateTechnical(GameSave save, string showEventId, float spotScore, int resultSeed,
@@ -46,11 +48,20 @@ namespace PWManager.Domain.Services
                 ?? throw new InvalidOperationException("Match plan was not found.");
             var sides = ResolveSides(match);
             ValidateMatch(save, match, sides);
+            var bookedParticipants = sides.SelectMany(s => s.MemberIds).Select(id => save.Wrestlers.Single(w => w.Id == id)).ToList();
+            var unavailable = bookedParticipants.FirstOrDefault(w => w.Condition.Availability is WrestlerAvailability.MatchUnavailable or WrestlerAvailability.Unavailable ||
+                w.KayfabeInjury?.Absent == true && w.KayfabeInjury.Severity != InjuryStatus.None);
+            if (unavailable != null)
+                return new MatchResultState { Id = createId(), ShowId = show.Id, ShowVersion = show.ShowVersion,
+                    ShowEventId = showEvent.Id, MatchPlanId = match.Id, PlannedDuration = showEvent.PlannedDuration,
+                    FinishType = MatchFinishType.Draw, CriticReview = null, ResultSeed = resultSeed,
+                    CancellationReason = unavailable.Condition.Availability is WrestlerAvailability.MatchUnavailable or WrestlerAvailability.Unavailable
+                        ? "실제 부상으로 경기 취소" : "각본상 부상으로 결장",
+                    ParticipantProfiles = sides.Select(side => new MatchParticipantProfileState { SideId = side.Id, MemberIds = side.MemberIds }).ToList() };
             var spots = MatchSpotEvaluator.Evaluate(save, match, show.Date, showEventId, resultSeed, pendingResults);
             var endingSpot = spots.FirstOrDefault(x => x.ScriptedEffect == SpotScriptedEffect.MatchStopped || x.ScriptedEffect == SpotScriptedEffect.Disqualification);
-            if (endingSpot?.ScriptedEffect == SpotScriptedEffect.MatchStopped)
-                actualMatchDuration = endingSpot.Phase == MatchSpotPhase.Entrance ? 0 :
-                    Math.Max(1, (int)Math.Round(showEvent.PlannedDuration * (endingSpot.Phase == MatchSpotPhase.Early ? .25f : endingSpot.Phase == MatchSpotPhase.Middle ? .6f : .9f)));
+            if (endingSpot?.ScriptedEffect == SpotScriptedEffect.MatchStopped && endingSpot.Phase == MatchSpotPhase.Entrance)
+                actualMatchDuration = 0;
 
             if (!matchTypeRules.TryGetTeamRules(match.MatchTypeId, out var minimumTeamCount, out _, out _, out _))
                 throw new InvalidOperationException("Match type was not found.");
@@ -69,9 +80,93 @@ namespace PWManager.Domain.Services
             }
             var participantIds = sides.SelectMany(x => x.MemberIds).ToList();
             var participants = participantIds.Select(id => save.Wrestlers.Single(x => x.Id == id)).ToList();
-            var conditionDelta = -Clamp(actualMatchDuration * ConditionCostPerMinute * conditionCostMultiplier * gimmickConditionCostMultiplier,
-                MinimumConditionCost, MaximumConditionCost);
-            var performances = participants.Select(x => CalculatePerformance(x, actualMatchDuration, resultSeed)).ToList();
+            var finishType = endingSpot?.ScriptedEffect == SpotScriptedEffect.MatchStopped ? MatchFinishType.Draw :
+                endingSpot?.ScriptedEffect == SpotScriptedEffect.Disqualification ? MatchFinishType.Disqualification : match.FinishType;
+            var finishPerformerId = endingSpot?.ScriptedEffect == SpotScriptedEffect.Disqualification ? endingSpot.TargetId :
+                finishType == MatchFinishType.Draw ? null :
+                (string.IsNullOrEmpty(match.FinishPerformerId) ? match.WinnerId : match.FinishPerformerId);
+            var bookedWinningSide = finishType == MatchFinishType.Draw ? null : endingSpot?.ScriptedEffect == SpotScriptedEffect.Disqualification
+                ? sides.Single(x => x.MemberIds.Contains(finishPerformerId))
+                : sides.Single(x => x.Id == ResolveWinningSideId(match, sides, finishPerformerId));
+            var loserTargetId = finishType == MatchFinishType.Draw ? null :
+                endingSpot?.ScriptedEffect == SpotScriptedEffect.Disqualification
+                    ? sides.First(x => x.Id != bookedWinningSide.Id).MemberIds.FirstOrDefault() : match.LoserTargetId;
+            if (finishType != MatchFinishType.Draw && string.IsNullOrEmpty(loserTargetId))
+                loserTargetId = sides.First(x => x.Id != bookedWinningSide.Id).MemberIds[0];
+
+            MatchEngineState engineState = null;
+            if (actualMatchDuration > 0)
+            {
+                MatchGimmickRules? gimmick = null;
+                if (!string.IsNullOrEmpty(match.MatchGimmickId) && matchTypeRules.TryGetGimmickRules(match.MatchGimmickId, out var found)) gimmick = found;
+                bool Allowed(MatchFinishType value) => MatchFinishRules.IsAllowed(value, minimumTeamCount > 0, participantIds.Count, sides.Count, gimmick);
+                var runtimeRules = new MatchRuntimeRules
+                {
+                    Tag = minimumTeamCount > 0,
+                    Tornado = minimumTeamCount > 0 && match.Tornado,
+                    Elimination = match.Elimination,
+                    IronMan = match.IronMan,
+                    FallsToWin = Math.Max(1, match.FallsToWin),
+                    DominantSideId = match.DominantSideId,
+                    OpeningStyle = match.OpeningStyle,
+                    OpeningHostility = MatchOpening.Hostility(save, sides),
+                    ImportantMatch = show.MainEventId == showEvent.Id || match.StoryAction == StoryAction.End,
+                    Pinfall = Allowed(MatchFinishType.Pinfall),
+                    Submission = Allowed(MatchFinishType.Submission),
+                    Disqualification = Allowed(MatchFinishType.Disqualification),
+                    CountOut = Allowed(MatchFinishType.CountOut),
+                    RopeBreak = MatchFinishRules.Resolve(gimmick?.RopeBreakRule ?? MatchRuleOverride.Default, true),
+                    CountOutSeconds = gimmick?.CountOutSeconds ?? 10,
+                    Objective = Allowed(MatchFinishType.ObjectRetrieval) ? MatchObjective.Retrieval :
+                        Allowed(MatchFinishType.TableBreak) ? MatchObjective.Table : Allowed(MatchFinishType.Escape) ? MatchObjective.Escape : MatchObjective.PinOrSubmission
+                };
+                engineState = new MatchSimulator(resultSeed, findMove: findMove, accidentsEnabled: accidentsEnabled).Simulate(participants.Select(x =>
+                    new MatchEngineParticipant
+                    {
+                        Id = x.Id,
+                        WrestlingStyleId = x.Presentation.WrestlingStyleId,
+                        Alignment = x.Roster.Alignment,
+                        SideId = sides.Single(side => side.MemberIds.Contains(x.Id)).Id,
+                        StatusValue = x.Status.StatusValue,
+                        AmbushTendency = x.Roster.Alignment == KayfabeAlignment.Heel ? x.Attributes.HeelWork / 20f : .05f,
+                        Attributes = new WrestlerAttributesState
+                        {
+                            Brawling = x.Attributes.Brawling, Power = x.Attributes.Power, Technical = x.Attributes.Technical,
+                            HighFlying = x.Attributes.HighFlying, Selling = x.Attributes.Selling,
+                            Stamina = x.Attributes.Stamina, RingPsychology = x.Attributes.RingPsychology,
+                            RingImprovisation = x.Attributes.RingImprovisation, Charisma = x.Attributes.Charisma,
+                            Acting = x.Attributes.Acting, FaceWork = x.Attributes.FaceWork, HeelWork = x.Attributes.HeelWork
+                        },
+                        Fatigue = Math.Max(0f, Math.Min(100f, 100f - x.Condition.Condition)),
+                        RealInjury = x.Condition.InjuryStatus, RealInjuryRegion = x.Condition.InjuryRegion,
+                        HeadDamage = StoryDamage(x, BodyRegion.Head), BodyDamage = StoryDamage(x, BodyRegion.Body),
+                        ArmDamage = StoryDamage(x, BodyRegion.Arms), LegDamage = StoryDamage(x, BodyRegion.Legs),
+                        TargetRegion = x.Presentation.FinisherMoveIds?.Select(id => findMove?.Invoke(id)).FirstOrDefault(m => m != null)?.TargetRegion ??
+                            (x.Attributes.Power > x.Attributes.Technical ? BodyRegion.Body : BodyRegion.Legs),
+                        SignatureMoveIds = x.Presentation.SignatureMoveIds?.Where(id => findMove?.Invoke(id) != null).ToList() ?? new(),
+                        FinisherMoveIds = x.Presentation.FinisherMoveIds?.Where(id => findMove?.Invoke(id) != null).ToList() ?? new()
+                    }), checked(showEvent.PlannedDuration * 60), new MatchEngineBooking
+                    {
+                        WinnerId = finishPerformerId, LoserId = loserTargetId, FinishType = finishType
+                    }, runtimeRules, spots);
+                if (!engineState.IsFinished || engineState.IsAborted) throw new InvalidOperationException(engineState.FailureReason);
+                if (engineState.WasStoppedByInjury)
+                {
+                    spots = spots.Where((spot, index) => engineState.AppliedSpots.Contains(index)).ToList();
+                    endingSpot = spots.FirstOrDefault(x => x.ScriptedEffect != SpotScriptedEffect.None);
+                }
+                finishPerformerId = engineState.WinnerId;
+                finishType = engineState.ActualFinish;
+                actualMatchDuration = (int)Math.Ceiling(engineState.ElapsedSeconds / 60d);
+                var engineLoserId = engineState.Events.LastOrDefault()?.ReceiverId;
+                loserTargetId = finishType == MatchFinishType.Draw ? null :
+                    participantIds.Contains(engineLoserId) ? engineLoserId : loserTargetId;
+            }
+
+            var winningSide = finishType == MatchFinishType.Draw ? null : sides.Single(x => x.MemberIds.Contains(finishPerformerId));
+            var losingSide = string.IsNullOrEmpty(loserTargetId) ? null : sides.Single(x => x.MemberIds.Contains(loserTargetId));
+            var evaluationMinutes = engineState == null ? actualMatchDuration : engineState.ElapsedSeconds / 60f;
+            var performances = participants.Select(x => CalculatePerformance(x, evaluationMinutes, resultSeed)).ToList();
             var performanceByWrestler = performances.ToDictionary(x => x.WrestlerId, StringComparer.Ordinal);
             var profiles = sides.Select(x => CreateParticipantProfile(save, x, minimumTeamCount > 0, performanceByWrestler)).ToList();
             var routineExecution = profiles.Average(x => x.RoutineExecution);
@@ -79,23 +174,15 @@ namespace PWManager.Domain.Services
             var highestPsychology = profiles.Max(x => x.RingPsychology);
             var structureScore = averagePsychology * 0.70f + highestPsychology * 0.30f;
             var baseQuality = routineExecution * 0.70f + structureScore * 0.30f;
-            var durationMultiplier = GetDurationMultiplier(baseQuality, actualMatchDuration);
+            var observed = ObserveQuality(engineState);
+            var observedQuality = observed.ObservedExecution * .35f + observed.ObservedStructure * .25f +
+                observed.ObservedDecisions * .25f + observed.ObservedSelling * .15f;
+            var engineContribution = engineState == null ? 0 : (observedQuality - baseQuality) * .30f;
+            baseQuality += engineContribution;
+            var durationMultiplier = GetDurationMultiplier(baseQuality, evaluationMinutes);
             var durationContribution = baseQuality * durationMultiplier - baseQuality;
             spotScore += spots.Sum(x => x.FinalSpotScore);
             var finalQuality = Clamp(baseQuality * durationMultiplier + spotScore, 0f, 20f);
-
-            var finishType = endingSpot?.ScriptedEffect == SpotScriptedEffect.MatchStopped ? MatchFinishType.Draw :
-                endingSpot?.ScriptedEffect == SpotScriptedEffect.Disqualification ? MatchFinishType.Disqualification : match.FinishType;
-            var finishPerformerId = endingSpot?.ScriptedEffect == SpotScriptedEffect.Disqualification ? endingSpot.TargetId :
-                finishType == MatchFinishType.Draw ? null :
-                (string.IsNullOrEmpty(match.FinishPerformerId) ? match.WinnerId : match.FinishPerformerId);
-            var winningSide = finishType == MatchFinishType.Draw ? null : endingSpot?.ScriptedEffect == SpotScriptedEffect.Disqualification
-                ? sides.Single(x => x.MemberIds.Contains(finishPerformerId))
-                : sides.Single(x => x.Id == ResolveWinningSideId(match, sides, finishPerformerId));
-            var loserTargetId = finishType == MatchFinishType.Draw ? null :
-                endingSpot?.ScriptedEffect == SpotScriptedEffect.Disqualification
-                    ? sides.First(x => x.Id != winningSide.Id).MemberIds.FirstOrDefault() : match.LoserTargetId;
-            var losingSide = string.IsNullOrEmpty(loserTargetId) ? null : sides.Single(x => x.MemberIds.Contains(loserTargetId));
             var result = new MatchResultState
             {
                 Id = createId(),
@@ -113,6 +200,7 @@ namespace PWManager.Domain.Services
                 IndirectLoserIds = losingSide?.MemberIds.Where(x => x != loserTargetId).ToList() ?? new List<string>(),
                 FinishType = finishType,
                 WasStoppedBySpot = endingSpot?.ScriptedEffect == SpotScriptedEffect.MatchStopped,
+                WasStoppedByInjury = engineState?.WasStoppedByInjury == true,
                 FinalMatchQuality = finalQuality,
                 CriticReview = CriticReviewCalculator.Match(finalQuality),
                 TechnicalEvaluation = new TechnicalEvaluationBreakdownState
@@ -121,7 +209,9 @@ namespace PWManager.Domain.Services
                     Structure = structureScore,
                     Duration = durationContribution,
                     Spot = spotScore,
-                    RandomVariance = 0f
+                    RandomVariance = 0f, Engine = engineContribution,
+                    ObservedExecution = observed.ObservedExecution, ObservedStructure = observed.ObservedStructure,
+                    ObservedDecisions = observed.ObservedDecisions, ObservedSelling = observed.ObservedSelling
                 },
                 WrestlerPerformances = performances,
                 ParticipantProfiles = profiles,
@@ -132,38 +222,25 @@ namespace PWManager.Domain.Services
                     new() { Code = "match.duration", Contribution = durationContribution },
                     new() { Code = "match.spot", Contribution = spotScore }
                 },
-                ResultSeed = resultSeed
+                ResultSeed = resultSeed,
+                EngineState = engineState
             };
             result.SpotResults = spots;
-            if (minimumTeamCount == 0 && sides.Count == 2 && string.IsNullOrEmpty(match.MatchGimmickId) &&
-                endingSpot == null && actualMatchDuration > 0 && finishType is >= MatchFinishType.Pinfall and <= MatchFinishType.Draw)
+            if (engineState != null)
             {
-                if (finishType != MatchFinishType.Draw)
-                {
-                    if (string.IsNullOrEmpty(result.LoserTargetId)) result.LoserTargetId = participantIds.Single(x => x != finishPerformerId);
-                    if (result.LoserTargetId == finishPerformerId)
-                        throw new InvalidOperationException("The winner and loser must be opponents.");
-                }
-                string Move(IEnumerable<string> ids) => ids?.FirstOrDefault(id => !string.IsNullOrWhiteSpace(id) && findMove?.Invoke(id) != null);
-                result.EngineState = new MatchSimulator(resultSeed).Simulate(participants.OrderBy(x => x.Id, StringComparer.Ordinal).Select(x =>
-                    new MatchEngineParticipant
-                    {
-                        Id = x.Id, Attributes = new WrestlerAttributesState
-                        {
-                            Brawling = x.Attributes.Brawling, Power = x.Attributes.Power, Technical = x.Attributes.Technical,
-                            HighFlying = x.Attributes.HighFlying, Selling = x.Attributes.Selling,
-                            Stamina = x.Attributes.Stamina, RingPsychology = x.Attributes.RingPsychology
-                        },
-                        Fatigue = Math.Max(0f, Math.Min(100f, 100f - x.Condition.Condition)),
-                        SignatureMoveId = Move(x.Presentation.SignatureMoveIds), FinisherMoveId = Move(x.Presentation.FinisherMoveIds)
-                    }), checked(actualMatchDuration * 60), new MatchEngineBooking
-                    {
-                        WinnerId = finishPerformerId, LoserId = result.LoserTargetId, FinishType = finishType
-                    });
-                if (!result.EngineState.IsFinished)
-                    throw new InvalidOperationException(result.EngineState.FailureReason);
-                result.WinnerId = result.FinishPerformerId = result.EngineState.WinnerId;
-                result.ActualMatchDuration = result.EngineState.ElapsedSeconds / 60;
+                result.EvaluationReasons.Add(new EvaluationReasonState { Code = "match.engine.content", Contribution = engineContribution });
+                foreach (var injured in engineState.Participants.Where(p => p.InjuredThisMatch))
+                    result.InjuryChanges.Add(new MatchInjuryChangeState { SourceResultId = result.Id, WrestlerId = injured.Id,
+                        Severity = injured.RealInjury, Region = injured.RealInjuryRegion, RecoveryDays = MatchHealth.RecoveryDays(injured.RealInjury) });
+            }
+            foreach (var planned in match.StoryInjuries ?? new())
+            {
+                if (planned == null || !participantIds.Contains(planned.WrestlerId) || planned.Severity == InjuryStatus.None ||
+                    !Enum.IsDefined(typeof(InjuryStatus), planned.Severity) || !Enum.IsDefined(typeof(BodyRegion), planned.Region) || planned.Days < 1 || planned.Days > 365)
+                    throw new InvalidOperationException("Invalid planned story injury.");
+                if (actualMatchDuration > 0) result.InjuryChanges.Add(new MatchInjuryChangeState { SourceResultId = result.Id,
+                    WrestlerId = planned.WrestlerId, IsKayfabe = true, Severity = planned.Severity,
+                    Region = planned.Region, RecoveryDays = planned.Days, Absent = planned.Absent });
             }
             result.MoveResults = MatchMoveService.Evaluate(save, sides, result, findMove);
             foreach (var participant in participants)
@@ -171,7 +248,10 @@ namespace PWManager.Domain.Services
                 {
                     SourceResultId = result.Id,
                     WrestlerId = participant.Id,
-                    ConditionDelta = conditionDelta,
+                    ConditionDelta = -Clamp(Math.Min(result.ActualMatchDuration * .1f,
+                        result.EngineState?.Participants.FirstOrDefault(x => x.Id == participant.Id)?.Exertion * .02f ?? 0) +
+                        result.ActualMatchDuration * ConditionCostPerMinute * conditionCostMultiplier * gimmickConditionCostMultiplier,
+                        MinimumConditionCost, MaximumConditionCost),
                     ReasonCode = WrestlerConditionChangeReason.MatchParticipation
                 });
             return result;
@@ -197,6 +277,11 @@ namespace PWManager.Domain.Services
             }
             else if (sides.Count != ids.Count || sides.Any(x => x.MemberIds.Count != 1))
                 throw new InvalidOperationException("Individual match sides are invalid.");
+            if (match.FallsToWin < 1) throw new InvalidOperationException("Falls to win must be at least one.");
+            if (match.IronMan && match.Elimination) throw new InvalidOperationException("Iron Man and elimination rules cannot be combined.");
+            if (match.Tornado && minimumTeamCount == 0) throw new InvalidOperationException("Tornado rules require a tag match.");
+            if (!string.IsNullOrEmpty(match.DominantSideId) && sides.All(x => x.Id != match.DominantSideId))
+                throw new InvalidOperationException("Dominant side must be one of the match sides.");
             var finishPerformerId = string.IsNullOrEmpty(match.FinishPerformerId) ? match.WinnerId : match.FinishPerformerId;
             if (match.FinishType != MatchFinishType.Draw && !ids.Contains(finishPerformerId))
                 throw new InvalidOperationException("Match finish performer must be a participant.");
@@ -207,7 +292,7 @@ namespace PWManager.Domain.Services
                     throw new InvalidOperationException($"Match participant was not found: {id}");
         }
 
-        private WrestlerMatchPerformanceState CalculatePerformance(WrestlerState wrestler, int duration, int resultSeed)
+        private WrestlerMatchPerformanceState CalculatePerformance(WrestlerState wrestler, float duration, int resultSeed)
         {
             if (!styleRules.TryGetStyleWeights(wrestler.Presentation.WrestlingStyleId, out var weights))
                 throw new InvalidOperationException($"Wrestling style was not found: {wrestler.Presentation.WrestlingStyleId}");
@@ -246,7 +331,8 @@ namespace PWManager.Domain.Services
                     chemistry = officialTeam.Chemistry;
                     representedTagTeamId ??= officialTeam.Id;
                 }
-                else chemistry = 30f;
+                else chemistry = (save.Stables ?? new List<StableState>()).SingleOrDefault(x =>
+                    x?.Status == TagTeamStatus.Active && side.MemberIds.All(x.MemberIds.Contains))?.Chemistry ?? 30f;
             }
             var chemistryBonus = (chemistry - 50f) / 50f;
             float Ability(Func<WrestlerAttributesState, float> select) =>
@@ -271,7 +357,7 @@ namespace PWManager.Domain.Services
             };
         }
 
-        private static TagTeamState ResolveOfficialTagTeam(GameSave save, MatchSideState side)
+        internal static TagTeamState ResolveOfficialTagTeam(GameSave save, MatchSideState side)
         {
             var activeTeams = (save.TagTeams ?? new List<TagTeamState>()).Where(x => x?.Status == TagTeamStatus.Active).ToList();
             if (!string.IsNullOrEmpty(side.RepresentedTagTeamId))
@@ -356,29 +442,57 @@ namespace PWManager.Domain.Services
 
         private static float GetStaminaPenalty(float overtime)
         {
-            if (overtime <= 0f) return 0f;
-            if (overtime <= 5f) return 1f;
-            if (overtime <= 10f) return 3f;
-            if (overtime <= 15f) return 6f;
-            return 10f;
+            return Interpolate(overtime, new[] { 0f, 5f, 10f, 15f, 20f }, new[] { 0f, 1f, 3f, 6f, 10f });
         }
 
-        private static float GetDurationMultiplier(float baseQuality, int duration)
+        private static float GetDurationMultiplier(float baseQuality, float duration)
         {
-            if (duration <= 10)
-            {
-                if (baseQuality < 10f) return 1f;
-                if (baseQuality < 13f) return 0.95f;
-                if (baseQuality < 15f) return 0.90f;
-                if (baseQuality < 17f) return 0.85f;
-                return 0.75f;
-            }
-            if (duration < 30) return 1f;
-            if (baseQuality < 7f) return 0.65f;
-            if (baseQuality < 10f) return 0.75f;
-            if (baseQuality < 13f) return 0.85f;
-            if (baseQuality < 15f) return 0.95f;
-            return 1f;
+            float Smooth(float x) { x = Math.Clamp(x, 0, 1); return x * x * (3 - 2 * x); }
+            var shortFactor = Interpolate(baseQuality, new[] { 0f, 10f, 13f, 15f, 17f, 20f }, new[] { 1f, 1f, .95f, .90f, .85f, .75f });
+            var longFactor = Interpolate(baseQuality, new[] { 0f, 7f, 10f, 13f, 15f, 20f }, new[] { .65f, .65f, .75f, .85f, .95f, 1f });
+            return 1 - (1 - shortFactor) * (1 - Smooth((duration - 8) / 7)) - (1 - longFactor) * Smooth((duration - 28) / 4);
+        }
+
+        private static float Interpolate(float value, float[] x, float[] y)
+        {
+            if (value <= x[0]) return y[0];
+            for (int i = 1; i < x.Length; i++)
+                if (value < x[i]) return y[i - 1] + (y[i] - y[i - 1]) * (value - x[i - 1]) / (x[i] - x[i - 1]);
+            return y[y.Length - 1];
+        }
+
+        private static float StoryDamage(WrestlerState wrestler, BodyRegion region) =>
+            wrestler.KayfabeInjury?.Region == region ? (int)wrestler.KayfabeInjury.Severity * 25f : 0;
+
+        public static TechnicalEvaluationBreakdownState ObserveQuality(MatchEngineState state)
+        {
+            var result = new TechnicalEvaluationBreakdownState { ObservedExecution = 10, ObservedStructure = 10,
+                ObservedDecisions = 10, ObservedSelling = 10 };
+            if (state == null) return result;
+            var attacks = state.Events.Where(e => e.IsPhysicalAttack).ToList();
+            if (attacks.Count > 0) result.ObservedExecution = attacks.Average(e => e.Result == MatchActionResult.Countered ? 1 : e.ExecutionQuality) * 20;
+            var decisions = state.Events.Where(e => e.HasDecisionEvidence).ToList();
+            var covers = decisions.Where(e => e.Type == MatchActionType.Cover || e.Type == MatchActionType.Pin && e.Result == MatchActionResult.RollUp).ToList();
+            var choices = decisions.Where(e => e.IsPhysicalAttack && !e.IntentionalCombination).ToList();
+            result.ObservedDecisions = ((covers.Count == 0 ? 10 : covers.Count(e => e.ValidCover) * 20f / covers.Count) +
+                (choices.Count == 0 ? 10 : choices.Count(e => e.ContextualChoice) * 20f / choices.Count)) / 2;
+            var selling = decisions.Where(e => e.SellingProtectedRegion || e.SellingContradiction || e.IsPhysicalAttack || e.Type == MatchActionType.Recover).ToList();
+            if (selling.Count > 0) result.ObservedSelling = selling.Average(e => e.SellingQuality) * 20;
+            var opportunities = decisions.Where(e => e.TargetCompleted && e.PreparationAvailable && !string.IsNullOrEmpty(e.GoalMoveId)).ToList();
+            var transitions = opportunities.Select(e => decisions.Where(next => next.PerformerId == e.PerformerId &&
+                next.MatchTimeSeconds > e.MatchTimeSeconds && next.GoalMoveId == e.GoalMoveId).Take(3).ToList())
+                .Where(events => events.Count == 3 && !events.Any(e => e.Result == MatchActionResult.Countered || e.InjurySeverity != InjuryStatus.None)).ToList();
+            var transitionQuality = transitions.Count == 0 ? 10 : transitions.Count(events => events.Any(e => e.IsPreparation || e.Type == MatchActionType.Finisher)) * 20f / transitions.Count;
+            var links = decisions.Where(e => e.CauseEventIndex >= 0 && e.CauseEventIndex < state.Events.Count).ToList();
+            var continuity = links.Count == 0 ? 10 : links.Count(e =>
+                state.Events[e.CauseEventIndex].MatchTimeSeconds < e.MatchTimeSeconds &&
+                state.Events[e.CauseEventIndex].ExchangeId == e.ExchangeId) * 20f / links.Count;
+            var finishingAttacks = attacks.Where(e => e.Type == MatchActionType.Finisher && e.Result is MatchActionResult.FullSuccess or MatchActionResult.ReceptionFailure).ToList();
+            var finish = state.WasStoppedByInjury || finishingAttacks.Count == 0 ? 10 : finishingAttacks.Count(e =>
+                decisions.Any(p => p.PerformerId == e.PerformerId && p.MatchTimeSeconds <= e.MatchTimeSeconds &&
+                    p.MatchTimeSeconds >= e.MatchTimeSeconds - 45 && p.IsPreparation && p.GoalMoveId == e.GoalMoveId)) * 20f / finishingAttacks.Count;
+            result.ObservedStructure = (transitionQuality + continuity + finish) / 3;
+            return result;
         }
 
         private static float Clamp(float value, float minimum, float maximum) => Math.Max(minimum, Math.Min(maximum, value));

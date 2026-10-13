@@ -1,0 +1,45 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 92ce33d374916a64eab27f7d3c88fa16, type: 3}
+  m_Name: move_150_superkick
+  m_EditorClassIdentifier: PWMANAGER.Data::PWManager.Data.Definitions.MoveDefinition
+  id: move_150
+  koreanName: "\uC288\uD37C\uD0A5"
+  englishName: Superkick
+  BrawlingWeight: 1
+  PowerWeight: 0
+  TechnicalWeight: 0
+  HighFlyingWeight: 0
+  ExecutionDifficulty: 6
+  SellingDifficulty: 7
+  RequiredStat: 0
+  RequiredStatValue: 0
+  ScenarioGroupId: 
+  Kind: 1
+  TargetRegion: 0
+  Enabled: 0
+  CanUseGenerally: 0
+  CanBeSignature: 0
+  CanBeFinisher: 0
+  TechniqueKey: compat-superkick
+  AllowedStyleIds:
+  - style_001
+  - style_003
+  - style_004
+  - style_005
+  - style_007
+  Action: 1
+  Situation: 5
+  MotionProfile: 6
+  ExecutionStyle: 0
+  EndPosture: 1
+  TravelDistance: 0.1

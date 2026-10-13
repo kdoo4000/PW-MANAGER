@@ -46,7 +46,7 @@ namespace PWManager.Tests
                 var result = Field<MatchResultState>("result");
                 Assert.That(result.EngineState.IsFinished, Is.True);
                 Assert.That(result.WinnerId, Is.EqualTo(Field<GameSave>("save").Wrestlers[1].Id));
-                Assert.That(result.EngineState.ElapsedSeconds, Is.EqualTo(300));
+                Assert.That(result.EngineState.ElapsedSeconds, Is.InRange(300 * .95, 300 * 1.05));
                 Assert.That(root.Q<Button>("export").enabledSelf, Is.True);
                 var snapshot = JsonUtility.ToJson(result.EngineState);
                 Click("next");

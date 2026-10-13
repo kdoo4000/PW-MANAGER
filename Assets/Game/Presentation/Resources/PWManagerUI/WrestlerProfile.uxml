@@ -106,15 +106,17 @@
             </ui:VisualElement>
             <ui:VisualElement class="wp-content">
                 <ui:VisualElement class="wp-tabs">
-                    <ui:Label text="개요" class="wp-tab active"/>
-                    <ui:Label text="관계" class="wp-tab"/>
+                    <ui:Button name="wp-open-overview" text="개요" class="wp-tab active"/>
+                    <ui:Button name="wp-open-relationships" text="관계" class="wp-tab"/>
                     <ui:Label text="계약" class="wp-tab"/>
                 </ui:VisualElement>
                 <ui:VisualElement class="wp-scroll">
                     <ui:VisualElement class="wp-layout">
-                        <ui:VisualElement class="wp-layout-top">
-                            <ui:VisualElement class="wp-card wp-player-panel">
-                                <ui:Label text="프로필" class="wp-card-title"/>
+<ui:VisualElement class="wp-card wp-player-panel">
+                                <ui:VisualElement class="wp-profile-heading">
+                                    <ui:Label text="프로필" class="wp-card-title"/>
+                                    <ui:Button name="wp-edit-appearance" text="복장 변경" class="wp-choice wp-edit-appearance"/>
+                                </ui:VisualElement>
                                 <ui:VisualElement class="wp-profile-hero">
                                     <ui:VisualElement class="wp-avatar">
                                         <ui:Label name="wp-initials" text="PW" class="wp-initials"/>
@@ -129,28 +131,42 @@
                                 </ui:VisualElement>
                                 <ui:VisualElement class="wp-profile-details">
                                     <ui:VisualElement class="wp-info-row">
-                                        <ui:Label text="본명"/>
-                                        <ui:Label name="wp-legal-name" text="—"/>
+                                        <ui:Label text="본명" class="wp-info-key"/>
+                                        <ui:Label name="wp-legal-name" class="wp-info-value" text="—"/>
                                     </ui:VisualElement>
                                     <ui:VisualElement class="wp-info-row">
-                                        <ui:Label text="경력"/>
-                                        <ui:Label name="wp-career" text="—"/>
+                                        <ui:Label text="경력" class="wp-info-key"/>
+                                        <ui:Label name="wp-career" class="wp-info-value" text="—"/>
+                                    </ui:VisualElement>
+                                    
+                                    <ui:VisualElement class="wp-info-row">
+                                        <ui:Label text="소속 태그팀" class="wp-info-key"/>
+                                        <ui:Label name="wp-tag" class="wp-info-value" text="없음"/>
                                     </ui:VisualElement>
                                     <ui:VisualElement class="wp-info-row">
-                                        <ui:Label text="현재 위상"/>
-                                        <ui:Label name="wp-card-status" text="—"/>
-                                    </ui:VisualElement>
-                                    <ui:VisualElement class="wp-info-row">
-                                        <ui:Label text="소속 태그팀"/>
-                                        <ui:Label name="wp-tag" text="없음"/>
-                                    </ui:VisualElement>
-                                    <ui:VisualElement class="wp-info-row">
-                                        <ui:Label text="소속 스테이블"/>
-                                        <ui:Label name="wp-stable" text="없음"/>
+                                        <ui:Label text="소속 스테이블" class="wp-info-key"/>
+                                        <ui:Label name="wp-stable" class="wp-info-value" text="없음"/>
                                     </ui:VisualElement>
                                 </ui:VisualElement>
-                            </ui:VisualElement>
-                            <ui:VisualElement class="wp-card wp-abilities-panel">
+                            <ui:VisualElement name="wp-current-state" class="wp-current-state">
+  <ui:VisualElement class="wp-state-heading">
+    <ui:Label text="현재 상태" class="wp-card-title"/>
+    <ui:Label name="wp-availability" text="출전 가능" class="wp-availability"/>
+  </ui:VisualElement>
+  <ui:VisualElement class="wp-state-gauges"><ui:VisualElement class="wp-metric">
+  <ui:VisualElement name="wp-condition"/>
+  <ui:Label text="컨디션" class="wp-metric-caption"/>
+</ui:VisualElement><ui:VisualElement class="wp-metric">
+  <ui:VisualElement name="wp-satisfaction"/>
+  <ui:Label text="만족도" class="wp-metric-caption"/>
+</ui:VisualElement></ui:VisualElement>
+  <ui:VisualElement class="wp-info-row"><ui:Label text="실제 부상"/><ui:Label name="wp-real-injury" text="—"/></ui:VisualElement>
+  <ui:VisualElement class="wp-info-row"><ui:Label text="각본 부상"/><ui:Label name="wp-story-injury" text="—"/></ui:VisualElement>
+</ui:VisualElement>
+</ui:VisualElement>
+<ui:VisualElement class="wp-main">
+<ui:VisualElement class="wp-layout-top">
+<ui:VisualElement class="wp-card wp-abilities-panel">
                                 <ui:VisualElement class="wp-section-heading">
                                     <ui:Label text="능력치" class="wp-card-title"/>
                                 </ui:VisualElement>
@@ -181,8 +197,8 @@
                                     </ui:VisualElement>
                                 </ui:VisualElement>
                             </ui:VisualElement>
-                            <ui:VisualElement class="wp-top-side">
-                                <ui:VisualElement class="wp-card wp-half-card wp-moves-card">
+<ui:VisualElement class="wp-top-side">
+<ui:VisualElement class="wp-card wp-half-card wp-moves-card">
                                     <ui:VisualElement class="wp-moves-header">
                                         <ui:Label text="무브셋" class="wp-card-title"/>
                                         <ui:Button name="wp-edit-moves" text="변경" class="wp-save-button"/>
@@ -203,55 +219,45 @@
                                         </ui:VisualElement>
                                     </ui:VisualElement>
                                 </ui:VisualElement>
-                                <ui:VisualElement class="wp-card wp-half-card">
-                                    <ui:Label text="팬 반응" class="wp-card-title"/>
-                                    <ui:VisualElement class="wp-info-row">
-                                        <ui:Label text="매니아"/>
-                                        <ui:Label name="wp-mania" text="—"/>
-                                    </ui:VisualElement>
-                                    <ui:VisualElement class="wp-info-row">
-                                        <ui:Label text="캐주얼"/>
-                                        <ui:Label name="wp-light" text="—"/>
-                                    </ui:VisualElement>
-                                    <ui:VisualElement class="wp-info-row">
-                                        <ui:Label text="몰입형"/>
-                                        <ui:Label name="wp-family" text="—"/>
-                                    </ui:VisualElement>
-                                </ui:VisualElement>
-                            </ui:VisualElement>
-                        </ui:VisualElement>
-                        <ui:VisualElement class="wp-layout-bottom">
-                            <ui:VisualElement class="wp-card wp-bottom-card" style="justify-content: space-between;">
-                                <ui:Label text="현재 상태" class="wp-card-title"/>
-                                <ui:VisualElement class="wp-info-row">
-                                    <ui:Label text="활동 가능"/>
-                                    <ui:Label name="wp-availability" text="—" class="positive"/>
-                                </ui:VisualElement>
-                                <ui:VisualElement class="wp-info-row">
-                                    <ui:Label text="컨디션"/>
-                                    <ui:Label name="wp-condition" text="—"/>
-                                </ui:VisualElement>
-                                <ui:VisualElement class="wp-info-row">
-                                    <ui:Label text="만족도"/>
-                                    <ui:Label name="wp-satisfaction" text="—"/>
-                                </ui:VisualElement>
-                                <ui:VisualElement class="wp-info-row">
-                                    <ui:Label text="부상"/>
-                                    <ui:Label name="wp-injury" text="—"/>
-                                </ui:VisualElement>
-                                <ui:VisualElement class="wp-info-row">
-                                    <ui:Label text="모멘텀"/>
-                                    <ui:Label name="wp-momentum" text="—"/>
-                                </ui:VisualElement>
-                            </ui:VisualElement>
-                            <ui:VisualElement class="wp-card wp-style-card wp-promo-card">
+<ui:VisualElement name="wp-standing-card" class="wp-card wp-standing-card">
+  <ui:Label text="위상·관객 반응" class="wp-card-title"/>
+  <ui:VisualElement class="wp-standing-summary">
+    <ui:VisualElement class="wp-standing-rank"><ui:Label text="현재 위상" class="wp-metric-caption"/><ui:Label name="wp-card-status" text="—" class="wp-rank-value"/></ui:VisualElement>
+    <ui:VisualElement class="wp-metric">
+  <ui:VisualElement name="wp-momentum"/>
+  <ui:Label text="모멘텀" class="wp-metric-caption"/>
+</ui:VisualElement>
+  </ui:VisualElement>
+  <ui:VisualElement class="wp-audience-heading"><ui:Label class="wp-audience-name"/><ui:Label text="선호" class="wp-audience-axis"/><ui:Label text="관심" class="wp-audience-axis"/></ui:VisualElement>
+  <ui:VisualElement class="wp-audience-row">
+  <ui:Label text="매니아" class="wp-audience-name"/>
+  <ui:VisualElement name="wp-mania-preference" class="wp-fan-bar-host"/>
+  <ui:VisualElement name="wp-mania-interest" class="wp-fan-bar-host"/>
+</ui:VisualElement>
+  <ui:VisualElement class="wp-audience-row">
+  <ui:Label text="캐주얼" class="wp-audience-name"/>
+  <ui:VisualElement name="wp-light-preference" class="wp-fan-bar-host"/>
+  <ui:VisualElement name="wp-light-interest" class="wp-fan-bar-host"/>
+</ui:VisualElement>
+  <ui:VisualElement class="wp-audience-row">
+  <ui:Label text="몰입형" class="wp-audience-name"/>
+  <ui:VisualElement name="wp-family-preference" class="wp-fan-bar-host"/>
+  <ui:VisualElement name="wp-family-interest" class="wp-fan-bar-host"/>
+</ui:VisualElement>
+</ui:VisualElement>
+
+</ui:VisualElement>
+</ui:VisualElement>
+<ui:VisualElement class="wp-layout-bottom">
+<ui:VisualElement class="wp-settings-pair">
+<ui:VisualElement class="wp-card wp-style-card wp-promo-card">
                                 <ui:VisualElement class="wp-card-heading wp-style-heading">
                                     <ui:Label text="경기 스타일" class="wp-card-title"/>
                                     <ui:Button name="wp-save-match-style" text="저장" class="wp-save-button"/>
                                 </ui:VisualElement>
                                 <ui:VisualElement name="wp-match-style-options" class="wp-choice-grid"/>
                             </ui:VisualElement>
-                            <ui:VisualElement class="wp-card wp-style-card">
+<ui:VisualElement class="wp-card wp-style-card wp-role-panel">
                                 <ui:VisualElement class="wp-card-heading">
                                     <ui:Label text="프로모 역할 · 성향" class="wp-card-title"/>
                                     <ui:Button name="wp-save-promo-style" text="저장" class="wp-save-button"/>
@@ -261,7 +267,8 @@
                                 <ui:Label text="성향" class="wp-choice-label second" style="margin-top: 25px;"/>
                                 <ui:VisualElement name="wp-disposition-options" class="wp-promo-choice-row"/>
                             </ui:VisualElement>
-                            <ui:VisualElement class="wp-card wp-bottom-card wp-last-card">
+</ui:VisualElement>
+<ui:VisualElement class="wp-card wp-bottom-card wp-last-card">
                                 <ui:Label text="출전 기록" class="wp-card-title"/>
                                 <ui:VisualElement class="wp-record-grid">
                                     <ui:VisualElement class="wp-record">
@@ -300,8 +307,9 @@
                                     <ui:Label name="wp-recent-result" text="기록 없음"/>
                                 </ui:VisualElement>
                             </ui:VisualElement>
-                        </ui:VisualElement>
-                    </ui:VisualElement>
+</ui:VisualElement>
+</ui:VisualElement>
+</ui:VisualElement>
                 </ui:VisualElement>
             </ui:VisualElement>
         </ui:VisualElement>

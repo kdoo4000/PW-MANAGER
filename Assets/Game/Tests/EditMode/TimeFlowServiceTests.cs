@@ -54,11 +54,16 @@ namespace PWManager.Tests
         }
 
         [Test]
-        public void AdvanceTo_EndDateExpiresContractAfterFinalDayProcessing()
+        public void AdvanceTo_ContractRemainsValidThroughSeasonEndAndExpiresNextDay()
         {
             var save = CreateSave(1000, new GameDate(2027, 5, 30), 0, new GameDate(2027, 5, 31));
 
             new TimeFlowService().AdvanceTo(save, new GameDate(2027, 5, 31));
+
+            Assert.That(save.Contracts[0].Status, Is.EqualTo(ContractStatus.Expiring));
+            Assert.That(save.ProcessedIds, Is.Empty);
+
+            new TimeFlowService().AdvanceTo(save, new GameDate(2027, 6, 1));
 
             Assert.That(save.Contracts[0].Status, Is.EqualTo(ContractStatus.Expired));
             Assert.That(save.ProcessedIds.Single(), Does.StartWith("contract-expiry:"));

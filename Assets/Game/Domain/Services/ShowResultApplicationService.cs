@@ -32,6 +32,24 @@ namespace PWManager.Domain.Services
             var transactions = CreateSettlementTransactions(context, save.Transactions ?? new List<TransactionRecord>());
             FanAudienceService.ValidateResult(save, context.ShowResult);
             FanAudienceService.ValidateAudience(save);
+            StorylineService.Validate(save, context.ShowResult);
+            var championships = ChampionshipService.PrepareResults(save,
+                context.MatchResults.OrderBy(m => context.Show.TimelineEventIds.IndexOf(m.ShowEventId)), context.Show.Date);
+            var groupSimulation = save.CopyForStorySimulation();
+            foreach (var healthResult in context.MatchResults.OrderBy(m => context.Show.TimelineEventIds.IndexOf(m.ShowEventId)))
+                MatchHealth.ApplyResult(groupSimulation, healthResult, context.Show.Date);
+            var groupSources = new HashSet<string>(StringComparer.Ordinal);
+            var previousGroupPosition = -1;
+            foreach (var change in context.ShowResult.GroupChanges ?? new())
+            {
+                if (change == null || !context.ShowResult.PromoResultIds.Contains(change.SourceResultId))
+                    throw new InvalidOperationException("Group change must belong to this show's promo.");
+                var position = context.ShowResult.TimelineResultIds.IndexOf(change.SourceResultId);
+                if (position < 0 || position < previousGroupPosition || !groupSources.Add(change.SourceResultId))
+                    throw new InvalidOperationException("Group results must follow unique timeline order.");
+                previousGroupPosition = position;
+                WrestlerGroupService.ApplyPromoChange(groupSimulation, change);
+            }
             if (context.ShowResult.FanSatisfaction?.IsCalculated == true &&
                 context.ShowResult.FanResponseChanges.Any(x => !appearanceIds.Contains(x.WrestlerId)))
                 throw new InvalidOperationException("Fan changes must belong to show participants.");
@@ -45,15 +63,49 @@ namespace PWManager.Domain.Services
                 wrestler.Roster.LastAppearanceDate = new OptionalGameDate(context.Show.Date);
             }
             foreach (var matchResult in context.MatchResults)
-            foreach (var wrestlerId in (matchResult.ParticipantProfiles ?? new List<MatchParticipantProfileState>())
-                .SelectMany(x => x?.MemberIds ?? new List<string>()).Distinct(StringComparer.Ordinal))
             {
-                var wrestler = wrestlers[wrestlerId];
-                wrestler.Roster.LastMatchDate = new OptionalGameDate(context.Show.Date);
-                wrestler.Status.OfficialMatchCount++;
+                if (!string.IsNullOrEmpty(matchResult.CancellationReason)) continue;
+                foreach (var wrestlerId in (matchResult.ParticipantProfiles ?? new List<MatchParticipantProfileState>())
+                    .SelectMany(x => x?.MemberIds ?? new List<string>()).Distinct(StringComparer.Ordinal))
+                {
+                    var wrestler = wrestlers[wrestlerId];
+                    wrestler.Roster.LastMatchDate = new OptionalGameDate(context.Show.Date);
+                    wrestler.Status.OfficialMatchCount++;
+                }
             }
             save.Transactions.AddRange(transactions);
             FanAudienceService.Apply(save, context.Show, context.ShowResult);
+            StorylineService.Apply(save, context.ShowResult, context.Show.Date);
+            save.TagTeams = groupSimulation.TagTeams;
+            save.Championships = championships;
+            save.Stables = groupSimulation.Stables;
+            foreach (var wrestler in save.Wrestlers)
+            {
+                var simulated = groupSimulation.Wrestlers.Single(x => x.Id == wrestler.Id);
+                wrestler.Roster.ActiveTagTeamId = simulated.Roster.ActiveTagTeamId;
+                wrestler.Roster.ActiveStableId = simulated.Roster.ActiveStableId;
+                wrestler.Condition.InjuryStatus = simulated.Condition.InjuryStatus;
+                wrestler.Condition.InjuryRegion = simulated.Condition.InjuryRegion;
+                wrestler.Condition.RecoveryDate = simulated.Condition.RecoveryDate;
+                wrestler.Condition.Availability = simulated.Condition.Availability;
+                wrestler.Condition.InjuryControlsAvailability = simulated.Condition.InjuryControlsAvailability;
+                wrestler.Condition.AvailabilityBeforeInjury = simulated.Condition.AvailabilityBeforeInjury;
+                wrestler.KayfabeInjury = simulated.KayfabeInjury.Copy();
+            }
+            foreach (var candidate in context.ShowResult.StoryCandidates ?? new())
+            {
+                if (save.StoryCandidates.Any(x => x.Id == candidate.Id)) continue;
+                save.StoryCandidates.Add(new StoryCandidateState
+                {
+                    Id = candidate.Id, ShowId = context.Show.Id, Quality = candidate.Quality,
+                    Event = new StoryEventState
+                    {
+                        SourceResultId = candidate.Event.SourceResultId, Date = context.Show.Date,
+                        EventType = candidate.Event.EventType, Incident = candidate.Event.Incident,
+                        ActorId = candidate.Event.ActorId, TargetId = candidate.Event.TargetId
+                    }
+                });
+            }
             context.Show.Status = ShowStatus.Completed;
             schedule.Status = ScheduleStatus.Completed;
             save.ProcessedIds.Add(context.ApplicationKey);
@@ -88,11 +140,15 @@ namespace PWManager.Domain.Services
         {
             var ids = new HashSet<string>(StringComparer.Ordinal);
             foreach (var matchResult in context.MatchResults)
-            foreach (var profile in matchResult.ParticipantProfiles ?? new List<MatchParticipantProfileState>())
-            foreach (var wrestlerId in profile?.MemberIds ?? new List<string>())
-                ids.Add(wrestlerId);
+            {
+                if (!string.IsNullOrEmpty(matchResult.CancellationReason)) continue;
+                foreach (var profile in matchResult.ParticipantProfiles ?? new List<MatchParticipantProfileState>())
+                foreach (var wrestlerId in profile?.MemberIds ?? new List<string>())
+                    ids.Add(wrestlerId);
+            }
             foreach (var promoResult in context.PromoResults)
             {
+                if (!string.IsNullOrEmpty(promoResult.CancellationReason)) continue;
                 var promo = (context.Save.PromoPlans ?? new List<PromoPlanState>()).SingleOrDefault(x => x?.Id == promoResult.PromoPlanId)
                     ?? throw new InvalidOperationException("Promo result references a missing promo plan.");
                 foreach (var wrestlerId in promo.ParticipantIds ?? new List<string>()) ids.Add(wrestlerId);

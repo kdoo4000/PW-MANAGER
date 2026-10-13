@@ -1,0 +1,43 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 92ce33d374916a64eab27f7d3c88fa16, type: 3}
+  m_Name: move_332_plancha
+  m_EditorClassIdentifier: PWMANAGER.Data::PWManager.Data.Definitions.MoveDefinition
+  id: move_332
+  koreanName: "\uD50C\uB780\uCC60"
+  englishName: Plancha
+  BrawlingWeight: 0
+  PowerWeight: 0
+  TechnicalWeight: 0
+  HighFlyingWeight: 1
+  ExecutionDifficulty: 10
+  SellingDifficulty: 7
+  RequiredStat: 4
+  RequiredStatValue: 10
+  ScenarioGroupId: 
+  Kind: 3
+  TargetRegion: 1
+  Enabled: 1
+  CanUseGenerally: 1
+  CanBeSignature: 0
+  CanBeFinisher: 0
+  TechniqueKey: plancha
+  AllowedStyleIds:
+  - style_004
+  - style_005
+  - style_007
+  Action: 13
+  Situation: 41
+  MotionProfile: 16
+  ExecutionStyle: 2
+  EndPosture: 1
+  TravelDistance: 0.18

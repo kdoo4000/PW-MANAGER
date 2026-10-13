@@ -84,7 +84,21 @@ namespace PWManager.Data.Generation
             wrestler.Status.DebutDate = careerYears == 0 ? createdDate : AddYears(createdDate, -careerYears);
             GenerateTraits(wrestler);
             GenerateMoves(wrestler);
+            GenerateAppearance(wrestler);
             return wrestler;
+        }
+
+        private void GenerateAppearance(WrestlerState wrestler)
+        {
+            var names = content.Catalog.NamePool;
+            var parts = wrestler.Identity.LegalName.Split(' ');
+            var givenNames = wrestler.Identity.Gender == WrestlerGender.Male
+                ? names.KoreanMaleGivenNames.Concat(names.JapaneseMaleGivenNames)
+                : names.KoreanFemaleGivenNames.Concat(names.JapaneseFemaleGivenNames);
+            var preferEastAsianSkin = givenNames.Contains(parts[0]) &&
+                (names.KoreanFamilyNames.Contains(parts[^1]) || names.JapaneseFamilyNames.Contains(parts[^1]));
+            wrestler.Presentation.Appearance = PortraitAppearanceRules.Generate(wrestler.Identity, wrestler.Presentation.WrestlingStyleId,
+                new Random(PortraitAppearanceRules.StableSeed(wrestler.Id) ^ wrestler.Identity.CreatedDate.Year), preferEastAsianSkin);
         }
 
         private List<WrestlerState> GenerateGuaranteedGroup(WrestlerGender gender, int count, GameDate date)
@@ -169,6 +183,7 @@ namespace PWManager.Data.Generation
                     if (!usedNames.Add(replacementName)) continue;
                     candidate.Identity.LegalName = replacementName;
                     candidate.Identity.RingName = replacementName;
+                    GenerateAppearance(candidate);
                     break;
                 }
             }
@@ -416,20 +431,15 @@ namespace PWManager.Data.Generation
 
         private void GenerateMoves(WrestlerState wrestler)
         {
-            var eligible = content.Moves.Values.Where(x => MeetsMoveRequirement(wrestler.Attributes, x)).ToList();
-            if (eligible.Count < 2) throw new InvalidOperationException("At least two eligible moves are required.");
-            var signature = eligible[random.Next(eligible.Count)]; eligible.Remove(signature);
-            var finisher = eligible[random.Next(eligible.Count)];
+            var eligible = content.Moves.Values.Where(x => x.CanAssign(wrestler, false) || x.CanAssign(wrestler, true)).ToList();
+            var signatures = eligible.Where(x => x.CanAssign(wrestler, false) && eligible.Any(y => y.CanAssign(wrestler, true) && y.Id != x.Id)).ToList();
+            if (signatures.Count == 0) throw new InvalidOperationException("Distinct eligible signature and finisher moves are required.");
+            var signature = signatures[random.Next(signatures.Count)];
+            var finishers = eligible.Where(x => x.CanAssign(wrestler, true) && x.Id != signature.Id).ToList();
+            var finisher = finishers[random.Next(finishers.Count)];
             wrestler.Presentation.SignatureMoveIds.Add(signature.Id);
             wrestler.Presentation.FinisherMoveIds.Add(finisher.Id);
         }
-
-        private static bool MeetsMoveRequirement(WrestlerAttributesState a, MoveDefinition move) => move.RequiredStat switch
-        {
-            MoveRequiredStat.None => true, MoveRequiredStat.Brawling => a.Brawling >= move.RequiredStatValue,
-            MoveRequiredStat.Power => a.Power >= move.RequiredStatValue, MoveRequiredStat.Technical => a.Technical >= move.RequiredStatValue,
-            MoveRequiredStat.HighFlying => a.HighFlying >= move.RequiredStatValue, _ => false
-        };
 
         private string GenerateLegalName(WrestlerGender gender)
         {

@@ -24,3 +24,17 @@ MonoBehaviour:
   RequiredStat: 0
   RequiredStatValue: 0
   ScenarioGroupId: 
+  Kind: 3
+  TargetRegion: 1
+  Enabled: 1
+  CanUseGenerally: 1
+  CanBeSignature: 1
+  CanBeFinisher: 1
+  TechniqueKey: diving-elbow
+  AllowedStyleIds: []
+  Action: 13
+  Situation: 13
+  MotionProfile: 16
+  ExecutionStyle: 2
+  EndPosture: 1
+  TravelDistance: 0.18

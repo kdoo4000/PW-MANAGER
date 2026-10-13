@@ -4,6 +4,9 @@ namespace PWManager.Domain.Services
 {
     public static class MatchFinishRules
     {
+        public static bool Resolve(MatchRuleOverride rule, bool defaultValue) =>
+            rule == MatchRuleOverride.Default ? defaultValue : rule == MatchRuleOverride.Allowed;
+
         public static bool IsAllowed(MatchFinishType finishType, bool isTeamMatch,
             int participantCount, int teamCount, MatchGimmickRules? gimmickRules = null)
         {

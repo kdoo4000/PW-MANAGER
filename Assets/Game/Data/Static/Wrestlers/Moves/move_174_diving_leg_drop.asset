@@ -1,0 +1,43 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 92ce33d374916a64eab27f7d3c88fa16, type: 3}
+  m_Name: move_174_diving_leg_drop
+  m_EditorClassIdentifier: PWMANAGER.Data::PWManager.Data.Definitions.MoveDefinition
+  id: move_174
+  koreanName: "\uB2E4\uC774\uBE59 \uB808\uADF8\uB4DC\uB86D"
+  englishName: Diving Leg Drop
+  BrawlingWeight: 0
+  PowerWeight: 0
+  TechnicalWeight: 0
+  HighFlyingWeight: 1
+  ExecutionDifficulty: 6
+  SellingDifficulty: 7
+  RequiredStat: 0
+  RequiredStatValue: 0
+  ScenarioGroupId: 
+  Kind: 3
+  TargetRegion: 0
+  Enabled: 1
+  CanUseGenerally: 1
+  CanBeSignature: 1
+  CanBeFinisher: 1
+  TechniqueKey: diving-leg-drop
+  AllowedStyleIds:
+  - style_004
+  - style_005
+  - style_007
+  Action: 13
+  Situation: 13
+  MotionProfile: 16
+  ExecutionStyle: 2
+  EndPosture: 1
+  TravelDistance: 0.18

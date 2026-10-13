@@ -272,6 +272,9 @@
 .show-participant-chip { height: 30px; margin: 0 7px 7px 0; padding: 5px 10px; border-width: 1px; border-color: #62502c; border-radius: 6px; background-color: #2b2419; color: #d9b45b; font-size: 16px; -unity-font-style: bold; }
 .show-portrait-trapezoid { position: relative; flex-grow: 1; flex-basis: 0; min-width: 0; height: 100%; margin-right: -32px; }
 .show-portrait-trapezoid.last { margin-right: 0; }
+.show-team-names { position: absolute; left: 32px; right: 32px; bottom: 8px; flex-direction: row; flex-wrap: wrap; }
+.show-team-member-name { flex-grow: 1; flex-basis: 0; min-width: 0; height: 28px; margin: 2px; padding: 0 4px; background-color: rgba(9, 17, 27, 0.88); color: #d9b45b; font-size: 13px; -unity-text-align: middle-center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; border-width: 0; border-radius: 0; }
+.show-team-member-name:hover { color: #ffffff; background-color: #263b51; }
 .show-participant-list.team-match > .show-portrait-trapezoid { margin-right: -34px; }
 .show-participant-list.team-match > .show-portrait-trapezoid.last { margin-right: 0; }
 .show-participant-portrait { width: 100%; height: 100%; margin: 0; padding: 15px 10px 8px; border-width: 0; background-color: transparent; align-items: center; justify-content: center; }
@@ -279,10 +282,13 @@
 .wrestler-portrait-name-link { height: 24px; padding: 0; border-width: 0; background-color: transparent; }
 .wrestler-portrait-name-link:hover { color: #f0cf7a; }
 .show-portrait-trapezoid.empty { background-color: transparent; }
+.show-participant-portrait-name { position: absolute; left: 32px; right: 32px; bottom: 8px; height: 32px; padding: 0 6px; background-color: rgba(8, 13, 21, 0.88); color: #f2f5fa; font-size: 16px; -unity-text-align: middle-center; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.show-participant-portrait-name:hover { color: #f0cf7a; background-color: rgba(8, 13, 21, 0.96); }
+.show-participant-list.multi-side .show-participant-portrait-name { left: 14px; right: 14px; font-size: 13px; }
 .show-participant-empty-label { width: 100%; height: 100%; color: #58718b; font-size: 16px; -unity-font-style: bold; -unity-text-align: middle-center; }
-.wrestler-portrait-frame { width: 88px; height: 88px; flex-shrink: 0; align-items: center; justify-content: center; overflow: hidden; border-width: 2px; border-color: #d9b45b; border-radius: 44px; background-color: #2b2419; }
-.show-participant-list.duel .wrestler-portrait-frame { width: 122px; height: 122px; border-radius: 61px; }
-.show-participant-list.multi-side .wrestler-portrait-frame { width: 70px; height: 70px; border-radius: 35px; }
+.wrestler-portrait-frame { width: 88px; height: 79px; flex-shrink: 0; align-items: center; justify-content: center; overflow: hidden; border-width: 2px; border-color: #d9b45b; border-radius: 0; background-color: #2b2419; }
+.show-participant-list.duel .wrestler-portrait-frame { width: 122px; height: 110px; border-radius: 0; }
+.show-participant-list.multi-side .wrestler-portrait-frame { width: 70px; height: 63px; border-radius: 0; }
 .wrestler-portrait-image { width: 100%; height: 100%; }
 .wrestler-portrait-initials { color: #d9b45b; font-size: 25px; -unity-font-style: bold; -unity-text-align: middle-center; }
 .show-participant-list.duel .wrestler-portrait-initials { font-size: 32px; }
@@ -318,7 +324,7 @@
 .show-header-notice { height: 14px; margin-top: 3px; overflow: hidden; color: #6f829a; white-space: nowrap; text-overflow: ellipsis; }
 .show-editor-overlay { position: absolute; left: 0; right: 0; top: 0; bottom: 0; align-items: center; justify-content: center; background-color: rgba(2, 5, 10, 0.88); }
 .show-editor-dialog { width: 94%; height: 90%; max-width: 1440px; max-height: 1000px; padding: 30px; border-width: 1px; border-color: #454047; border-radius: 12px; background-color: #0b111a; }
-.show-editor-heading { height: 58px; flex-direction: row; justify-content: space-between; align-items: center; }
+.show-editor-heading { height: 58px; flex-shrink: 0; flex-direction: row; justify-content: space-between; align-items: center; }
 .show-editor-title { color: #eff6ff; font-size: 26px; -unity-font-style: bold; }
 .show-editor-close { width: 40px; height: 40px; margin: 0; padding: 0; border-width: 1px; border-color: #2b3a4d; border-radius: 7px; background-color: #111925; color: #afbdcd; font-size: 25px; }
 .show-editor-fields { height: 94px; flex-direction: row; margin-top: 12px; }
@@ -329,6 +335,10 @@
 .show-editor-rule-scroll .unity-scroll-view__horizontal-scroller { display: none; }
 .show-editor-rule-scroll .unity-scroll-view__content-container { min-width: 0; width: auto; }
 .show-editor-rule-options { width: auto; min-width: 0; align-self: stretch; }
+.show-editor-team-slots { flex-direction: row; flex-wrap: wrap; margin-bottom: 8px; flex-shrink: 0; }
+.show-editor-team-slot { flex-grow: 1; min-height: 38px; margin: 3px; padding: 0 12px; background-color: #132233; border-width: 1px; border-color: #29425d; color: #c5d3e2; font-size: 15px; }
+.show-editor-team-slot.selected { border-color: #d9b45b; background-color: #302719; color: #ffffff; }
+.show-editor-team-slot:hover { border-color: #d9b45b; }
 .show-editor-rule-option { width: auto; align-self: stretch; min-height: 52px; margin-bottom: 11px; padding: 0 16px; border-width: 1px; border-color: #29425d; border-radius: 6px; background-color: #132233; color: #c5d3e2; font-size: 16px; -unity-font-style: bold; -unity-text-align: middle-left; }
 .show-editor-rule-option:hover { border-color: #d9b45b; background-color: #302719; color: #f4f0e7; }
 .show-editor-rule-option.selected { border-color: #d9b45b; background-color: #302719; color: #ffffff; }
@@ -361,7 +371,8 @@
 .spot-info, .spot-empty { color: #94a3b7; font-size: 16px; white-space: normal; margin-bottom: 8px; }
 .spot-warning { color: #e3b36c; font-size: 16px; white-space: normal; margin-bottom: 8px; }
 .spot-row > .small-button { align-self: flex-end; }
-.show-editor-finish { flex-direction: row; flex-shrink: 0; min-height: 94px; margin-bottom: 12px; }
+.show-editor-finish { flex-shrink: 0; min-height: 180px; margin-bottom: 12px; }
+.show-editor-finish-row { flex-direction: row; flex-grow: 1; min-height: 0; }
 .show-editor-finish .show-editor-field { flex-basis: 0; min-width: 0; }
 .show-editor-spot-field { flex-grow: 1; flex-direction: column; margin-bottom: 14px; color: #cdd8e7; font-size: 16px; }
 .show-editor-spot-field .unity-base-field__label { width: 100%; margin-bottom: 7px; color: #94a3b7; font-size: 16px; }
@@ -370,13 +381,13 @@
 .show-editor-field.duration { width: 180px; flex-grow: 0; margin-right: 0; }
 .show-editor-field .unity-base-field__label { width: 100%; color: #94a3b7; font-size: 16px; }
 .show-editor-field .unity-base-field__input { width: 100%; height: 42px; margin-top: 8px; padding: 0 12px; border-width: 1px; border-color: #454047; border-radius: 7px; background-color: #1a1b1f; font-size: 16px; }
-.show-editor-roster-heading { height: 52px; margin-top: 18px; flex-direction: row; align-items: center; justify-content: space-between; border-bottom-width: 1px; border-bottom-color: #1d2a3b; }
+.show-editor-roster-heading { height: 52px; flex-shrink: 0; margin-top: 18px; flex-direction: row; align-items: center; justify-content: space-between; border-bottom-width: 1px; border-bottom-color: #1d2a3b; }
 .show-editor-roster-sort { min-width: 230px; margin-left: 20px; color: #cdd8e7; }
 .show-editor-roster-sort .unity-base-field__label { min-width: 40px; }
 .show-editor-roster-sort .unity-base-field__input { min-height: 34px; padding: 0 10px; border-width: 1px; border-color: #454047; border-radius: 7px; background-color: #1a1b1f; }
 .show-editor-section-title { color: #dce7f5; font-size: 18px; -unity-font-style: bold; }
 .show-editor-selected-count { color: #d9b45b; font-size: 16px; -unity-font-style: bold; }
-.show-editor-roster-scroll { flex-grow: 1; min-height: 0; margin-top: 14px; }
+.show-editor-roster-scroll { flex-grow: 1; flex-basis: 0; min-height: 0; margin-top: 14px; }
 .show-timeline-scroll .unity-scroll-view__horizontal-scroller,
 .show-editor-roster-scroll .unity-scroll-view__horizontal-scroller { display: none; }
 .show-timeline-scroll .unity-scroll-view__vertical-scroller .unity-base-slider__dragger,
@@ -444,7 +455,7 @@
 .save-load-row:hover { border-color:#d9b45b; background-color:#2b2419; }
 .save-load-row-copy { flex-grow:1; }
 .save-load-row-name { color:#e5eef9; font-size: 16px; -unity-font-style:bold; -unity-text-align:middle-left; }
-.save-load-row-date { margin-top:3px; color:#74869d; font-size: 16px; -unity-text-align:middle-left; }
+.save-load-row-date { margin-top:3px; color:#8c9db3; font-size: 16px; -unity-text-align:middle-left; }
 .save-load-row-action { width:82px; color:#75bfff; font-size: 16px; -unity-font-style:bold; -unity-text-align:middle-right; }
 .save-load-empty { margin-top:70px; color:#74869d; font-size: 16px; -unity-text-align:middle-center; }
 

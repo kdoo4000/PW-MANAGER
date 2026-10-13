@@ -138,12 +138,20 @@ namespace PWManager.Domain.Services
             if (string.IsNullOrWhiteSpace(show.Name)) Error(issues, "show.name", "Show name is required.", show.Id);
             if (show.DurationLimit <= 0 || show.DurationLimit % 5 != 0) Error(issues, "show.duration-limit", "Duration limit must be a positive multiple of five.", show.Id);
             var events = save.ShowEvents.Where(x => x?.ShowId == show.Id).ToDictionary(x => x.Id, StringComparer.Ordinal);
+            var bookedChampionships = new HashSet<string>(StringComparer.Ordinal);
             foreach (var eventId in show.TimelineEventIds)
             {
                 if (!events.TryGetValue(eventId, out var showEvent)) { Error(issues, "event.missing", "Timeline references a missing event.", eventId); continue; }
                 if (showEvent.PlannedDuration <= 0 || showEvent.PlannedDuration % 5 != 0)
                     Error(issues, "event.duration", "Event duration must be a positive multiple of five.", eventId);
-                if (showEvent.EventType == ShowEventType.Match) ValidateMatch(save, show, showEvent, issues);
+                if (showEvent.EventType == ShowEventType.Match)
+                {
+                    ValidateMatch(save, show, showEvent, issues);
+                    var titleId = save.MatchPlans.FirstOrDefault(x => x.Id == showEvent.DetailId)?.ChampionshipId;
+                    // shortcut: one bout per title per show, add ordered title booking when multi-bout defenses are supported.
+                    if (!string.IsNullOrEmpty(titleId) && !bookedChampionships.Add(titleId))
+                        Error(issues, "match.championship-duplicate", "같은 쇼에서 하나의 챔피언십은 한 경기만 편성할 수 있습니다.", showEvent.DetailId);
+                }
                 else ValidatePromo(save, show, showEvent, issues);
             }
             var used = show.CalculatePlannedDuration(events.Values);
@@ -214,6 +222,11 @@ namespace PWManager.Domain.Services
             }
             else if (sides.Count != participantCount || sides.Any(x => x?.MemberIds?.Count != 1))
                 Error(issues, "match.sides", "An individual match requires one participant per side.", match.Id);
+            if (match.FallsToWin < 1) Error(issues, "match.falls", "Falls to win must be at least one.", match.Id);
+            if (match.IronMan && match.Elimination) Error(issues, "match.rules", "Iron Man and elimination rules cannot be combined.", match.Id);
+            if (match.Tornado && minimumTeamCount == 0) Error(issues, "match.tornado", "Tornado rules require a tag match.", match.Id);
+            if (!string.IsNullOrEmpty(match.DominantSideId) && sides.All(x => x?.Id != match.DominantSideId))
+                Error(issues, "match.dominant-side", "Dominant side must be one of the match sides.", match.Id);
             MatchGimmickRules? gimmickRules = null;
             if (!string.IsNullOrEmpty(match.MatchGimmickId))
             {
@@ -235,6 +248,15 @@ namespace PWManager.Domain.Services
             if (!string.IsNullOrEmpty(match.LoserTargetId) && winningSide?.MemberIds?.Contains(match.LoserTargetId) == true)
                 Error(issues, "match.loser-side", "Loser target cannot belong to the winning side.", match.Id);
             foreach (var participantId in participants) ValidateParticipant(save, show, participantId, true, issues, match.Id);
+            ValidateStoryLink(save, match.StorylineId, match.StoryAction, participants, issues, match.Id);
+            try { ChampionshipService.ValidateMatch(save, match); }
+            catch (InvalidOperationException exception) { Error(issues, "match.championship", exception.Message, match.Id); }
+            var injuryIds = new HashSet<string>();
+            foreach (var injury in match.StoryInjuries ?? new())
+                if (injury == null || !participants.Contains(injury.WrestlerId) || !injuryIds.Add(injury.WrestlerId) ||
+                    injury.Severity == InjuryStatus.None || !Enum.IsDefined(typeof(InjuryStatus), injury.Severity) ||
+                    !Enum.IsDefined(typeof(BodyRegion), injury.Region) || injury.Days < 1 || injury.Days > 365)
+                    Error(issues, "match.story-injury", "각본상 부상의 선수·부위·심각도·복귀 기간을 확인하세요.", match.Id);
             foreach (var message in MatchSpotEvaluator.Validate(save, match)) Error(issues, "match.spot", message, match.Id);
         }
 
@@ -247,6 +269,34 @@ namespace PWManager.Domain.Services
             if (promo.Purpose == PromoPurpose.SponsorAdvertisement && string.IsNullOrWhiteSpace(promo.SponsorRequirementId))
                 Error(issues, "promo.sponsor", "Sponsor advertisement requires a sponsor requirement.", promo.Id);
             foreach (var participantId in promo.ParticipantIds ?? new List<string>()) ValidateParticipant(save, show, participantId, false, issues, promo.Id);
+            ValidateStoryLink(save, promo.StorylineId, promo.StoryAction,
+                (promo.ParticipantIds ?? new()).Concat(promo.TargetIds ?? new()).Distinct().ToList(), issues, promo.Id);
+            try { StorylineService.ValidatePromoIncident(save, promo); }
+            catch (InvalidOperationException exception) { Error(issues, "promo.incident", exception.Message, promo.Id); }
+            try { WrestlerGroupService.ValidatePromo(save, promo); }
+            catch (InvalidOperationException exception) { Error(issues, "promo.group", exception.Message, promo.Id); }
+        }
+
+        private static void ValidateStoryLink(GameSave save, string storylineId, StoryAction action,
+            IReadOnlyCollection<string> participants, List<ShowValidationIssue> issues, string entityId)
+        {
+            if (!Enum.IsDefined(typeof(StoryAction), action))
+            {
+                Error(issues, "story.action", "Invalid story action.", entityId);
+                return;
+            }
+            if (action == StoryAction.None)
+            {
+                if (!string.IsNullOrEmpty(storylineId)) Error(issues, "story.action", "A linked storyline requires a story action.", entityId);
+                return;
+            }
+            var story = (save.Storylines ?? new List<StorylineState>()).SingleOrDefault(x => x?.Id == storylineId);
+            if (story == null || story.Status != StorylineStatus.Active)
+                Error(issues, "story.active", "Linked storyline must be active.", entityId);
+            else if (action == StoryAction.Progress && !StorylineService.CanProgress(save, story))
+                Error(issues, "story.parties", "해체되거나 소속이 겹치는 그룹의 대립은 종료만 할 수 있습니다.", entityId);
+            else if (!StorylineService.IncludesBothParties(save, story, participants))
+                Error(issues, "story.participants", "A linked event must include both storyline wrestlers.", entityId);
         }
 
         private static void ValidateParticipant(GameSave save, ShowState show, string participantId, bool match, List<ShowValidationIssue> issues, string entityId)
@@ -261,6 +311,9 @@ namespace PWManager.Domain.Services
                 Error(issues, "participant.roster", "Participant is not on the active roster.", entityId);
             if (wrestler.Condition.Availability == WrestlerAvailability.Unavailable || match && wrestler.Condition.Availability == WrestlerAvailability.MatchUnavailable)
                 Error(issues, "participant.availability", "Participant is unavailable for this event.", entityId);
+            if (match && wrestler.KayfabeInjury?.Absent == true && wrestler.KayfabeInjury.Severity != InjuryStatus.None &&
+                (!wrestler.KayfabeInjury.ReturnDate.HasValue || wrestler.KayfabeInjury.ReturnDate.Value.CompareTo(show.Date) > 0))
+                Error(issues, "participant.story-injury", "각본상 부상으로 결장 중인 선수입니다.", entityId);
         }
 
         private static void AddAppearanceWarnings(GameSave save, ShowState show, IEnumerable<ShowEventState> events, List<ShowValidationIssue> issues)

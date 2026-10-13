@@ -87,7 +87,7 @@ namespace PWManager.Data.Loading
                     definition.CompatibleMatchTypeIds, definition.ConditionCostMultiplier,
                     definition.DisqualificationRule, definition.CountOutRule,
                     definition.PinfallRule, definition.SubmissionRule,
-                    definition.AllowedSpecialFinishTypes);
+                    definition.AllowedSpecialFinishTypes, definition.RopeBreakRule, definition.CountOutSeconds);
                 return true;
             }
             rules = default;
@@ -107,12 +107,19 @@ namespace PWManager.Data.Loading
             return false;
         }
 
-        public PWManager.Domain.Services.MatchMoveRules GetMoveRules(string id) => Moves.TryGetValue(id, out var move)
+        public PWManager.Domain.Services.MatchMoveRules GetMoveRules(string id) => Moves.TryGetValue(id, out var move) && move.Enabled
             ? new PWManager.Domain.Services.MatchMoveRules
             {
                 Name = move.DisplayName, BrawlingWeight = move.BrawlingWeight, PowerWeight = move.PowerWeight,
                 TechnicalWeight = move.TechnicalWeight, HighFlyingWeight = move.HighFlyingWeight,
-                ExecutionDifficulty = move.ExecutionDifficulty, SellingDifficulty = (float)move.SellingDifficulty
+                ExecutionDifficulty = move.ExecutionDifficulty, SellingDifficulty = (float)move.SellingDifficulty,
+                Kind = move.Kind != PWManager.Domain.Services.MoveKind.Automatic ? move.Kind :
+                    id is "move_011" or "move_012" ? PWManager.Domain.Services.MoveKind.Submission : PWManager.Domain.Services.MoveKind.Automatic,
+                TargetRegion = id == "move_012" ? PWManager.Domain.Services.BodyRegion.Legs :
+                    id == "move_011" ? PWManager.Domain.Services.BodyRegion.Head : move.TargetRegion,
+                Situation = move.Situation, MotionProfile = move.MotionProfile,
+                ExecutionStyle = move.ExecutionStyle,
+                EndPosture = move.EndPosture, TravelDistance = move.TravelDistance
             } : null;
 
         private static IReadOnlyDictionary<string, T> Index<T>(IEnumerable<T> values) where T : StaticDefinition

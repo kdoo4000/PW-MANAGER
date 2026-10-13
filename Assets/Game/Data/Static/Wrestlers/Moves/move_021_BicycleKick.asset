@@ -24,3 +24,17 @@ MonoBehaviour:
   RequiredStat: 0
   RequiredStatValue: 0
   ScenarioGroupId: 
+  Kind: 1
+  TargetRegion: 1
+  Enabled: 1
+  CanUseGenerally: 0
+  CanBeSignature: 1
+  CanBeFinisher: 1
+  TechniqueKey: legacy-move_021
+  AllowedStyleIds: []
+  Action: 8
+  Situation: 5
+  MotionProfile: 5
+  ExecutionStyle: 0
+  EndPosture: 1
+  TravelDistance: 0.07

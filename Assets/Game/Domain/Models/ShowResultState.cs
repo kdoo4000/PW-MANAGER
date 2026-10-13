@@ -35,6 +35,10 @@ namespace PWManager.Domain.Models
         public List<ResultChangeState> WrestlerChanges = new();
         public List<ResultChangeState> FanChanges = new();
         public List<ResultChangeState> StoryChanges = new();
+        public List<StorylineResultChangeState> StorylineChanges = new();
+        public List<StoryCandidateState> StoryCandidates = new();
+        public List<GroupResultChangeState> GroupChanges = new();
+        public List<StoryRelationshipChangeState> RelationshipChanges = new();
         public List<ResultChangeState> TitleChanges = new();
         public List<ResultChangeState> TournamentChanges = new();
         public FanReactionResultState FanExpectation;

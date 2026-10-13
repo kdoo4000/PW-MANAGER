@@ -32,8 +32,9 @@ namespace PWManager.Tests
             Assert.That(WrestlerNameText.Format("Ace", new[] { wrestlers[0], new WrestlerState { Identity = new WrestlerIdentityState { Id = "other", RingName = "Ace" } } }), Is.EqualTo("Ace"));
         }
 
-        [Test]
-        public void InlineLink_OpensCorrectProfileAndReturnsToUnsavedEditor()
+        [TestCase(KeyCode.Return)]
+        [TestCase(KeyCode.Space)]
+        public void InlineLink_OpensCorrectProfileAndReturnsToUnsavedEditor(KeyCode submitKey)
         {
             var previous = DashboardSession.ActiveSave;
             var transient = DashboardSession.IsTransient;
@@ -67,6 +68,24 @@ namespace PWManager.Tests
                 Assert.That(root.Q<Label>("dashboard-page-title").text, Is.EqualTo($"{target.Identity.RingName} / 개요"));
                 Assert.That(editor.ClassListContains("hidden"), Is.True);
                 Assert.That(root.Q("wrestler-profile-content").style.display.value, Is.EqualTo(DisplayStyle.Flex));
+                typeof(DashboardController).GetMethod("NavigateBack", BindingFlags.Instance | BindingFlags.NonPublic).Invoke(dashboard, null);
+                Assert.That(editor.ClassListContains("hidden"), Is.False);
+
+                var names = WrestlerNameText.Create($"{WrestlerNameText.DisplayName(save.Wrestlers[0])} / {WrestlerNameText.DisplayName(target)}", save.Wrestlers);
+                root.Add(names);
+                names.Focus();
+                using (var tab = NavigationMoveEvent.GetPooled(NavigationMoveEvent.Direction.Next, EventModifiers.None))
+                {
+                    tab.target = names;
+                    names.SendEvent(tab);
+                }
+                using (var enter = KeyDownEvent.GetPooled('\0', submitKey, EventModifiers.None))
+                {
+                    enter.target = names;
+                    names.SendEvent(enter);
+                }
+                Assert.That(root.Q<Label>("wp-name").text, Is.EqualTo(target.Identity.RingName));
+                Assert.That(editor.ClassListContains("hidden"), Is.True);
                 typeof(DashboardController).GetMethod("NavigateBack", BindingFlags.Instance | BindingFlags.NonPublic).Invoke(dashboard, null);
                 Assert.That(editor.ClassListContains("hidden"), Is.False);
 

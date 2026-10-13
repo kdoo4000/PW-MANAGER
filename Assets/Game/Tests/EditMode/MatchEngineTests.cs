@@ -14,7 +14,7 @@ namespace PWManager.Tests
         {
             var participants = new[] { Participant("a"), Participant("b") };
             participants[0].Fatigue = 99f;
-            var state = new MatchSimulator(73).Simulate(participants, 600,
+            var state = new MatchSimulator(73, accidentsEnabled: false).Simulate(participants, 600,
                 new MatchEngineBooking { WinnerId = "a", LoserId = "b" });
             Assert.That(state.Events[0].Before.Participants[0].Fatigue, Is.EqualTo(99f));
             for (var i = 0; i < state.Events.Count; i++)
@@ -43,18 +43,18 @@ namespace PWManager.Tests
         [TestCase(MatchFinishType.Disqualification, MatchActionResult.Disqualification)]
         [TestCase(MatchFinishType.CountOut, MatchActionResult.CountOut)]
         [TestCase(MatchFinishType.Draw, MatchActionResult.Draw)]
-        public void BookedSingles_OnlyEndsWithBookedFinish_AtAllottedTime(MatchFinishType finish, MatchActionResult outcome)
+        public void BookedSingles_OnlyEndsWithBookedFinish_WithinFivePercent(MatchFinishType finish, MatchActionResult outcome)
         {
             foreach (var seed in Enumerable.Range(0, 12))
             {
-                MatchEngineState Run() => new MatchSimulator(seed).Simulate(new[] { Participant("a"), Participant("b") }, 600,
+                MatchEngineState Run() => new MatchSimulator(seed, accidentsEnabled: false).Simulate(new[] { Participant("a"), Participant("b") }, 600,
                     new MatchEngineBooking { WinnerId = "b", LoserId = "a", FinishType = finish });
                 var state = Run();
                 Assert.That(state.IsFinished, Is.True);
                 Assert.That(state.IsAborted, Is.False);
                 Assert.That(state.WinnerId, Is.EqualTo(finish == MatchFinishType.Draw ? null : "b"));
-                Assert.That(state.ElapsedSeconds, Is.EqualTo(600));
-                Assert.That(state.Events.Sum(x => x.DurationSeconds), Is.EqualTo(600));
+                Assert.That(state.ElapsedSeconds, finish == MatchFinishType.Draw ? Is.EqualTo(600) : Is.InRange(570, 630));
+                Assert.That(state.Events.Sum(x => x.DurationSeconds), Is.EqualTo(state.ElapsedSeconds));
                 Assert.That(state.Events.All(x => x.DurationSeconds > 0), Is.True);
                 Assert.That(state.Events.Last().Type, Is.EqualTo(MatchActionType.Finish));
                 Assert.That(state.Events.Last().Result, Is.EqualTo(outcome));
@@ -69,11 +69,11 @@ namespace PWManager.Tests
         public void BookedSingles_RejectsInvalidBooking_AndDoesNotInventFinishAtEventLimit()
         {
             var participants = new[] { Participant("a"), Participant("b") };
-            Assert.Throws<ArgumentException>(() => new MatchSimulator(1).Simulate(participants, 600,
+            Assert.Throws<ArgumentException>(() => new MatchSimulator(1, accidentsEnabled: false).Simulate(participants, 600,
                 new MatchEngineBooking { WinnerId = "a", LoserId = "a" }));
-            Assert.Throws<ArgumentException>(() => new MatchSimulator(1).Simulate(participants, 600,
+            Assert.Throws<ArgumentException>(() => new MatchSimulator(1, accidentsEnabled: false).Simulate(participants, 600,
                 new MatchEngineBooking { WinnerId = "missing", LoserId = "b" }));
-            Assert.Throws<ArgumentException>(() => new MatchSimulator(1).Simulate(participants, 600,
+            Assert.Throws<ArgumentException>(() => new MatchSimulator(1, accidentsEnabled: false).Simulate(participants, 600,
                 new MatchEngineBooking { WinnerId = "a", LoserId = "b", FinishType = MatchFinishType.Escape }));
             var result = new MatchSimulator(1, 0).Simulate(participants, 600,
                 new MatchEngineBooking { WinnerId = "a", LoserId = "b" });
@@ -90,7 +90,8 @@ namespace PWManager.Tests
             Assert.That(first.IsAborted, Is.False);
             Assert.That(first.Events.Count, Is.LessThanOrEqualTo(MatchSimulator.MaximumEvents));
             Assert.That(first.Events.Select(Key), Is.EqualTo(second.Events.Select(Key)));
-            Assert.That(first.Events, Has.All.Matches<MatchEngineEvent>(x => x.PerformerId != null && x.ReceiverId != null && x.CommentaryKey != null));
+            Assert.That(first.Events, Has.All.Matches<MatchEngineEvent>(x => x.CommentaryKey != null &&
+                (x.PerformerId != null && x.ReceiverId != null || x.Type == MatchActionType.Finish && x.Result == MatchActionResult.Draw)));
             Assert.That(first.Events.Select(x => x.Phase).Distinct().Count(), Is.GreaterThan(1));
         }
 
@@ -142,7 +143,7 @@ namespace PWManager.Tests
         public void ThreeWayMatch_UsesMultiplePerformersAndTargets()
         {
             var participants = new[] { Participant("a"), Participant("b"), Participant("c") };
-            var state = new MatchSimulator(91).Simulate(participants, 480);
+            var state = new MatchSimulator(91, accidentsEnabled: false).Simulate(participants, 480);
             Assert.That(state.IsFinished || state.IsAborted, Is.True);
             Assert.That(state.Events.Select(x => x.PerformerId).Distinct().Count(), Is.GreaterThan(1));
 
@@ -168,7 +169,7 @@ namespace PWManager.Tests
             decisiveOpening.ElapsedSeconds = 60;
             decisiveOpening.Events.Add(new MatchEngineEvent { Phase = MatchPhase.Opening, Type = MatchActionType.Finisher, Impact = 18f, IsMajorMoment = true });
             Assert.That(CanTransition(MatchPhase.Opening, MatchPhase.Climax, decisiveOpening), Is.True);
-            Assert.That(CanTransition(MatchPhase.Opening, MatchPhase.Finish, decisiveOpening), Is.True);
+            Assert.That(CanTransition(MatchPhase.Opening, MatchPhase.Finish, decisiveOpening), Is.False);
 
             var dramatic = State(MatchPhase.Climax);
             dramatic.ElapsedSeconds = 500;
@@ -217,7 +218,9 @@ namespace PWManager.Tests
             var basic = new MatchEngineAction { Type = MatchActionType.BasicStrike, PerformerId = "a", ReceiverId = "b" };
             var opening = new OpeningMatchState();
             Assert.That(ActionEvaluator.Score(state, pin, opening), Is.LessThan(ActionEvaluator.Score(state, pin)));
-            Assert.That(ActionEvaluator.Score(state, basic, opening), Is.GreaterThan(ActionEvaluator.Score(state, basic)));
+            Assert.That(ActionEvaluator.Score(state, basic, opening), Is.LessThan(ActionEvaluator.Score(state, basic)));
+            var tieUp = new MatchEngineAction { Type = MatchActionType.TieUp, PerformerId = "a", ReceiverId = "b" };
+            Assert.That(ActionEvaluator.Score(state, tieUp, opening), Is.GreaterThan(ActionEvaluator.Score(state, tieUp)));
         }
 
         [Test]
@@ -229,7 +232,7 @@ namespace PWManager.Tests
             Assert.That(sequences.Any(x => x.Contains(nameof(MatchPhase.Comeback)) || x.Contains(nameof(MatchPhase.BackAndForth)) || x.Contains(nameof(MatchPhase.Climax))), Is.True);
         }
 
-        private static MatchEngineState Simulate(int seed) => new MatchSimulator(seed).Simulate(Participant("a"), Participant("b"), 480);
+        private static MatchEngineState Simulate(int seed) => new MatchSimulator(seed, accidentsEnabled: false).Simulate(Participant("a"), Participant("b"), 480);
         private static MatchEngineState State(MatchPhase phase = MatchPhase.Climax) => new() { Participants = new List<MatchEngineParticipant> { Participant("a"), Participant("b") }, Phase = phase };
         private static bool CanTransition(MatchPhase source, MatchPhase target, MatchEngineState state)
         {

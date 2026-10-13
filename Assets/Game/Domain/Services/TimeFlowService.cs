@@ -142,6 +142,7 @@ namespace PWManager.Domain.Services
 
                 save.CurrentDate = nextDate;
                 ProcessContracts(save, nextDate, result.ProcessedIds);
+                foreach (var wrestler in save.Wrestlers.Where(x => x?.Condition != null)) MatchHealth.Recover(wrestler, nextDate);
                 foreach (var wrestler in save.Wrestlers.Where(x => x?.Condition != null && x.Condition.InjuryStatus == InjuryStatus.None))
                     wrestler.Condition.Condition = Math.Min(100f, wrestler.Condition.Condition + 3f);
                 FanAudienceService.AdvanceWeek(save, nextDate);
@@ -191,7 +192,7 @@ namespace PWManager.Domain.Services
                     }
                 }
 
-                if (date.Equals(contract.EndDate) && IsPayable(contract.Status))
+                if (date.CompareTo(contract.EndDate) > 0 && IsPayable(contract.Status))
                 {
                     contract.Status = ContractStatus.Expired;
                     var sourceId = $"contract-expiry:{contract.Id}:{DateKey(date)}";

@@ -5,11 +5,20 @@ using PWManager.Domain.Models;
 
 namespace PWManager.Domain.Services
 {
+    public enum MoveExecutionStyle { Stationary, Running, Aerial }
+
     public sealed class MatchMoveRules
     {
         public string Name;
+        public MoveKind Kind;
+        public BodyRegion TargetRegion = BodyRegion.Body;
         public float BrawlingWeight, PowerWeight, TechnicalWeight, HighFlyingWeight;
         public float ExecutionDifficulty, SellingDifficulty;
+        public MoveSituation Situation;
+        public MoveMotionProfile MotionProfile;
+        public MoveExecutionStyle ExecutionStyle;
+        public MatchPosture EndPosture;
+        public float TravelDistance = .15f;
     }
 
     public static class MatchMoveService
@@ -35,7 +44,7 @@ namespace PWManager.Domain.Services
                         ExecutionScore = Adjust(a.Brawling * move.BrawlingWeight + a.Power * move.PowerWeight +
                             a.Technical * move.TechnicalWeight + a.HighFlying * move.HighFlyingWeight, actor, match),
                         SellingScore = Adjust(target.Attributes.Selling, target, match),
-                        Result = matchEvent.Result == MatchActionResult.FullSuccess ? SpotExecutionResult.Success : SpotExecutionResult.Failure
+                        Result = matchEvent.ExecutionQuality >= .75f ? SpotExecutionResult.Success : SpotExecutionResult.Failure
                     });
                 }
                 return results;
