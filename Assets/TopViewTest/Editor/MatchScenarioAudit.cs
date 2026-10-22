@@ -530,7 +530,11 @@ public static class MatchScenarioAudit
         for (int i = 0; i < result.EngineState.Events.Count; i++)
         {
             var e = result.EngineState.Events[i];
-            log.AppendLine($"{i + 1:000} | {e.MatchTimeSeconds / 60:00}:{e.MatchTimeSeconds % 60:00} | 공방 {e.ExchangeId} | {e.Type}/{e.Result} | {PWManager.Domain.Services.MatchEventNarration.Text(e, result, Name)}");
+            if (!MatchEventNarration.ShouldNarrate(e, result)) continue;
+            int end = i;
+            while (end + 1 < result.EngineState.Events.Count && MatchEventNarration.CommentaryIndex(result, end + 1) == i) end++;
+            var index = end > i ? $"{i + 1:000}~{end + 1:000}" : $"{i + 1:000}";
+            log.AppendLine($"{index} | {e.MatchTimeSeconds / 60:00}:{e.MatchTimeSeconds % 60:00} | 공방 {e.ExchangeId} | {e.Type}/{e.Result} | {PWManager.Domain.Services.MatchEventNarration.Text(e, result, Name)}");
             log.AppendLine();
         }
         log.AppendLine($"결과: {(result.WinnerId == null ? "무승부" : Name(result.WinnerId))}, {result.FinishType}, {result.EngineState.ElapsedSeconds}초, 평가 {result.FinalMatchQuality:F2}/20");

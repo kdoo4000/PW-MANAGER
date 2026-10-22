@@ -88,6 +88,9 @@ namespace PWManager.Domain.Models
         public MatchFinishType FinishType;
         public bool WasStoppedBySpot;
         public bool WasStoppedByInjury;
+        public bool WasStoppedByExecution;
+        public string InterruptionReason;
+        public float PerformedMatchQuality;
         public string CancellationReason;
         public List<MatchInjuryChangeState> InjuryChanges = new();
         public float FinalMatchQuality;

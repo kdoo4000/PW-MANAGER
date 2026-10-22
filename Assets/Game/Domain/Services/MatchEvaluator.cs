@@ -103,10 +103,10 @@ namespace PWManager.Domain.Services
                 var runtimeRules = new MatchRuntimeRules
                 {
                     Tag = minimumTeamCount > 0,
-                    Tornado = minimumTeamCount > 0 && match.Tornado,
-                    Elimination = match.Elimination,
-                    IronMan = match.IronMan,
-                    FallsToWin = Math.Max(1, match.FallsToWin),
+                    Tornado = minimumTeamCount > 0 && (match.Tornado || gimmick?.Tornado == true),
+                    Elimination = match.Elimination || gimmick?.Elimination == true,
+                    IronMan = match.IronMan || gimmick?.IronMan == true,
+                    FallsToWin = gimmick?.TwoOutOfThree == true ? 2 : Math.Max(1, match.FallsToWin),
                     DominantSideId = match.DominantSideId,
                     OpeningStyle = match.OpeningStyle,
                     OpeningHostility = MatchOpening.Hostility(save, sides),
@@ -150,11 +150,12 @@ namespace PWManager.Domain.Services
                         WinnerId = finishPerformerId, LoserId = loserTargetId, FinishType = finishType
                     }, runtimeRules, spots);
                 if (!engineState.IsFinished || engineState.IsAborted) throw new InvalidOperationException(engineState.FailureReason);
-                if (engineState.WasStoppedByInjury)
+                if (engineState.WasStoppedByInjury || engineState.WasStoppedByExecution)
                 {
-                    spots = spots.Where((spot, index) => engineState.AppliedSpots.Contains(index)).ToList();
-                    endingSpot = spots.FirstOrDefault(x => x.ScriptedEffect != SpotScriptedEffect.None);
+                    foreach (var spot in spots.Where((spot, index) => !engineState.AppliedSpots.Contains(index)))
+                    { spot.WasSkipped = true; spot.SkipReason = "경기 중단으로 미실행"; spot.FinalSpotScore = 0; }
                 }
+                endingSpot = spots.FirstOrDefault(x => !x.WasSkipped && x.ScriptedEffect != SpotScriptedEffect.None);
                 finishPerformerId = engineState.WinnerId;
                 finishType = engineState.ActualFinish;
                 actualMatchDuration = (int)Math.Ceiling(engineState.ElapsedSeconds / 60d);
@@ -163,6 +164,16 @@ namespace PWManager.Domain.Services
                     participantIds.Contains(engineLoserId) ? engineLoserId : loserTargetId;
             }
 
+            if (engineState == null && endingSpot?.ScriptedEffect == SpotScriptedEffect.MatchStopped)
+            {
+                int stopIndex = spots.IndexOf(endingSpot);
+                for (int i = 0; i < spots.Count; i++)
+                {
+                    var spot = spots[i];
+                    if (i <= stopIndex) { spot.WasApplied = true; continue; }
+                    spot.WasSkipped = true; spot.SkipReason = "경기 무산으로 미실행"; spot.FinalSpotScore = 0;
+                }
+            }
             var winningSide = finishType == MatchFinishType.Draw ? null : sides.Single(x => x.MemberIds.Contains(finishPerformerId));
             var losingSide = string.IsNullOrEmpty(loserTargetId) ? null : sides.Single(x => x.MemberIds.Contains(loserTargetId));
             var evaluationMinutes = engineState == null ? actualMatchDuration : engineState.ElapsedSeconds / 60f;
@@ -181,7 +192,7 @@ namespace PWManager.Domain.Services
             baseQuality += engineContribution;
             var durationMultiplier = GetDurationMultiplier(baseQuality, evaluationMinutes);
             var durationContribution = baseQuality * durationMultiplier - baseQuality;
-            spotScore += spots.Sum(x => x.FinalSpotScore);
+            spotScore += spots.Where(x => !x.WasSkipped).Sum(x => x.FinalSpotScore);
             var finalQuality = Clamp(baseQuality * durationMultiplier + spotScore, 0f, 20f);
             var result = new MatchResultState
             {
@@ -201,8 +212,11 @@ namespace PWManager.Domain.Services
                 FinishType = finishType,
                 WasStoppedBySpot = endingSpot?.ScriptedEffect == SpotScriptedEffect.MatchStopped,
                 WasStoppedByInjury = engineState?.WasStoppedByInjury == true,
-                FinalMatchQuality = finalQuality,
-                CriticReview = CriticReviewCalculator.Match(finalQuality),
+                WasStoppedByExecution = engineState?.WasStoppedByExecution == true,
+                InterruptionReason = engineState?.WasStoppedByExecution == true ? engineState.FailureReason : null,
+                PerformedMatchQuality = finalQuality,
+                FinalMatchQuality = engineState?.WasStoppedByExecution == true ? 0 : finalQuality,
+                CriticReview = engineState?.WasStoppedByExecution == true ? null : CriticReviewCalculator.Match(finalQuality),
                 TechnicalEvaluation = new TechnicalEvaluationBreakdownState
                 {
                     Performance = routineExecution,
@@ -238,7 +252,8 @@ namespace PWManager.Domain.Services
                 if (planned == null || !participantIds.Contains(planned.WrestlerId) || planned.Severity == InjuryStatus.None ||
                     !Enum.IsDefined(typeof(InjuryStatus), planned.Severity) || !Enum.IsDefined(typeof(BodyRegion), planned.Region) || planned.Days < 1 || planned.Days > 365)
                     throw new InvalidOperationException("Invalid planned story injury.");
-                if (actualMatchDuration > 0) result.InjuryChanges.Add(new MatchInjuryChangeState { SourceResultId = result.Id,
+                if (actualMatchDuration > 0 && engineState?.WasStoppedByExecution != true && engineState?.WasStoppedByInjury != true)
+                    result.InjuryChanges.Add(new MatchInjuryChangeState { SourceResultId = result.Id,
                     WrestlerId = planned.WrestlerId, IsKayfabe = true, Severity = planned.Severity,
                     Region = planned.Region, RecoveryDays = planned.Days, Absent = planned.Absent });
             }
@@ -278,8 +293,10 @@ namespace PWManager.Domain.Services
             else if (sides.Count != ids.Count || sides.Any(x => x.MemberIds.Count != 1))
                 throw new InvalidOperationException("Individual match sides are invalid.");
             if (match.FallsToWin < 1) throw new InvalidOperationException("Falls to win must be at least one.");
-            if (match.IronMan && match.Elimination) throw new InvalidOperationException("Iron Man and elimination rules cannot be combined.");
-            if (match.Tornado && minimumTeamCount == 0) throw new InvalidOperationException("Tornado rules require a tag match.");
+            matchTypeRules.TryGetGimmickRules(match.MatchGimmickId ?? "gimmick_000", out var format);
+            if (format.TwoOutOfThree && sides.Count != 2) throw new InvalidOperationException("Two out of three falls requires exactly two sides.");
+            if ((match.IronMan || format.IronMan) && (match.Elimination || format.Elimination)) throw new InvalidOperationException("Iron Man and elimination rules cannot be combined.");
+            if ((match.Tornado || format.Tornado) && minimumTeamCount == 0) throw new InvalidOperationException("Tornado rules require a tag match.");
             if (!string.IsNullOrEmpty(match.DominantSideId) && sides.All(x => x.Id != match.DominantSideId))
                 throw new InvalidOperationException("Dominant side must be one of the match sides.");
             var finishPerformerId = string.IsNullOrEmpty(match.FinishPerformerId) ? match.WinnerId : match.FinishPerformerId;
@@ -492,6 +509,19 @@ namespace PWManager.Domain.Services
                 decisions.Any(p => p.PerformerId == e.PerformerId && p.MatchTimeSeconds <= e.MatchTimeSeconds &&
                     p.MatchTimeSeconds >= e.MatchTimeSeconds - 45 && p.IsPreparation && p.GoalMoveId == e.GoalMoveId)) * 20f / finishingAttacks.Count;
             result.ObservedStructure = (transitionQuality + continuity + finish) / 3;
+            var history = new Dictionary<string, List<string>>();
+            int repeated = 0, observed = 0;
+            foreach (var attack in attacks.Where(e => !e.IntentionalCombination && !string.IsNullOrEmpty(e.TechniqueId)))
+            {
+                string key = attack.PerformerId + ":" + attack.ReceiverId;
+                if (!history.TryGetValue(key, out var recent)) history[key] = recent = new List<string>();
+                if (recent.Count(id => id == attack.TechniqueId) >= 2) repeated++;
+                recent.Add(attack.TechniqueId);
+                if (recent.Count > 4) recent.RemoveAt(0);
+                observed++;
+            }
+            if (observed > 0 && state.Participants.Count == 2 && !state.Rules.Tag)
+                result.ObservedStructure = Math.Max(0, result.ObservedStructure - repeated * 8f / observed);
             return result;
         }
 

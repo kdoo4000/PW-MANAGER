@@ -110,12 +110,12 @@ namespace PWManager.Presentation
                     segment.Title = string.Join(" / ", segment.Participants.Select(Name));
                     var winners = new[] { match.FinishPerformerId ?? match.WinnerId }.Concat(match.IndirectWinnerIds ?? new List<string>())
                         .Where(x => !string.IsNullOrEmpty(x)).Distinct().Select(Name);
-                    segment.Result = !string.IsNullOrEmpty(match.CancellationReason) ? match.CancellationReason : (match.WasStoppedByInjury ? "실제 부상으로 경기 중단" :
-                        match.FinishType == MatchFinishType.Draw ? "무승부" : $"{string.Join(" & ", winners)} 승리");
+                    segment.Result = !string.IsNullOrEmpty(match.CancellationReason) ? match.CancellationReason : (match.WasStoppedByExecution ? "마무리 진행 불가로 경기 중단 · 승자 없음" : match.WasStoppedByInjury ? "실제 부상으로 경기 중단" :
+                        match.WasStoppedBySpot ? "경기 중단 · 승자 없음" : match.FinishType == MatchFinishType.Draw ? "무승부" : $"{string.Join(" & ", winners)} 승리");
                     if (match.CriticReview != null) segment.Result += $" · ★ {match.CriticReview.DisplayedStars:0.##}";
                     foreach (var spot in match.SpotResults ?? new List<SpotResultState>())
                         segment.Result += $"\n특수 스팟 · {SpecialMatchSpotCatalog.Find(spot.SpotId)?.Name ?? "스팟"} · {MatchSpotEvaluator.ResultText(spot)}" +
-                            (spot.Result >= SpotExecutionResult.Success && spot.FinalSpotScore < 0 ? " · 반복 역반응" : spot.RepeatCount > 0 ? " · 반복 사용" : string.Empty);
+                            (spot.WasSkipped ? string.Empty : spot.Result >= SpotExecutionResult.Success && spot.FinalSpotScore < 0 ? " · 반복 역반응" : spot.RepeatCount > 0 ? " · 반복 사용" : string.Empty);
                 }
                 else
                 {
@@ -190,9 +190,11 @@ namespace PWManager.Presentation
                 _ => "해설"
             };
             Text("simulation-speaker", speaker);
-            Text("simulation-commentary", line.Text);
+            var cast = save.Wrestlers.Where(w => segment.Participants.Contains(w.Id) || w.Id == line.SpeakerId ||
+                w.Id == CurrentBeat?.ActorId || w.Id == CurrentBeat?.TargetId || line.Text.Contains(WrestlerNameText.DisplayName(w))).ToList();
+            WrestlerNameText.Set(screen.Q<Label>("simulation-commentary"), line.Text, cast);
             var log = screen.Q<ScrollView>("simulation-log");
-            var entry = WrestlerNameText.Create($"{speaker} · {line.Text}", save.Wrestlers);
+            var entry = WrestlerNameText.Create($"{speaker} · {line.Text}", cast);
             entry.AddToClassList("sim-log-line");
             log.Add(entry);
             log.schedule.Execute(() => { if (entry.panel != null) log.ScrollTo(entry); });

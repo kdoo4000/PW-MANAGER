@@ -57,6 +57,7 @@ namespace PWManager.Domain.Services
             ValidateEventTarget(save, showId, plannedDuration);
             match.Id = string.IsNullOrEmpty(match.Id) ? createId() : match.Id;
             if (string.IsNullOrEmpty(match.MatchGimmickId)) match.MatchGimmickId = "gimmick_000";
+            if (matchTypeRules.TryGetGimmickRules(match.MatchGimmickId, out var gimmick)) gimmick.ApplyFormat(match);
             ExpandLegacyMatchPlan(match);
             var participantIds = MatchParticipants(match);
             if (participantIds.Count > 0 && participantIds.Distinct(StringComparer.Ordinal).Count() != participantIds.Count)
@@ -87,6 +88,7 @@ namespace PWManager.Domain.Services
 
             replacement.Id = showEvent.DetailId;
             if (string.IsNullOrEmpty(replacement.MatchGimmickId)) replacement.MatchGimmickId = "gimmick_000";
+            if (matchTypeRules.TryGetGimmickRules(replacement.MatchGimmickId, out var gimmick)) gimmick.ApplyFormat(replacement);
             ExpandLegacyMatchPlan(replacement);
             var participantIds = MatchParticipants(replacement);
             if (participantIds.Count == 0 || participantIds.Distinct(StringComparer.Ordinal).Count() != participantIds.Count)
@@ -223,8 +225,10 @@ namespace PWManager.Domain.Services
             else if (sides.Count != participantCount || sides.Any(x => x?.MemberIds?.Count != 1))
                 Error(issues, "match.sides", "An individual match requires one participant per side.", match.Id);
             if (match.FallsToWin < 1) Error(issues, "match.falls", "Falls to win must be at least one.", match.Id);
-            if (match.IronMan && match.Elimination) Error(issues, "match.rules", "Iron Man and elimination rules cannot be combined.", match.Id);
-            if (match.Tornado && minimumTeamCount == 0) Error(issues, "match.tornado", "Tornado rules require a tag match.", match.Id);
+            matchTypeRules.TryGetGimmickRules(match.MatchGimmickId ?? "gimmick_000", out var format);
+            if (format.TwoOutOfThree && sides.Count != 2) Error(issues, "match.two-out-of-three", "Two out of three falls requires exactly two sides.", match.Id);
+            if ((match.IronMan || format.IronMan) && (match.Elimination || format.Elimination)) Error(issues, "match.rules", "Iron Man and elimination rules cannot be combined.", match.Id);
+            if ((match.Tornado || format.Tornado) && minimumTeamCount == 0) Error(issues, "match.tornado", "Tornado rules require a tag match.", match.Id);
             if (!string.IsNullOrEmpty(match.DominantSideId) && sides.All(x => x?.Id != match.DominantSideId))
                 Error(issues, "match.dominant-side", "Dominant side must be one of the match sides.", match.Id);
             MatchGimmickRules? gimmickRules = null;

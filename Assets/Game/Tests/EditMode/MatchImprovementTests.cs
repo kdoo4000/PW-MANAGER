@@ -14,6 +14,19 @@ namespace PWManager.Tests
                 HighFlying = 12, Selling = 12, Stamina = 18, RingPsychology = 18, RingImprovisation = 12 } };
 
         [Test]
+        public void PreparationBudgetDependsOnCurrentWorkInsteadOfFixedEightyFiveSeconds()
+        {
+            var a = P("a"); var b = P("b");
+            var state = new MatchEngineState { Participants = new() { a, b }, TargetDurationSeconds = 300,
+                Booking = new() { WinnerId = "a", LoserId = "b" } };
+            int ready = MatchPhysics.BookedPreparationSeconds(state);
+            Assert.That(ready, Is.LessThan(85));
+            a.IsDowned = true; a.Posture = MatchPosture.Supine; a.Fatigue = 90;
+            b.Position = MatchPosition.Corner; b.RingX = .92f;
+            Assert.That(MatchPhysics.BookedPreparationSeconds(state), Is.GreaterThan(ready));
+        }
+
+        [Test]
         public void BookedAttackKeepsItsDurationAndCanFinishAfterTheTarget()
         {
             var a = P("a"); a.FinisherMoveId = "named-finish";
@@ -28,7 +41,7 @@ namespace PWManager.Tests
             Assert.That(simulator.Step(s).Type, Is.EqualTo(MatchActionType.Cover));
             var count = simulator.Step(s);
             Assert.That(count.DurationSeconds, Is.EqualTo(3));
-            Assert.That(s.IsFinished && !s.IsAborted, Is.True);
+            Assert.That(s.IsFinished && !s.IsAborted && !s.WasStoppedByExecution, Is.True);
             Assert.That(s.ElapsedSeconds, Is.EqualTo(302));
         }
 
@@ -42,7 +55,7 @@ namespace PWManager.Tests
             {
                 var s = new MatchSimulator(seed, accidentsEnabled: false).Simulate(new[] { P("a"), P("b") }, duration,
                     new() { WinnerId = "a", LoserId = "b" });
-                Assert.That(s.IsFinished && !s.IsAborted, Is.True, s.FailureReason);
+                Assert.That(s.IsFinished && !s.IsAborted && !s.WasStoppedByExecution, Is.True, s.FailureReason);
                 Assert.That(s.ElapsedSeconds, Is.InRange(duration * .95, duration * 1.05));
                 Assert.That(s.Events.Last().DurationSeconds, Is.EqualTo(3));
                 times.Add(s.ElapsedSeconds);
@@ -102,7 +115,8 @@ namespace PWManager.Tests
                 var a = P("a"); a.FinisherMoveId = "move_023";
                 var s = new MatchSimulator(seed, accidentsEnabled: false, findMove: id => MatchTechniques.Find(id)?.Rules).Simulate(new[] { a, P("b") }, duration,
                     new() { WinnerId = "a", LoserId = "b" });
-                Assert.That(s.IsFinished && !s.IsAborted, Is.True, s.FailureReason);
+                Assert.That(s.IsFinished && !s.IsAborted && !s.WasStoppedByExecution, Is.True, s.FailureReason +
+                    $" seed={seed}: " + string.Join(" | ", s.Events.TakeLast(20).Select(e => $"{e.MatchTimeSeconds}:{e.Type}/{e.Result}/{e.MoveId}/{e.Detail}")));
                 Assert.That(s.ElapsedSeconds, Is.InRange(duration * .95, duration * 1.05));
                 var hit = s.Events.FindLastIndex(e => e.TechniqueId == "move_023" && e.Impact > 0);
                 Assert.That(hit, Is.GreaterThanOrEqualTo(0));
@@ -163,7 +177,7 @@ namespace PWManager.Tests
             {
                 var s = new MatchSimulator(seed, accidentsEnabled: false).Simulate(new[] { P("a"), P("b") }, 600,
                     new MatchEngineBooking { WinnerId = "a", LoserId = "b", FinishType = finish });
-                Assert.That(s.IsFinished && !s.IsAborted, Is.True, s.FailureReason);
+                Assert.That(s.IsFinished && !s.IsAborted && !s.WasStoppedByExecution, Is.True, s.FailureReason);
                 Assert.That(s.ElapsedSeconds, Is.InRange(600 * .95, 600 * 1.05));
                 Assert.That(s.Events.Any(e => e.Detail == "delayed-cover"), Is.False);
                 Assert.That(s.Events.Last().DurationSeconds, Is.EqualTo(3));
@@ -200,7 +214,7 @@ namespace PWManager.Tests
             var s = new MatchSimulator(3, accidentsEnabled: false, findMove: _ => new MatchMoveRules { Kind = MoveKind.Aerial,
                 Situation = MoveSituation.DivingStanding, EndPosture = MatchPosture.Supine }).Simulate(new[] { a, P("b") }, 300,
                 new MatchEngineBooking { WinnerId = "a", LoserId = "b", FinishType = MatchFinishType.Pinfall });
-            Assert.That(s.IsFinished && !s.IsAborted, Is.True, s.FailureReason);
+            Assert.That(s.IsFinished && !s.IsAborted && !s.WasStoppedByExecution, Is.True, s.FailureReason);
             Assert.That(s.Events.Last().DurationSeconds, Is.EqualTo(3));
         }
 
@@ -307,7 +321,7 @@ namespace PWManager.Tests
             Assert.That(MatchTechniques.Candidates(MatchActionType.Submission, a, b), Is.Empty);
             var state = new MatchSimulator(1, accidentsEnabled: false).Simulate(new[] { a, b }, 300,
                 new MatchEngineBooking { WinnerId = "a", LoserId = "b", FinishType = MatchFinishType.Submission });
-            Assert.That(state.IsAborted, Is.True);
+            Assert.That(state.WasStoppedByExecution, Is.True);
             Assert.That(state.Events.Any(e => e.PerformerId == a.Id && e.Type == MatchActionType.Submission && e.Impact > 0), Is.False);
         }
 
@@ -424,7 +438,7 @@ namespace PWManager.Tests
             var a = P("a"); a.Fatigue = 80;
             var state = new MatchSimulator(7, accidentsEnabled: false).Simulate(new[] { a, P("b") }, 900,
                 new() { WinnerId = "a", LoserId = "b" });
-            Assert.That(state.IsFinished && !state.IsAborted, Is.True, state.FailureReason);
+            Assert.That(state.IsFinished && !state.IsAborted && !state.WasStoppedByExecution, Is.True, state.FailureReason);
             Assert.That(a.Fatigue, Is.GreaterThanOrEqualTo(80));
         }
 
@@ -446,7 +460,7 @@ namespace PWManager.Tests
         {
             var state = new MatchSimulator(7, accidentsEnabled: false).Simulate(new[] { P("a"), P("b"), P("c"), P("d") }, 600,
                 new() { WinnerId = "a", LoserId = "b" });
-            Assert.That(state.IsFinished && !state.IsAborted, Is.True, state.FailureReason);
+            Assert.That(state.IsFinished && !state.IsAborted && !state.WasStoppedByExecution, Is.True, state.FailureReason);
             var cover = state.Events.Last(e => e.Type == MatchActionType.Cover);
             Assert.That(cover.Before.Participants.Where(p => p.Id != "a" && p.Id != "b")
                 .All(p => p.IsDowned || p.IsEliminated || p.Stun >= 12 || p.Position == MatchPosition.Outside), Is.True);

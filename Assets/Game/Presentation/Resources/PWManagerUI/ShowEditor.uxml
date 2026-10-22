@@ -39,10 +39,6 @@
                     <ui:DropdownField name="show-editor-loser" label="패배 대상" class="show-editor-field"/>
                 </ui:VisualElement>
                 <ui:VisualElement class="show-editor-finish-row">
-                    <ui:IntegerField name="show-editor-falls-to-win" label="승리에 필요한 폴" value="1" class="show-editor-field"/>
-                    <ui:Toggle name="show-editor-iron-man" label="아이언맨 방식" class="show-editor-field"/>
-                    <ui:Toggle name="show-editor-elimination" label="탈락 방식" class="show-editor-field"/>
-                    <ui:Toggle name="show-editor-tornado" label="토네이도 태그" class="show-editor-field"/>
                     <ui:DropdownField name="show-editor-dominant-side" label="경기 주도 선수 / 팀" class="show-editor-field"/>
                 </ui:VisualElement>
             </ui:VisualElement>

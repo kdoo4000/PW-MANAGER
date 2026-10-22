@@ -178,10 +178,10 @@ namespace PWManager.Domain.Services
             MoveSituation.RingsideGrounded or MoveSituation.DoubleTeamGrounded or MoveSituation.GroundProne or MoveSituation.GroundSeated or MoveSituation.GroundKneeling or
             MoveSituation.DivingOutsideGrounded or MoveSituation.SpringboardOutsideGrounded;
 
-        public static bool FitsSituation(MoveSituation situation, MatchEngineParticipant actor, MatchEngineParticipant target)
+        public static bool FitsSituation(MoveSituation situation, MatchEngineParticipant actor, MatchEngineParticipant target, MatchPosture? targetPosture = null)
         {
             if (situation == MoveSituation.Automatic) return true;
-            if (IsGrounded(situation) != target.IsDowned) return false;
+            if (IsGrounded(situation) != (targetPosture.HasValue ? targetPosture != MatchPosture.Standing : target.IsDowned)) return false;
             if (IsOutsideDive(situation)) return MatchPhysics.InRing(actor) && target.Position == MatchPosition.Outside &&
                 (!IsRopeDive(situation) || actor.Position != MatchPosition.TopRope);
             if (situation is MoveSituation.RingsideStanding or MoveSituation.RingsideGrounded or MoveSituation.Table)
@@ -190,20 +190,20 @@ namespace PWManager.Domain.Services
             if (IsRear(situation)) return MatchMovement.IsBehind(actor, target);
             return situation switch
             {
-                MoveSituation.GroundProne => target.Posture == MatchPosture.Prone,
-                MoveSituation.GroundSeated => target.Posture == MatchPosture.Seated,
-                MoveSituation.GroundKneeling => target.Posture == MatchPosture.Kneeling,
+                MoveSituation.GroundProne => (targetPosture ?? target.Posture) == MatchPosture.Prone,
+                MoveSituation.GroundSeated => (targetPosture ?? target.Posture) == MatchPosture.Seated,
+                MoveSituation.GroundKneeling => (targetPosture ?? target.Posture) == MatchPosture.Kneeling,
                 _ => true
             };
         }
 
-        public static bool FitsSituation(MatchMoveRules move, MatchEngineParticipant actor, MatchEngineParticipant target)
+        public static bool FitsSituation(MatchMoveRules move, MatchEngineParticipant actor, MatchEngineParticipant target, MatchPosture? targetPosture = null)
         {
-            if (!FitsSituation(move.Situation, actor, target)) return false;
+            if (!FitsSituation(move.Situation, actor, target, targetPosture)) return false;
             bool flatTarget = move.MotionProfile == MoveMotionProfile.GroundDrop || move.Situation is
                 MoveSituation.RunningGrounded or MoveSituation.DivingGrounded or MoveSituation.DoubleTeamGrounded;
             // Legacy callers set IsDowned before movement normalizes Standing to Supine.
-            if (flatTarget && target.Posture is MatchPosture.Seated or MatchPosture.Kneeling) return false;
+            if (flatTarget && (targetPosture ?? target.Posture) is MatchPosture.Seated or MatchPosture.Kneeling) return false;
             return move.MotionProfile != MoveMotionProfile.GroundDrop && move.Situation != MoveSituation.RunningGrounded ||
                 !MatchMovement.CanReachRopes(target);
         }
@@ -216,10 +216,11 @@ namespace PWManager.Domain.Services
         public static bool CanExecute(MatchMoveRules move, MatchEngineParticipant actor) => MatchHealth.CanUse(move, actor) &&
             (move == null || !IsOutsideDive(move.Situation) || actor.Attributes.HighFlying >= 10 && actor.Fatigue < 75);
 
-        public static List<MatchTechnique> Candidates(MatchActionType action, MatchEngineParticipant actor, MatchEngineParticipant target) =>
+        public static List<MatchTechnique> Candidates(MatchActionType action, MatchEngineParticipant actor, MatchEngineParticipant target, MatchPosture? targetPosture = null) =>
             All.Where(x => x.Enabled && x.CanUseGenerally && (x.Rules.Situation == MoveSituation.Automatic || IsSupported(x.Rules.Situation)) &&
-                x.Action == action && x.GroundedTarget == target.IsDowned && FitsSituation(x.Rules, actor, target) && x.AllowsStyle(actor.WrestlingStyleId) && x.MeetsRequirement(actor.Attributes) &&
+                x.Action == action && x.GroundedTarget == (targetPosture.HasValue ? targetPosture != MatchPosture.Standing : target.IsDowned) && FitsSituation(x.Rules, actor, target, targetPosture) && x.AllowsStyle(actor.WrestlingStyleId) && x.MeetsRequirement(actor.Attributes) &&
                 (action is not (MatchActionType.LimbAttack or MatchActionType.Submission) || x.Rules.TargetRegion == actor.TargetRegion) &&
+                (action != MatchActionType.Submission || !actor.IsDowned || MatchMoveMotion.ActorEndPosture(x.Id) != MatchPosture.Standing) &&
                 CanExecute(x.Rules, actor) && MatchHealth.CanReceive(x.Rules, target)).ToList();
 
         public static MatchTechnique Select(MatchEngineState state, MatchActionType action, MatchEngineParticipant actor,
@@ -227,6 +228,8 @@ namespace PWManager.Domain.Services
         {
             var candidates = Candidates(action, actor, target);
             if (candidates.Count == 0) throw new InvalidOperationException($"No general technique fits {action} and the target posture.");
+            var recent = state.Events.Where(x => x.PerformerId == actor.Id && x.ReceiverId == target.Id &&
+                x.IsPhysicalAttack && !x.IntentionalCombination && !string.IsNullOrEmpty(x.TechniqueId)).TakeLast(4).ToList();
             var last = state.Events.LastOrDefault(x => x.PerformerId == actor.Id && !string.IsNullOrEmpty(x.TechniqueId))?.TechniqueId;
             // Attribute weights give the shared pool a style without duplicating wrestler catalogs.
             var weights = candidates.Select(x => Math.Pow(2 + actor.Attributes.Brawling * x.Rules.BrawlingWeight +
@@ -234,8 +237,11 @@ namespace PWManager.Domain.Services
                 actor.Attributes.HighFlying * x.Rules.HighFlyingWeight, 2) *
                 (IsRear(x.Rules.Situation)
                     ? 1 + actor.Attributes.RingPsychology * .15f : 1) *
-                (candidates.Count > 1 && (x.Id == last || x.Key == last) && state.Exchange?.Kind is not (ExchangeKind.GripCombo or ExchangeKind.Hold or ExchangeKind.Chain)
-                    ? MatchPhysics.Damage(target, actor.TargetRegion) >= 60 ? .25 : .9 : 1)).ToArray();
+                (candidates.Count > 1 && state.Exchange?.Kind is not (ExchangeKind.GripCombo or ExchangeKind.Hold or ExchangeKind.Chain)
+                    ? state.Participants.Count == 2 && !state.Rules.Tag
+                        ? Math.Pow(.35, recent.Count(e => e.TechniqueId == x.Id || e.TechniqueId == x.Key))
+                        : x.Id == last || x.Key == last ? MatchPhysics.Damage(target, actor.TargetRegion) >= 60 ? .25 : .9 : 1
+                    : 1)).ToArray();
             return candidates[PerformerSelector.WeightedIndex(weights, random)];
         }
     }

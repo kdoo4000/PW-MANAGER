@@ -42,7 +42,7 @@ namespace PWManager.Domain.Services
             return (save.MatchResults ?? new List<MatchResultState>()).Concat(pending ?? Array.Empty<MatchResultState>())
                 .Where(x => x != null && x.ShowEventId != excludedEventId)
                 .SelectMany(x => x.SpotResults ?? new List<SpotResultState>())
-                .Count(x => x != null && x.SpotId == spotId && x.Date.CompareTo(date.AddDays(-56)) >= 0 && x.Date.CompareTo(date) <= 0);
+                .Count(x => x != null && !x.WasSkipped && x.SpotId == spotId && x.Date.CompareTo(date.AddDays(-56)) >= 0 && x.Date.CompareTo(date) <= 0);
         }
 
         public static List<SpotResultState> Evaluate(GameSave save, MatchPlanState match, GameDate date,
@@ -126,6 +126,7 @@ namespace PWManager.Domain.Services
         }
 
         public static string ResultText(SpotResultState result) =>
-            result.Result switch { SpotExecutionResult.GreatSuccess => "대성공", SpotExecutionResult.Success => "성공", SpotExecutionResult.Failure when result.Recovered => "실패 · 흐름 복구", SpotExecutionResult.Failure => "실패", _ => "대실패" };
+            result.WasSkipped ? "미실행 · " + result.SkipReason :
+                result.Result switch { SpotExecutionResult.GreatSuccess => "대성공", SpotExecutionResult.Success => "성공", SpotExecutionResult.Failure when result.Recovered => "실패 · 흐름 복구", SpotExecutionResult.Failure => "실패", _ => "대실패" };
     }
 }

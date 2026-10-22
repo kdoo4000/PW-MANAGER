@@ -16,6 +16,189 @@ public static class TopViewArenaTestBuilder
     private const string Root = "Assets/TopViewTest";
     private static readonly Dictionary<string, Material> Materials = new();
 
+    [MenuItem("PWManager/Top View/Create Show Simulation")]
+    public static void CreateShowSimulation()
+    {
+        if (EditorApplication.isPlaying) throw new InvalidOperationException("Stop Play mode first.");
+        for (int i = 0; i < UnityEngine.SceneManagement.SceneManager.sceneCount; i++)
+            if (UnityEngine.SceneManagement.SceneManager.GetSceneAt(i).isDirty)
+                throw new InvalidOperationException("Save open scenes before creating the show simulation.");
+        const string path = Root + "/TopView Show Simulation.unity";
+        if (AssetDatabase.LoadAssetAtPath<SceneAsset>(path)) { EditorSceneManager.OpenScene(path); return; }
+        var scene = EditorSceneManager.OpenScene(Root + "/TopView Arena Test.unity");
+        var arena = UnityEngine.Object.FindAnyObjectByType<TopViewArenaTest>();
+        arena.ringsideViewSize = 7.25f;
+        arena.playbackSpeed = 1;
+        arena.clock = 0;
+        arena.paused = false;
+        arena.automaticCamera = true;
+        arena.viewCamera.rect = new Rect(0, 0, 1, 1);
+        arena.viewCamera.orthographicSize = arena.ringsideViewSize;
+        arena.viewCamera.transform.position = new Vector3(arena.ringCenter.x, 45, arena.ringCenter.z);
+        EditorSceneManager.SaveScene(scene, path, false);
+        Selection.activeGameObject = arena.gameObject;
+    }
+
+    [MenuItem("PWManager/Top View/Apply Crowd Panels")]
+    public static void ApplyCrowdPanels()
+    {
+        if (EditorApplication.isPlaying) throw new InvalidOperationException("Stop Play mode before editing the arena.");
+        var arena = UnityEngine.Object.FindAnyObjectByType<TopViewArenaTest>();
+        if (!arena || (arena.gameObject.scene.path != Root + "/TopView Arena Test.unity" &&
+            arena.gameObject.scene.path != Root + "/TopView Show Simulation.unity"))
+            throw new InvalidOperationException("Open a TopView arena scene first.");
+        var seats = UnityEngine.Object.FindObjectsByType<Renderer>(FindObjectsInactive.Include, FindObjectsSortMode.None)
+            .Where(r => r.gameObject.scene == arena.gameObject.scene && r.name.StartsWith("Venue_") &&
+                r.sharedMaterials.Any(m => m && m.name == "VenueSeat")).ToArray();
+        if (seats.Length == 0) throw new InvalidOperationException("No audience seat meshes found.");
+        if (seats.Any(r => r.sharedMaterials.Length != 1))
+            throw new InvalidOperationException("Audience seat meshes also contain non-seat geometry.");
+        var existing = arena.transform.Find("Crowd Panels");
+        if (existing) UnityEngine.Object.DestroyImmediate(existing.gameObject);
+        var root = new GameObject("Crowd Panels").transform;
+        root.SetParent(arena.transform, false);
+        var material = FlatMaterial("CrowdPanel", new Color(.09f, .105f, .12f));
+        material.enableInstancing = true;
+        const string meshPath = Root + "/CrowdDisc.asset";
+        var disc = AssetDatabase.LoadAssetAtPath<Mesh>(meshPath);
+        if (!disc)
+        {
+            const int segments = 16;
+            var vertices = new Vector3[segments + 1];
+            var triangles = new int[segments * 3];
+            for (int i = 0; i < segments; i++)
+            {
+                float angle = i * Mathf.PI * 2 / segments;
+                vertices[i + 1] = new Vector3(Mathf.Cos(angle) * .5f, 0, Mathf.Sin(angle) * .5f);
+                triangles[i * 3] = 0;
+                triangles[i * 3 + 1] = (i + 1) % segments + 1;
+                triangles[i * 3 + 2] = i + 1;
+            }
+            disc = new Mesh { name = "Crowd Disc", vertices = vertices, triangles = triangles };
+            disc.RecalculateNormals(); disc.RecalculateBounds();
+            AssetDatabase.CreateAsset(disc, meshPath);
+        }
+        var panels = new List<Renderer>();
+        void AddPanels(Bounds bounds, string section)
+        {
+            int columns = Mathf.Max(1, Mathf.CeilToInt(bounds.size.x / .45f));
+            int rows = Mathf.Max(1, Mathf.CeilToInt(bounds.size.z / .45f));
+            for (int z = 0; z < rows; z++)
+            for (int x = 0; x < columns; x++)
+            {
+                var panel = new GameObject();
+                panel.name = section + " Crowd " + x + " " + z;
+                panel.transform.SetParent(root, false);
+                panel.transform.position = new Vector3(bounds.min.x + (x + .5f) * bounds.size.x / columns,
+                    bounds.max.y, bounds.min.z + (z + .5f) * bounds.size.z / rows);
+                float diameter = Mathf.Min(bounds.size.x / columns, bounds.size.z / rows) * .78f;
+                panel.transform.localScale = new Vector3(diameter, 1, diameter);
+                panel.AddComponent<MeshFilter>().sharedMesh = disc;
+                var renderer = panel.AddComponent<MeshRenderer>();
+                renderer.sharedMaterial = material;
+                renderer.shadowCastingMode = ShadowCastingMode.Off;
+                renderer.receiveShadows = false;
+                panels.Add(renderer);
+            }
+        }
+        foreach (var seat in seats)
+        {
+            var bounds = seat.bounds;
+            seat.enabled = false;
+            AddPanels(bounds, seat.name);
+            if (seat.name is "Venue_LOD1_Floor_West_3" or "Venue_LOD1_Floor_East_3")
+            {
+                float side = Mathf.Sign(bounds.center.x - arena.ringCenter.x);
+                float outer = Mathf.Abs(bounds.center.x - arena.ringCenter.x) - bounds.extents.x;
+                const float aisleEdge = 2.1f;
+                var center = new Vector3(arena.ringCenter.x + side * (outer + aisleEdge) * .5f, bounds.center.y, bounds.center.z);
+                AddPanels(new Bounds(center, new Vector3(outer - aisleEdge, bounds.size.y, bounds.size.z)), "Entrance Audience " + side);
+            }
+        }
+        // A fixed shuffle scatters attention across the crowd without flickering when seeking.
+        var random = new System.Random(713);
+        for (int i = panels.Count - 1; i > 0; i--)
+        {
+            int j = random.Next(i + 1);
+            (panels[i], panels[j]) = (panels[j], panels[i]);
+        }
+        arena.crowdPanels = panels.ToArray();
+        arena.viewCamera.orthographicSize = arena.ringsideViewSize;
+        arena.viewCamera.transform.position = new Vector3(arena.ringCenter.x, 45, arena.ringCenter.z);
+        EditorUtility.SetDirty(arena);
+        EditorSceneManager.MarkSceneDirty(arena.gameObject.scene);
+        EditorSceneManager.SaveScene(arena.gameObject.scene);
+        AssetDatabase.SaveAssets();
+        Debug.Log($"Crowd panels: {panels.Count}, audience seat meshes hidden: {seats.Length}.");
+    }
+
+    public static string CheckCrowdPanels()
+    {
+        var arena = UnityEngine.Object.FindAnyObjectByType<TopViewArenaTest>();
+        if (!arena || arena.crowdPanels.Length == 0) throw new InvalidOperationException("Crowd panels are missing.");
+        var entranceAudience = arena.crowdPanels.Where(r => r.name.StartsWith("Entrance Audience ")).ToArray();
+        if (!entranceAudience.Any(r => r.bounds.center.x > arena.ringCenter.x) ||
+            !entranceAudience.Any(r => r.bounds.center.x < arena.ringCenter.x) ||
+            entranceAudience.Any(r => Mathf.Abs(r.bounds.center.x - arena.ringCenter.x) - r.bounds.extents.x < 2.1f))
+            throw new InvalidOperationException("Entrance audience is missing or blocks the aisle.");
+        if (arena.Engine == null) arena.InitializeMatch();
+        var seats = UnityEngine.Object.FindObjectsByType<Renderer>(FindObjectsSortMode.None)
+            .Where(r => r.name.StartsWith("Venue_") && r.sharedMaterials.Any(m => m && m.name == "VenueSeat")).ToArray();
+        if (seats.Length == 0 || seats.Any(r => r.enabled)) throw new InvalidOperationException("Audience seats are still visible.");
+        if (!UnityEngine.Object.FindObjectsByType<Renderer>(FindObjectsSortMode.None).Any(r => r.enabled && r.name.Contains("AnnounceChairs")))
+            throw new InvalidOperationException("Commentary chairs are missing.");
+        float clock = arena.clock;
+        var e = arena.Engine.Events[0];
+        var performer = e.PerformerId; var receiver = e.ReceiverId; var result = e.Result; float reaction = e.CrowdReaction;
+        float beforeHeat = e.Before.CrowdHeat, afterHeat = e.After.CrowdHeat;
+        var block = new MaterialPropertyBlock();
+        Color Sample(float value, float time)
+        {
+            e.CrowdReaction = 12;
+            e.Before.CrowdHeat = 0;
+            e.After.CrowdHeat = value;
+            arena.Seek(time);
+            arena.crowdPanels[0].GetPropertyBlock(block);
+            return block.GetColor("_BaseColor");
+        }
+        int LitCount(Color neutral) => arena.crowdPanels.Count(panel =>
+        {
+            panel.GetPropertyBlock(block);
+            return Vector4.Distance(block.GetColor("_BaseColor"), neutral) > .001f;
+        });
+        try
+        {
+            float time = e.MatchTimeSeconds + e.DurationSeconds * .65f;
+            e.Result = PWManager.Domain.Services.MatchActionResult.FullSuccess;
+            e.PerformerId = arena.Engine.Participants[0].Id;
+            var neutral = Sample(0, time);
+            foreach (float heat in new[] { 0f, 25f, 75f, 100f, 25f })
+            {
+                Sample(heat, time);
+                if (LitCount(neutral) != Mathf.RoundToInt(arena.crowdPanels.Length * heat / 100f))
+                    throw new InvalidOperationException("Lit audience count does not follow changing crowd heat: " + heat);
+            }
+            var blue = Sample(100, time);
+            e.PerformerId = arena.Engine.Participants[1].Id;
+            var red = Sample(100, time);
+            if (blue.b <= blue.r || red.r <= red.b) throw new InvalidOperationException("Crowd colors do not follow the reacting wrestler.");
+            e.PerformerId = arena.Engine.Participants[0].Id;
+            e.ReceiverId = arena.Engine.Participants[1].Id;
+            e.Result = PWManager.Domain.Services.MatchActionResult.Countered;
+            var counter = Sample(100, time);
+            if (counter.r <= counter.b) throw new InvalidOperationException("A counter cheers the wrong wrestler.");
+            var rewound = Sample(100, 0);
+            if (Vector4.Distance(rewound, neutral) > .001f) throw new InvalidOperationException("Reaction remains visible after rewinding.");
+            return $"PASS: {arena.crowdPanels.Length} dense panels, both entrance audience sections, clear aisle, {seats.Length} hidden seat meshes, commentary chairs retained, wrestler colors and counter, lit counts at 0/25/75/100/25 percent heat, rewind.";
+        }
+        finally
+        {
+            e.PerformerId = performer; e.ReceiverId = receiver; e.Result = result; e.CrowdReaction = reaction;
+            e.Before.CrowdHeat = beforeHeat; e.After.CrowdHeat = afterHeat;
+            arena.Seek(clock);
+        }
+    }
+
     [MenuItem("PWManager/Top View/Create Arena Test")]
     public static void Create()
     {

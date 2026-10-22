@@ -141,7 +141,7 @@ namespace PWManager.Tests
             var show = save.Shows[0]; show.DurationLimit = 20;
             var showEvent = planning.AddMatch(save, show.Id, match, 20);
             planning.Confirm(save, show.Id); show.Status = ShowStatus.InProgress;
-            var evaluator = new MatchEvaluator(content, content);
+            var evaluator = new MatchEvaluator(content, content, accidentsEnabled: false);
             new ShowExecutionService(planning, evaluator, new PromoEvaluator()).Execute(save, show.Id, 7, 100, 20);
             var result = save.MatchResults.Single();
             Assert.That(result.TechnicalEvaluation.Spot, Is.EqualTo(result.SpotResults.Sum(x => x.FinalSpotScore)));
@@ -159,8 +159,9 @@ namespace PWManager.Tests
             Assert.That(restored.MatchPlans.Single().Spots.Count, Is.EqualTo(3));
         }
 
-        [Test]
-        public void RunInStop_EndsMatchAtTheSpotAndShortensDuration()
+        [TestCase(MatchSpotPhase.Entrance)]
+        [TestCase(MatchSpotPhase.Middle)]
+        public void RunInStop_EndsMatchAtTheSpotAndShortensDuration(MatchSpotPhase phase)
         {
             var catalog = Resources.Load<StaticContentCatalog>("PWManagerRuntime/GameStaticContentCatalog");
             var save = ShowTestSaveFactory.Create(catalog, 74);
@@ -169,7 +170,9 @@ namespace PWManager.Tests
             var participants = save.Wrestlers.Take(2).Select(x => x.Id).ToList();
             var match = new MatchPlanState { MatchTypeId = "matchtype_001", MatchGimmickId = "gimmick_000",
                 FinishType = MatchFinishType.Draw, ParticipantIds = participants };
-            match.Spots.Add(new PlannedSpotState { SpotId = "spot_004", Phase = MatchSpotPhase.Middle,
+            match.Spots.Add(new PlannedSpotState { SpotId = phase == MatchSpotPhase.Entrance ? "spot_003" : "spot_004", Phase = phase,
+                ActorId = save.Wrestlers.First(x => !participants.Contains(x.Id)).Id, TargetId = participants[0] });
+            match.Spots.Add(new PlannedSpotState { SpotId = "spot_015", Phase = MatchSpotPhase.PostMatch,
                 ActorId = save.Wrestlers.First(x => !participants.Contains(x.Id)).Id, TargetId = participants[0] });
             var show = save.Shows[0]; show.DurationLimit = 20;
             planning.AddMatch(save, show.Id, match, 20);
@@ -178,7 +181,11 @@ namespace PWManager.Tests
             var result = save.MatchResults.Single();
             Assert.That(result.WasStoppedBySpot, Is.True);
             Assert.That(result.ActualMatchDuration, Is.LessThan(result.PlannedDuration));
-            Assert.That(result.SimulationBeats.Last().Detail, Does.StartWith(result.SpotResults.Last().ScriptedMoment));
+            Assert.That(result.SimulationBeats.Last().Detail, Does.StartWith(result.SpotResults.Single(x => x.ScriptedEffect == SpotScriptedEffect.MatchStopped).ScriptedMoment));
+            var skipped = result.SpotResults.Single(x => x.Phase == MatchSpotPhase.PostMatch);
+            Assert.That(skipped.WasSkipped, Is.True);
+            Assert.That(skipped.FinalSpotScore, Is.Zero);
+            Assert.That(result.NarrativeLines.Any(x => x.Text.Contains(skipped.ScriptedMoment)), Is.False);
             Assert.That(result.SimulationBeats.Any(x => x.BeatType == MatchBeatType.Finish), Is.False);
         }
 

@@ -16,6 +16,92 @@ namespace PWManager.Tests
 {
     public sealed class ShowProducingEditorTests
     {
+        [TestCase("아이언맨 매치", "gimmick_005", false, false)]
+        [TestCase("토네이도 태그 매치", "gimmick_006", true, false)]
+        [TestCase("탈락 매치", "gimmick_007", false, false)]
+        [TestCase("아이언맨 매치", "gimmick_005", false, true)]
+        [TestCase("토네이도 태그 매치", "gimmick_006", true, true)]
+        [TestCase("탈락 매치", "gimmick_007", false, true)]
+        [TestCase("3판 2선승제 경기", "gimmick_008", false, false)]
+        [TestCase("3판 2선승제 경기", "gimmick_008", false, true)]
+        [TestCase("3판 2선승제 경기", "gimmick_008", true, false)]
+        public void Rules_GimmickSelectionSavesFormatAndProductionDoesNotEditIt(string label, string gimmickId, bool tag, bool legacy)
+        {
+            var previous = DashboardSession.ActiveSave;
+            var transient = DashboardSession.IsTransient;
+            var ui = new GameObject("Gimmick Rules Test UI");
+            try
+            {
+                var catalog = Resources.Load<StaticContentCatalog>("PWManagerRuntime/GameStaticContentCatalog");
+                var save = ShowTestSaveFactory.Create(catalog, 20260903);
+                DashboardSession.SetActiveSave(save, transient: true);
+                var teamSize = tag ? 2 : 1;
+                var ids = save.Wrestlers.Take(teamSize * 2).Select(x => x.Id).ToArray();
+                var match = new MatchPlanState
+                {
+                    MatchTypeId = tag ? "matchtype_002" : "matchtype_001",
+                    MatchGimmickId = "gimmick_000", FinishType = MatchFinishType.Draw,
+                    TeamCount = 2, MembersPerTeam = teamSize,
+                    Sides =
+                    {
+                        new() { Id = "a", MemberIds = ids.Take(teamSize).ToList() },
+                        new() { Id = "b", MemberIds = ids.Skip(teamSize).ToList() }
+                    }
+                };
+                var show = save.Shows[0];
+                if (legacy)
+                {
+                    match.IronMan = gimmickId == "gimmick_005";
+                    match.Tornado = tag;
+                    match.Elimination = gimmickId == "gimmick_007";
+                    match.FallsToWin = gimmickId == "gimmick_008" ? 2 : 1;
+                }
+                var showEvent = new ShowPlanningService(new StaticContentRegistry(catalog)).AddMatch(save, show.Id, match, 20);
+                var document = ui.AddComponent<UIDocument>();
+                document.panelSettings = Resources.Load<PanelSettings>("PWManagerRuntime/PWManagerPanelSettings");
+                document.visualTreeAsset = Resources.Load<VisualTreeAsset>("PWManagerUI/Dashboard");
+                var root = document.rootVisualElement;
+                DashboardViewHost.MountMissingViews(root);
+                var type = typeof(DashboardController).Assembly.GetType("PWManager.Presentation.ShowPlanningController");
+                var controller = Activator.CreateInstance(type, root);
+                void Set(string name, object value) => type.GetField(name, BindingFlags.Instance | BindingFlags.NonPublic).SetValue(controller, value);
+                object Call(string name, params object[] args) => type.GetMethod(name, BindingFlags.Instance | BindingFlags.NonPublic).Invoke(controller, args);
+                void Open(string section) => Call("OpenSelectedEventEditor", Enum.Parse(type.GetNestedType("ShowEditSection", BindingFlags.NonPublic), section));
+                void Click(Button button) => typeof(Clickable).GetMethod("Invoke", BindingFlags.Instance | BindingFlags.NonPublic).Invoke(button.clickable, new object[] { null });
+                Set("save", save); Set("selectedShowId", show.Id); Set("selectedShowEventId", showEvent.Id);
+                Open("Rules");
+                var gimmicks = root.Q("show-editor-gimmick-options");
+                if (legacy) Assert.That(gimmicks.Children().OfType<Button>().Single(x => x.text == label).ClassListContains("selected"), Is.True);
+                Click(gimmicks.Children().OfType<Button>().Single(x => x.text == label));
+                Assert.That(root.Q<IntegerField>("show-editor-falls-to-win"), Is.Null);
+                Call("SubmitShowEditor");
+                Assert.That(match.MatchGimmickId, Is.EqualTo(gimmickId));
+                Assert.That(match.IronMan, Is.EqualTo(gimmickId == "gimmick_005"));
+                Assert.That(match.Tornado, Is.EqualTo(gimmickId == "gimmick_006"));
+                Assert.That(match.Elimination, Is.EqualTo(gimmickId == "gimmick_007"));
+                Assert.That(match.FallsToWin, Is.EqualTo(gimmickId == "gimmick_008" ? 2 : 1));
+                Open("Producing");
+                Assert.That(root.Q("show-editor-spots").Q<IntegerField>("show-editor-falls-to-win"), Is.Null);
+                Assert.That(root.Q<Toggle>("show-editor-iron-man"), Is.Null);
+                Assert.That(root.Q<Toggle>("show-editor-tornado"), Is.Null);
+                Assert.That(root.Q<Toggle>("show-editor-elimination"), Is.Null);
+                Call("SubmitShowEditor");
+                Assert.That(match.FallsToWin, Is.EqualTo(gimmickId == "gimmick_008" ? 2 : 1));
+                Open("Rules");
+                gimmicks = root.Q("show-editor-gimmick-options");
+                Assert.That(gimmicks.Children().OfType<Button>().Single(x => x.text == label).ClassListContains("selected"), Is.True);
+                Click(gimmicks.Children().OfType<Button>().Single(x => x.text == "기본 경기"));
+                Call("SubmitShowEditor");
+                Assert.That(match.IronMan || match.Tornado || match.Elimination, Is.False);
+                Assert.That(match.FallsToWin, Is.EqualTo(1));
+            }
+            finally
+            {
+                UnityEngine.Object.DestroyImmediate(ui);
+                DashboardSession.SetActiveSave(previous, transient);
+            }
+        }
+
         [TestCase(1)]
         [TestCase(2)]
         [TestCase(3)]

@@ -17,7 +17,7 @@ namespace PWManager.Tests
                 var a = Fighter("a"); var b = Fighter("b");
                 var match = new MatchSimulator(seed).Simulate(new[] { a, b }, 600,
                     new MatchEngineBooking { WinnerId = "a", LoserId = "b" });
-                Assert.That(match.IsFinished && !match.IsAborted, Is.True, match.FailureReason);
+                Assert.That(match.IsFinished && !match.IsAborted && !match.WasStoppedByExecution, Is.True, match.FailureReason);
                 for (int i = 0; i < match.Events.Count; i++)
                 {
                     var e = match.Events[i];

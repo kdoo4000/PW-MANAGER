@@ -54,6 +54,7 @@ namespace PWManager.Editor
             for (var i = 0; i < result.EngineState.Events.Count; i++)
             {
                 var e = result.EngineState.Events[i];
+                if (string.IsNullOrEmpty(commentary[i])) continue;
                 log.AppendLine($"{i + 1:000} | {e.MatchTimeSeconds / 60:00}:{e.MatchTimeSeconds % 60:00} | 공방 {e.ExchangeId} | {e.Type}/{e.Result} | {commentary[i]}");
             }
             log.AppendLine($"\n결과: {Name(result.WinnerId)}, {result.FinishType}, {result.EngineState.ElapsedSeconds}초, 평가 {result.FinalMatchQuality:F2}/20");

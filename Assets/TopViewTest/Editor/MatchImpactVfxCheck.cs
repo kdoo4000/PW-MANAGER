@@ -47,6 +47,22 @@ public static class MatchImpactVfxCheck
                 Require(Count() == 0, "Impact remained at the clip end: " + move.Id);
                 checkedMoves++;
             }
+            foreach (string key in new[] { "chain-headlock-takedown", "chain-waistlock-takedown" })
+            {
+                var state = MovePreviewScene.BuildPreview(MoveTable.Load().First(m => m.Key == key));
+                var e = state.Events.Single(); e.Impact = 0;
+                arena.LoadMatch(state); arena.Seek(3.9f - .001f);
+                Require(Count() == 0, "Chain impact started before landing: " + key);
+                arena.Seek(3.9f + .02f * Rate(e));
+                Require(Count() > 0 && arena.HitEnvelope > 0, "Zero-damage chain landing lost its impact: " + key);
+                Require(arena.ControlEnvelope == 0, "Released takedown grip kept blinking: " + key);
+                foreach (var result in new[] { MatchActionResult.Countered, MatchActionResult.ExecutionFailure,
+                    MatchActionResult.Blocked, MatchActionResult.Escaped, MatchActionResult.Interrupted, MatchActionResult.Held })
+                {
+                    e.Result = result; arena.LoadMatch(state); arena.Seek(3.9f + .02f * Rate(e));
+                    Require(Count() == 0, "Impact on an incomplete chain takedown: " + key + "/" + result);
+                }
+            }
             var strike = MovePreviewScene.BuildPreview(MoveTable.Load().First(m => m.Key == "superkick"));
             var hit = strike.Events.Single(); float previousScale = 0, previousAlpha = 0;
             foreach (float strength in new[] { 2f, 6f, 9f, 15f })

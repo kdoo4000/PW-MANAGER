@@ -23,7 +23,9 @@ namespace PWManager.Domain.Services
     {
         public static PortraitPartGroup[] Groups(WrestlerGender gender) => gender == WrestlerGender.Female ? FemaleGroups : MaleGroups;
         public static int[] RearHair(WrestlerGender gender, int front) => gender == WrestlerGender.Female ? FemaleRearHair(front) : MaleRearHair(front);
-        public static bool FullMask(int mask) => mask > 1 && mask != 6 && mask != 7;
+        public static bool FullMask(int mask) => mask > 1 && mask != 6 && mask != 7 && mask != 12;
+        public static bool Selectable(WrestlerGender gender, string category, int index) =>
+            category != "tattoo" || !BodyPaintSources(gender).Contains(index);
     }
 
     public static class PortraitAppearanceRules
@@ -31,8 +33,8 @@ namespace PWManager.Domain.Services
         private static readonly string[] HairColors = { "#242424", "#513525", "#ac794b", "#dcb86d", "#74342d", "#b6b4ab" };
         public static readonly string[] FabricColors = { "#153260", "#c92c32", "#194e47", "#682c78", "#242424", "#e1b548", "#eee8db", "#cb4d83" };
         public static readonly string[] EyeColors = { "#825128", "#274d69", "#3d5c35", "#807667", "#382818", "#a87c38" };
-        public static readonly string[] ColorCategories = { "hair", "beard", "eyes", "clothes", "clothes-secondary", "facepaint", "facepaint-secondary", "mask", "mask-secondary", "tattoo", "bodypaint" };
-        public static readonly string[] WardrobeColorCategories = { "eyes", "clothes", "clothes-secondary", "facepaint", "facepaint-secondary", "mask", "mask-secondary", "bodypaint" };
+        public static readonly string[] ColorCategories = { "hair", "beard", "eyes", "clothes", "clothes-secondary", "facepaint", "facepaint-secondary", "mask", "mask-secondary", "tattoo", "bodypaint", "headwear", "headwear-secondary" };
+        public static readonly string[] WardrobeColorCategories = { "eyes", "clothes", "clothes-secondary", "facepaint", "facepaint-secondary", "mask", "mask-secondary", "bodypaint", "headwear", "headwear-secondary" };
 
         public static int BodyType(WrestlerIdentityState identity) => identity.BodyType switch
         {
@@ -74,13 +76,18 @@ namespace PWManager.Domain.Services
                     };
                     var part = random.NextDouble() >= chance ? 1 : group.Category == "mask" && styleId == "style_005"
                         ? PortraitCatalog.LuchaMasks[random.Next(PortraitCatalog.LuchaMasks.Length)] : random.Next(2, group.Count + 1);
+                    if (part > 1 && group.Category == "tattoo")
+                    {
+                        var available = Enumerable.Range(2, group.Count - 1).Where(index => PortraitCatalog.Selectable(identity.Gender, group.Category, index)).ToArray();
+                        part = available[random.Next(available.Length)];
+                    }
                     appearance.SetPart(group.Category, part);
                 }
             }
             var hair = HairColors[random.Next(HairColors.Length)];
             appearance.SetColor("hair", hair); appearance.SetColor("beard", hair);
             appearance.SetColor("eyes", EyeColors[0]);
-            foreach (var category in new[] { "clothes", "clothes-secondary", "facepaint", "facepaint-secondary", "mask", "mask-secondary" })
+            foreach (var category in new[] { "clothes", "clothes-secondary", "facepaint", "facepaint-secondary", "mask", "mask-secondary", "headwear", "headwear-secondary" })
                 appearance.SetColor(category, FabricColors[random.Next(FabricColors.Length)]);
             appearance.SetColor("tattoo", "#111111");
             appearance.SetColor("bodypaint", FabricColors[random.Next(FabricColors.Length)]);
@@ -117,6 +124,7 @@ namespace PWManager.Domain.Services
             appearance.SkinBrightness = Math.Clamp(appearance.SkinBrightness, 40, 150);
             foreach (var group in PortraitCatalog.Groups(gender).Where(x => x.Category != "bodytype"))
                 appearance.SetPart(group.Category, Math.Clamp(appearance.Part(group.Category), group.Category == "clothes" && gender == WrestlerGender.Female ? 2 : 1, group.Count));
+            if (!PortraitCatalog.Selectable(gender, "tattoo", appearance.Part("tattoo"))) appearance.SetPart("tattoo", 1);
             appearance.Parts.RemoveAll(x => x == null || !PortraitCatalog.Groups(gender).Any(g => g.Category == x.Category));
             var rear = PortraitCatalog.RearHair(gender, appearance.Part("hair"));
             if (rear != null && !rear.Contains(appearance.Part("hairback"))) appearance.SetPart("hairback", rear[0]);

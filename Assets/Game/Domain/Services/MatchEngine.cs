@@ -6,8 +6,8 @@ using PWManager.Domain.Models;
 namespace PWManager.Domain.Services
 {
     public enum MatchPhase { Opening, Neutral, Control, Comeback, BackAndForth, Climax, Finish }
-    public enum MatchActionType { BasicStrike, HeavyStrike, Grapple, GroundAttack, Submission, Pin, Rest, Signature, Finisher, Finish, Recover, Reposition, Climb, Dive, LimbAttack, Counter, Cover, Hold, RopeBreak, Tag, DoubleTeam, BreakUp, Taunt, ObjectSetup, ObjectClimb, ObjectFinish, Spot, Fall, Lift, Probe, TieUp, Chain, IrishWhip, CornerWhip, RopeRun, RunningAttack, CornerAttack, Evade, Retreat, StandingHold, PrepareAttack, ExitRing, Pursue, RingsideAttack, TopRopeAttack, TurnOver, MedicalStop }
-    public enum MatchActionResult { FullSuccess, PartialSuccess, ExecutionFailure, ReceptionFailure, Countered, Submitted, OneCount, TwoCount, NearFall, Pinfall, RollUp, Disqualification, CountOut, Draw, Escaped, Blocked, RopeBreak, Interrupted, Held, PassedOut, ObjectRetrieved, TableBroken, CageEscaped }
+    public enum MatchActionType { BasicStrike, HeavyStrike, Grapple, GroundAttack, Submission, Pin, Rest, Signature, Finisher, Finish, Recover, Reposition, Climb, Dive, LimbAttack, Counter, Cover, Hold, RopeBreak, Tag, DoubleTeam, BreakUp, Taunt, ObjectSetup, ObjectClimb, ObjectFinish, Spot, Fall, Lift, Probe, TieUp, Chain, IrishWhip, CornerWhip, RopeRun, RunningAttack, CornerAttack, Evade, Retreat, StandingHold, PrepareAttack, ExitRing, Pursue, RingsideAttack, TopRopeAttack, TurnOver, MedicalStop, ExecutionStop }
+    public enum MatchActionResult { FullSuccess, PartialSuccess, ExecutionFailure, ReceptionFailure, Countered, Submitted, OneCount, TwoCount, NearFall, Pinfall, RollUp, Disqualification, CountOut, Draw, Escaped, Blocked, RopeBreak, Interrupted, Held, PassedOut, ObjectRetrieved, TableBroken, CageEscaped, TimeLimitDecision }
 
     [Serializable]
     public sealed class MatchEngineBooking
@@ -72,6 +72,7 @@ namespace PWManager.Domain.Services
         public int EarliestFinishSeconds => TargetDurationSeconds - DurationToleranceSeconds;
         public bool AccidentsEnabled = true;
         public bool WasStoppedByInjury, RescueRequired, RescuePrepared;
+        public bool WasStoppedByExecution;
         public string MedicalStopWrestlerId;
         public int RescueDeadline;
         public int LatestFinishSeconds => Math.Max(TargetDurationSeconds + DurationToleranceSeconds, RescueDeadline);
@@ -268,6 +269,7 @@ namespace PWManager.Domain.Services
             stateMachine.Initialize(state);
             while (!state.IsFinished && !state.IsAborted && state.Events.Count < maximumEvents) Step(state);
             if (!state.IsFinished && !state.IsAborted) { state.IsAborted = true; state.FailureReason = "MaximumEvents reached without a finish."; }
+            if (state.IsFinished) CompleteSpots(state);
             return state;
         }
 
@@ -275,13 +277,15 @@ namespace PWManager.Domain.Services
         {
             if (state == null) throw new ArgumentNullException(nameof(state));
             if (state.IsFinished || state.IsAborted) throw new InvalidOperationException("The match has already ended.");
-            if (state.WasStoppedByInjury) { MatchHealth.RecordStop(state); return state.Events.Last(); }
+            if (state.WasStoppedByInjury) { stateMachine.TransitionTo(state, MatchPhase.Finish); MatchHealth.RecordStop(state); CompleteSpots(state); return state.Events.Last(); }
             MatchMovement.Initialize(state);
             if (!state.Opening.Initialized) MatchOpening.Initialize(state, random);
             var before = MatchEngineSnapshot.Capture(state);
             stateMachine.Update(state);
             var combination = state.Exchange?.Kind is ExchangeKind.GripCombo or ExchangeKind.Hold or ExchangeKind.Chain;
             var e = MatchPhysics.Next(state, random, stateMachine.CurrentState);
+            stateMachine.TransitionTo(state, state.IsFinished || state.BookingSequence ? MatchPhase.Finish :
+                state.Exchange?.Kind == ExchangeKind.Comeback ? MatchPhase.Comeback : state.Phase);
             e.IntentionalCombination = combination;
             e.Before = before;
             MatchMovement.Apply(state, e, before);
@@ -307,8 +311,45 @@ namespace PWManager.Domain.Services
             e.MatchControlChange = ab == null ? 0 : state.GetParticipant(e.PerformerId).MatchControl - ab.MatchControl;
             e.CommentaryKey = $"match.{e.Type.ToString().ToLowerInvariant()}.{e.Result.ToString().ToLowerInvariant()}";
             state.Events.Add(e);
-            if (state.WasStoppedByInjury) MatchHealth.RecordStop(state);
+            if (state.WasStoppedByInjury) { stateMachine.TransitionTo(state, MatchPhase.Finish); MatchHealth.RecordStop(state); }
+            else if (state.IsAborted) RecordExecutionStop(state);
+            if (state.IsFinished) CompleteSpots(state);
             return e;
+        }
+
+        private static void CompleteSpots(MatchEngineState state)
+        {
+            bool stopped = state.WasStoppedByInjury || state.WasStoppedByExecution ||
+                state.ScheduledSpots.Any(spot => spot.WasApplied && spot.ScriptedEffect == SpotScriptedEffect.MatchStopped);
+            for (int i = 0; i < state.ScheduledSpots.Count; i++)
+            {
+                var spot = state.ScheduledSpots[i];
+                if (spot.WasSkipped || state.AppliedSpots.Contains(i)) continue;
+                var actor = state.Participants.FirstOrDefault(p => p.Id == spot.ActorId);
+                var target = state.GetParticipant(spot.TargetId);
+                if (spot.Phase == MatchSpotPhase.PostMatch && !stopped &&
+                    target.RealInjury != InjuryStatus.Severe && actor?.RealInjury != InjuryStatus.Severe &&
+                    (actor == null || !MatchHealth.Restricted(actor, BodyRegion.Arms)))
+                { spot.WasApplied = true; state.AppliedSpots.Add(i); continue; }
+                spot.WasSkipped = true; spot.FinalSpotScore = 0;
+                spot.SkipReason = stopped ? "경기 중단으로 미실행" : "실행 가능한 시점 없이 경기가 종료됐습니다.";
+            }
+        }
+
+        private void RecordExecutionStop(MatchEngineState state)
+        {
+            var before = MatchEngineSnapshot.Capture(state);
+            stateMachine.TransitionTo(state, MatchPhase.Finish);
+            state.IsAborted = false; state.IsFinished = true; state.WasStoppedByExecution = true;
+            state.WinnerId = null; state.ActualFinish = MatchFinishType.Draw; state.Exchange = null;
+            var stop = new MatchEngineEvent { Type = MatchActionType.ExecutionStop, Result = MatchActionResult.Interrupted,
+                Detail = state.FailureReason, DurationSeconds = 1, MatchTimeSeconds = state.ElapsedSeconds,
+                Phase = MatchPhase.Finish, ExchangeId = ++state.NextExchangeId, CauseEventIndex = state.Events.Count - 1,
+                Before = before, IsMajorMoment = true, CommentaryKey = "match.execution-stop" };
+            MatchMovement.Apply(state, stop, before);
+            state.ElapsedSeconds++;
+            stop.After = MatchEngineSnapshot.Capture(state);
+            state.Events.Add(stop);
         }
     }
 
@@ -385,7 +426,8 @@ namespace PWManager.Domain.Services
                 MatchActionType.Submission => 5f + performer.Attributes.Technical + receiver.Fatigue * .2f,
                 MatchActionType.Pin => 8f + receiver.Fatigue * .35f + state.Drama * .1f,
                 MatchActionType.Rest => 2f + performer.Fatigue * .2f,
-                MatchActionType.Recover => 100f,
+                MatchActionType.Recover => performer.Stun < 12 && performer.Fatigue < 80 && receiver.IsDowned
+                    ? 2f + performer.Fatigue * .2f : 100f,
                 MatchActionType.Reposition => 12f,
                 MatchActionType.IrishWhip => 18f + performer.Attributes.Power * .7f + performer.Attributes.Technical * .3f,
                 MatchActionType.CornerWhip => 15f + performer.Attributes.Brawling * .7f + performer.Attributes.Power * .3f,
@@ -396,7 +438,7 @@ namespace PWManager.Domain.Services
                         Math.Max(0, receiver.MatchControl - performer.MatchControl) * .2f : 0),
                 MatchActionType.Retreat => 2f + performer.Fatigue * .18f + performer.Stun * .25f,
                 MatchActionType.Lift => 24f,
-                MatchActionType.TurnOver => 18f + receiver.Stun * .2f,
+                MatchActionType.TurnOver => action.MoveId != null ? 10f + receiver.Stun * .1f : 18f + receiver.Stun * .2f,
                 MatchActionType.Climb => 8f + performer.Attributes.HighFlying,
                 MatchActionType.LimbAttack => 12f + performer.Attributes.Technical + performer.Attributes.RingPsychology * .5f + Math.Max(0, 12 - Math.Abs(MatchPhysics.Damage(receiver, performer.TargetRegion) - 35) * .3f),
                 MatchActionType.Tag => 6f + performer.Fatigue * .7f,
@@ -411,10 +453,25 @@ namespace PWManager.Domain.Services
             if (state.Intensity > 40f && action.Type is MatchActionType.HeavyStrike or MatchActionType.Grapple or MatchActionType.Signature) score *= 1.2f;
             if (state.CrowdHeat < 25f && action.Type is MatchActionType.HeavyStrike or MatchActionType.Signature or MatchActionType.Finisher) score *= 1.25f;
             score *= TacticalFit(state, action, performer, receiver);
-            var repeats = state.Events.TakeLast(4).Count(x => x.PerformerId == action.PerformerId && x.Type == action.Type);
-            if (action.Type == MatchActionType.LimbAttack && !string.IsNullOrEmpty(performer.PlannedFinisherMoveId) &&
-                MatchPhysics.Damage(receiver, performer.TargetRegion) < 60 ||
-                state.Exchange?.Kind is ExchangeKind.GripCombo or ExchangeKind.Hold or ExchangeKind.Chain) repeats = 0;
+            bool singles = state.Participants.Count == 2 && !state.Rules.Tag;
+            // Recovery and hold ticks must not erase the opponent's memory of recent offense.
+            var repeats = singles ? state.Events.Where(x => x.PerformerId == action.PerformerId && (string.IsNullOrEmpty(x.ReceiverId) || x.ReceiverId == action.ReceiverId) &&
+                (x.IsPhysicalAttack || x.Type is MatchActionType.BasicStrike or MatchActionType.HeavyStrike or MatchActionType.Grapple or
+                    MatchActionType.GroundAttack or MatchActionType.LimbAttack or MatchActionType.Submission or MatchActionType.StandingHold or
+                    MatchActionType.Signature or MatchActionType.Finisher) && !x.IntentionalCombination).TakeLast(4).Count(x => x.Type == action.Type) :
+                state.Events.TakeLast(4).Count(x => x.PerformerId == action.PerformerId && x.Type == action.Type);
+            if (!singles && action.Type == MatchActionType.LimbAttack && !string.IsNullOrEmpty(performer.PlannedFinisherMoveId) &&
+                MatchPhysics.Damage(receiver, performer.TargetRegion) < 60 || state.Exchange?.Kind is ExchangeKind.GripCombo or ExchangeKind.Hold or ExchangeKind.Chain) repeats = 0;
+            if (singles && state.Rules.IronMan)
+            {
+                var own = state.Participants.Where(x => x.SideId == performer.SideId).Sum(x => x.Falls);
+                var opposition = state.GetOpponents(performer.Id).GroupBy(x => x.SideId).Max(g => g.Sum(x => x.Falls));
+                var urgency = Math.Clamp(1f - (state.TargetDurationSeconds - state.ElapsedSeconds) / 180f, 0, 1);
+                if (own <= opposition)
+                    score *= action.Type is MatchActionType.Pin or MatchActionType.Submission or MatchActionType.Finisher ? 1 + urgency * 3 :
+                        action.Type is MatchActionType.Rest or MatchActionType.Retreat or MatchActionType.Taunt or MatchActionType.StandingHold ? 1 - urgency * .9f : 1;
+                else if (action.Type is MatchActionType.Retreat or MatchActionType.Rest) score *= 1 + urgency * 2;
+            }
             return Math.Max(.01f, score * (float)Math.Pow(state.Rules.DominantSideId == performer.SideId ? .9f : .65f, repeats) * (phaseState?.GetActionScoreModifier(state, action) ?? 1f));
         }
 
@@ -475,6 +532,8 @@ namespace PWManager.Domain.Services
                 if (MatchPhysics.Damage(b, a.TargetRegion) >= 60)
                 {
                     if (action.Type == MatchActionType.LimbAttack) fit -= 1.1f;
+                    if (state.Participants.Count == 2 && !state.Rules.Tag && action.Type is MatchActionType.Submission or MatchActionType.StandingHold && MatchPhysics.Kind(goal) != MoveKind.Submission)
+                        fit -= 1.5f;
                     if (MatchHealth.IsPreparation(action.Type) && !MatchPhysics.CanMove(state, a, b, a.PlannedFinisherMoveId)) fit += 1.8f;
                 }
                 if (action.Type == MatchActionType.Climb && action.MoveId == a.PlannedFinisherMoveId) fit += .9f;

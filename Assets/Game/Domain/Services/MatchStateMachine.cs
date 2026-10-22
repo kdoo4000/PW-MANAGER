@@ -54,12 +54,12 @@ namespace PWManager.Domain.Services
             CurrentState.Update(context);
             if (context.Exchange?.Kind == ExchangeKind.Comeback)
             {
-                if (CurrentState.Phase != MatchPhase.Comeback) Initialize(context, MatchPhase.Comeback);
+                TransitionTo(context, MatchPhase.Comeback);
                 return;
             }
             if (context.BookingSequence)
             {
-                if (CurrentState.Phase != MatchPhase.Finish) Initialize(context, MatchPhase.Finish);
+                TransitionTo(context, MatchPhase.Finish);
                 return;
             }
             if (context.Exchange != null) return;
@@ -71,8 +71,13 @@ namespace PWManager.Domain.Services
             var weights = candidates.Select(x => ValidWeight(x.Score)).ToArray();
             if (weights.Sum() <= 0d) return;
             var next = candidates[PerformerSelector.WeightedIndex(weights, random)].Target;
-            if (next == CurrentState.Phase) return;
-            CurrentState.Exit(context);
+            TransitionTo(context, next);
+        }
+
+        public void TransitionTo(MatchEngineState context, MatchPhase next)
+        {
+            if (CurrentState?.Phase == next) { context.Phase = next; return; }
+            CurrentState?.Exit(context);
             CurrentState = states[next];
             context.Phase = next;
             CurrentState.Enter(context);
@@ -152,7 +157,7 @@ namespace PWManager.Domain.Services
         public override void Exit(MatchEngineState context) { context.Opening.Completed = true; }
         public override float GetActionScoreModifier(MatchEngineState context, MatchEngineAction action)
         {
-            var probe = context.Opening.Style is MatchOpeningStyle.Probe or MatchOpeningStyle.Automatic;
+            var probe = context.Opening.Style == MatchOpeningStyle.Automatic || MatchOpening.CanChain(context);
             return action.Type switch
             {
                 MatchActionType.Probe => probe ? 2f : .08f,

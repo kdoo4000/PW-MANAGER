@@ -39,7 +39,7 @@ namespace PWManager.Tests
             Assert.That(registry.Moves, Has.Count.EqualTo(PWManager.Data.Loading.MoveTable.Load().Count));
             Assert.That(registry.Venues, Has.Count.EqualTo(6));
             Assert.That(registry.MatchTypes, Has.Count.EqualTo(2));
-            Assert.That(registry.MatchGimmicks, Has.Count.EqualTo(5));
+            Assert.That(registry.MatchGimmicks, Has.Count.EqualTo(9));
             Assert.That(registry.MatchTypes["matchtype_001"].KoreanName, Is.EqualTo("개인전"));
             Assert.That(registry.MatchTypes["matchtype_001"].EnglishName, Is.EqualTo("Individual"));
             Assert.That(registry.MatchTypes["matchtype_001"].DisplayName, Is.EqualTo("개인전"));
@@ -64,6 +64,16 @@ namespace PWManager.Tests
             Assert.That(registry.MatchGimmicks["gimmick_004"].DisqualificationRule, Is.EqualTo(PWManager.Domain.Services.MatchRuleOverride.Disabled));
             Assert.That(registry.MatchGimmicks["gimmick_002"].ConditionCostMultiplier, Is.EqualTo(1.30f));
             Assert.That(registry.MatchGimmicks["gimmick_004"].CompatibleMatchTypeIds, Does.Contain("matchtype_002"));
+            Assert.That(registry.TryGetGimmickRules("gimmick_005", out var ironMan), Is.True);
+            Assert.That(ironMan.IronMan, Is.True);
+            Assert.That(registry.TryGetGimmickRules("gimmick_006", out var tornado), Is.True);
+            Assert.That(tornado.Tornado, Is.True);
+            Assert.That(tornado.IsCompatible("matchtype_001", 4), Is.False);
+            Assert.That(tornado.IsCompatible("matchtype_002", 4), Is.True);
+            Assert.That(registry.TryGetGimmickRules("gimmick_007", out var elimination), Is.True);
+            Assert.That(elimination.Elimination, Is.True);
+            Assert.That(registry.TryGetGimmickRules("gimmick_008", out var twoOutOfThree), Is.True);
+            Assert.That(twoOutOfThree.TwoOutOfThree, Is.True);
         }
 
         [Test]

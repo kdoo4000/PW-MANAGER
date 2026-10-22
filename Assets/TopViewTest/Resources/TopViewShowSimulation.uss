@@ -1,0 +1,72 @@
+.show-screen { position: absolute; left: 0; right: 0; top: 0; bottom: 0; color: #f1eee7; font-size: 18px; }
+.show-header { height: 84px; flex-shrink: 0; padding: 16px 26px; flex-direction: row; align-items: center; background-color: #101114; border-bottom-width: 1px; border-bottom-color: #635741; }
+.show-brand { flex-grow: 1; }
+.show-title, .show-match-title, .show-section-title, .show-result-title, .show-wrestler-name { -unity-font-definition: url("project://database/Assets/Game/Presentation/Resources/PWManagerUI/Fonts/SEBANGGothic-Bold.ttf"); }
+.show-title { font-size: 28px; letter-spacing: 1px; }
+.show-live { color: #e7c885; border-left-width: 3px; border-left-color: #e7c885; padding-left: 12px; margin-right: 24px; }
+.show-muted { color: #b9b8b3; font-size: 16px; white-space: normal; }
+.show-body { flex-direction: row; flex-grow: 1; min-height: 0; }
+.show-side { width: 278px; min-width: 220px; flex-shrink: 0; padding: 18px 18px 12px 18px; background-color: #151619; }
+.show-center { flex-grow: 1; min-width: 0; }
+.show-match-heading { min-height: 66px; padding: 14px 24px; flex-direction: row; align-items: center; background-color: #1a1b1f; }
+.show-match-title { flex-grow: 1; font-size: 23px; white-space: normal; }
+.show-clock { font-size: 28px; color: #e7c885; margin-left: 18px; }
+.show-stage { flex-grow: 1; min-height: 180px; overflow: hidden; border-left-width: 1px; border-right-width: 1px; border-color: #34363a; }
+.show-phase { position: absolute; top: 14px; left: 18px; padding: 7px 12px; background-color: rgba(16,17,20,0.92); color: #e7c885; font-size: 16px; }
+.show-caption { min-height: 114px; flex-shrink: 0; padding: 16px 24px; background-color: #1a1b1f; border-top-width: 2px; border-top-color: #bfa167; }
+.show-kicker { color: #e7c885; font-size: 16px; margin-bottom: 6px; }
+.show-commentary { font-size: 22px; white-space: normal; }
+.show-wrestler { border-top-width: 3px; background-color: #202126; padding-bottom: 14px; flex-shrink: 0; }
+.show-wrestler.blue { border-top-color: #64b4ff; }
+.show-wrestler.red { border-top-color: #ff8b8f; }
+.show-portrait { height: 120px; min-height: 120px; max-height: 120px; margin: 10px 0 0 0; flex-shrink: 0; }
+.show-wrestler-name { background-color: #202126; border-width: 0; border-radius: 0; font-size: 23px; min-height: 48px; white-space: normal; margin: 0; padding: 8px 12px; }
+.blue .show-wrestler-name { color: #83c3ff; }
+.red .show-wrestler-name { color: #ffaaaa; }
+.show-wrestler-name:hover, .show-wrestler-name:focus { background-color: #33363e; }
+.show-wrestler-detail { padding: 0 12px; }
+.show-position { min-height: 22px; font-size: 16px; white-space: normal; margin-bottom: 8px; color: #b9b8b3; }
+.show-meter { height: 8px; min-height: 8px; max-height: 8px; margin: 0 0 10px 0; font-size: 14px; flex-shrink: 0; }
+.show-meter-caption { color: #d3d0c8; font-size: 14px; margin: 0 0 6px 0; flex-shrink: 0; }
+.show-fan-meter { margin-bottom: 12px; flex-shrink: 0; }
+.show-fan-track { height: 8px; min-height: 8px; flex-shrink: 0; flex-direction: row; background-color: #303238; }
+.show-meter .unity-progress-bar__container { height: 8px; min-height: 0; flex-shrink: 0; }
+.show-fan-blue { height: 100%; background-color: #527fae; }
+.show-fan-red { height: 100%; background-color: #b4656d; }
+.show-condition-column { align-items: center; }
+.show-meter .unity-progress-bar__background { background-color: #303238; border-width: 0; border-radius: 0; margin: 0; padding: 0; }
+.show-meter .unity-progress-bar__progress { background-color: #937947; border-radius: 0; }
+.show-meter .unity-progress-bar__title { color: #ffffff; -unity-text-outline-width: 1px; -unity-text-outline-color: #16171a; }
+.show-damage { flex-direction: row; align-items: center; justify-content: space-around; margin-top: 6px; padding-top: 12px; border-top-width: 1px; border-top-color: #383a40; flex-shrink: 0; }
+.show-body-damage { width: 50px; height: 72px; }
+.show-condition { width: 72px; height: 72px; }
+.show-condition .wp-gauge-state { position: absolute; left: 0; right: 0; top: 0; bottom: 0; -unity-text-align: middle-center; white-space: normal; color: #f1eee7; font-size: 15px; }
+.show-section { margin-top: 18px; padding-top: 12px; border-top-width: 1px; border-top-color: #515158; }
+.show-section-title { font-size: 19px; margin-bottom: 8px; }
+.show-heat { color: #e7c885; font-size: 34px; margin-bottom: 10px; }
+.show-card-section { flex-grow: 1; min-height: 0; }
+.show-card-row { flex-direction: row; padding: 8px 8px; border-left-width: 3px; border-left-color: transparent; border-bottom-width: 1px; border-bottom-color: #3b3c41; }
+.show-card-row.current { background-color: #302c23; border-left-color: #e7c885; }
+.show-card-row.done { opacity: 0.65; }
+.show-card-number { color: #e7c885; margin-right: 10px; font-size: 16px; }
+.show-card-name { white-space: normal; font-size: 16px; flex-grow: 1; min-width: 0; }
+.show-card-copy { flex-grow: 1; min-width: 0; }
+.show-card-type { font-size: 14px; color: #c9b78f; margin-bottom: 5px; }
+.show-bottom { height: 152px; flex-shrink: 0; padding: 12px 22px 10px 22px; background-color: #101114; border-top-width: 1px; border-top-color: #635741; }
+.show-transport { flex-direction: row; align-items: center; height: 52px; }
+.show-button { min-height: 42px; padding: 8px 16px; margin: 0 8px 0 0; border-width: 1px; border-color: #746d60; border-radius: 3px; background-color: #25262b; color: #f1eee7; font-size: 17px; }
+.show-button:hover, .show-button:focus { background-color: #3b3426; border-color: #e7c885; }
+.show-button:disabled { color: #b5b1a9; background-color: #202126; }
+.show-speed { width: 110px; margin-right: 18px; }
+.show-speed .unity-base-popup-field__input { min-height: 40px; background-color: #25262b; color: #f1eee7; border-color: #746d60; font-size: 17px; }
+.show-timeline { flex-grow: 1; min-width: 80px; margin-right: 22px; }
+.show-log { flex-grow: 1; margin-top: 10px; }
+.show-log .unity-scroll-view__content-container { flex-direction: row; }
+.show-log-entry { width: 380px; white-space: normal; padding: 8px 16px; border-left-width: 1px; border-left-color: #625a49; color: #c9c7c1; font-size: 15px; }
+.show-result-overlay { position: absolute; left: 6%; right: 6%; top: 10%; bottom: 10%; justify-content: center; padding: 26px; background-color: rgba(16,17,20,0.96); border-top-width: 3px; border-top-color: #e7c885; }
+.show-result-title { font-size: 36px; white-space: normal; margin-bottom: 22px; }
+.show-summary-match { font-size: 22px; white-space: normal; margin-bottom: 22px; }
+.show-summary-line { font-size: 18px; white-space: normal; margin-bottom: 14px; }
+.show-promo-cast { flex-direction: row; justify-content: center; }
+.show-promo-person { flex-grow: 1; flex-basis: 0; align-items: center; }
+.show-promo-portrait { width: 200px; height: 180px; }

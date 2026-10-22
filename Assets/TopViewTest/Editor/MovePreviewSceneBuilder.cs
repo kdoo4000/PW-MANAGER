@@ -426,7 +426,7 @@ public static class MovePreviewSceneBuilder
             actor.GetPropertyBlock(block);
             if (Vector4.Distance(lit, dark) < .1f || Vector4.Distance(lit, next) > .001f ||
                 Vector4.Distance(actorColor, block.GetColor("_BaseColor")) > .001f ||
-                arena.ControlEnvelope > .351f || arena.HitEnvelope != 0 || arena.SubmissionEnvelope != 0)
+                arena.ControlEnvelope < .6f || arena.ControlEnvelope > .651f || arena.HitEnvelope != 0 || arena.SubmissionEnvelope != 0)
                 throw new InvalidOperationException("Control blink failed: " + move.Id);
             foreach (var result in new[] { MatchActionResult.Escaped, MatchActionResult.Countered, MatchActionResult.Interrupted })
             {

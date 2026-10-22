@@ -205,6 +205,36 @@ namespace PWManager.Tests
         }
 
         [Test]
+        public void ForcedFinishCompletesOpeningAndNewMatchesStillStartFresh()
+        {
+            var state = State(MatchPhase.Opening);
+            var machine = new MatchStateMachine(new Random(4));
+            machine.Initialize(state);
+            state.BookingSequence = true;
+            machine.Update(state);
+            Assert.That(state.Opening.Completed, Is.True);
+            Assert.That(machine.CurrentState.EvaluateTransitions(state).Single(x => x.Target == MatchPhase.Opening).Score, Is.Zero);
+            machine.Update(state);
+            Assert.That(state.Phase, Is.EqualTo(MatchPhase.Finish));
+            var next = State(MatchPhase.Opening);
+            machine.Initialize(next);
+            Assert.That(next.Opening.Completed, Is.False);
+        }
+
+        [Test]
+        public void ForcedComebackAlsoCompletesOpening()
+        {
+            var state = State(MatchPhase.Opening);
+            var machine = new MatchStateMachine(new Random(4));
+            machine.Initialize(state);
+            state.Exchange = new MatchExchange { Kind = ExchangeKind.Comeback };
+            machine.Update(state);
+            Assert.That(state.Opening.Completed, Is.True);
+            Assert.That(state.Phase, Is.EqualTo(MatchPhase.Comeback));
+            Assert.That(machine.CurrentState.Phase, Is.EqualTo(state.Phase));
+        }
+
+        [Test]
         public void StateMachine_IsAuthoritativeAndPhaseOwnsActionModifiers()
         {
             var state = State(MatchPhase.Opening);

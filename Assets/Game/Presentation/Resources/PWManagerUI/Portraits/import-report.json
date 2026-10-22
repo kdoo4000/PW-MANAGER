@@ -1,7 +1,7 @@
 [
   {
     "gender": "Male",
-    "count": 567,
+    "count": 650,
     "bodyDefaults": [
       100,
       85,
@@ -15,7 +15,7 @@
   },
   {
     "gender": "Female",
-    "count": 477,
+    "count": 568,
     "bodyDefaults": [
       100,
       85,

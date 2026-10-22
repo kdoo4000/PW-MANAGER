@@ -87,7 +87,8 @@ namespace PWManager.Data.Loading
                     definition.CompatibleMatchTypeIds, definition.ConditionCostMultiplier,
                     definition.DisqualificationRule, definition.CountOutRule,
                     definition.PinfallRule, definition.SubmissionRule,
-                    definition.AllowedSpecialFinishTypes, definition.RopeBreakRule, definition.CountOutSeconds);
+                    definition.AllowedSpecialFinishTypes, definition.RopeBreakRule, definition.CountOutSeconds,
+                    definition.IronMan, definition.Tornado, definition.Elimination, definition.TwoOutOfThree);
                 return true;
             }
             rules = default;

@@ -370,6 +370,11 @@ namespace PWManager.Presentation
                 ?? options.FirstOrDefault(x => x.ParticipantCount == participantCount)
                 ?? options.FirstOrDefault();
             selectedMatchGimmickId = match.MatchGimmickId;
+            if (selectedMatchGimmickId == "gimmick_000" && new[] { match.IronMan, match.Tornado, match.Elimination }.Count(x => x) == 1)
+                selectedMatchGimmickId = staticContent.MatchGimmicks.Values.FirstOrDefault(x =>
+                    x.IronMan == match.IronMan && x.Tornado == match.Tornado && x.Elimination == match.Elimination)?.Id ?? selectedMatchGimmickId;
+            else if (selectedMatchGimmickId == "gimmick_000" && match.FallsToWin == 2 && !match.IronMan && !match.Tornado && !match.Elimination)
+                selectedMatchGimmickId = staticContent.MatchGimmicks.Values.FirstOrDefault(x => x.TwoOutOfThree)?.Id ?? selectedMatchGimmickId;
         }
 
         private void RenderMatchRulePicker()
@@ -434,12 +439,6 @@ namespace PWManager.Presentation
             RefreshFinishParticipants();
             SetEditorChoices("show-editor-finish-performer", editorFinishPerformers.Select(WrestlerName).ToList(), editorFinishPerformers.IndexOf(match.FinishPerformerId ?? match.WinnerId));
             SetEditorChoices("show-editor-loser", editorFinishLosers.Select(WrestlerName).ToList(), editorFinishLosers.IndexOf(match.LoserTargetId));
-            root.Q<IntegerField>("show-editor-falls-to-win").SetValueWithoutNotify(Math.Max(1, match.FallsToWin));
-            root.Q<Toggle>("show-editor-iron-man").SetValueWithoutNotify(match.IronMan);
-            root.Q<Toggle>("show-editor-elimination").SetValueWithoutNotify(match.Elimination);
-            var tornado = root.Q<Toggle>("show-editor-tornado");
-            tornado.SetValueWithoutNotify(match.Tornado);
-            tornado.SetEnabled(match.TeamCount > 0 && match.MembersPerTeam > 1);
             var dominantSides = new List<string> { "균등" };
             dominantSides.AddRange(editorFinishSides.Select((side, index) => $"{index + 1}. {string.Join(" & ", (side.MemberIds ?? new List<string>()).Select(WrestlerName))}"));
             SetEditorChoices("show-editor-dominant-side", dominantSides, editorFinishSides.FindIndex(x => x.Id == match.DominantSideId) + 1);
@@ -537,9 +536,6 @@ namespace PWManager.Presentation
             if (finishIndex < 0 || finishIndex >= editorFinishTypes.Count) throw new InvalidOperationException("결말 방식을 선택하세요.");
             var finish = editorFinishTypes[finishIndex];
             if (!AllowedFinishTypes(match).Contains(finish)) throw new InvalidOperationException("이 경기 규칙에서 사용할 수 없는 결말입니다.");
-            var ironMan = root.Q<Toggle>("show-editor-iron-man").value;
-            var elimination = root.Q<Toggle>("show-editor-elimination").value;
-            if (ironMan && elimination) throw new InvalidOperationException("아이언맨 방식과 탈락 방식은 동시에 사용할 수 없습니다.");
             string sideId = null, performer = null, loser = null;
             if (finish != MatchFinishType.Draw)
             {
@@ -562,10 +558,6 @@ namespace PWManager.Presentation
             match.FinishPerformerId = performer;
             match.WinnerId = performer;
             match.LoserTargetId = loser;
-            match.FallsToWin = Math.Max(1, root.Q<IntegerField>("show-editor-falls-to-win").value);
-            match.IronMan = ironMan;
-            match.Elimination = elimination;
-            match.Tornado = match.MembersPerTeam > 1 && root.Q<Toggle>("show-editor-tornado").value;
             var dominantIndex = root.Q<DropdownField>("show-editor-dominant-side").index - 1;
             match.DominantSideId = dominantIndex >= 0 && dominantIndex < editorFinishSides.Count ? editorFinishSides[dominantIndex].Id : null;
         }
@@ -888,8 +880,17 @@ namespace PWManager.Presentation
                     if (!CompatibleGimmicks(rule).Any(x => x.Id == selectedMatchGimmickId))
                         throw new InvalidOperationException("선택한 규칙에서는 해당 기믹을 사용할 수 없습니다.");
                     var formatChanged = match.MatchTypeId != type.Id || match.TeamCount != rule.TeamCount || match.MembersPerTeam != rule.MembersPerTeam;
+                    var gimmickChanged = match.MatchGimmickId != selectedMatchGimmickId;
                     match.MatchTypeId = type.Id;
                     match.MatchGimmickId = selectedMatchGimmickId;
+                    staticContent.TryGetGimmickRules(selectedMatchGimmickId, out var gimmick);
+                    if (gimmickChanged || gimmick.IronMan || gimmick.Tornado || gimmick.Elimination || gimmick.TwoOutOfThree)
+                    {
+                        match.IronMan = gimmick.IronMan;
+                        match.Tornado = gimmick.Tornado;
+                        match.Elimination = gimmick.Elimination;
+                    }
+                    match.FallsToWin = gimmick.TwoOutOfThree ? 2 : 1;
                     match.TeamCount = rule.TeamCount;
                     match.MembersPerTeam = rule.MembersPerTeam;
                     if (formatChanged)
@@ -1127,6 +1128,7 @@ namespace PWManager.Presentation
             if (rule == null || staticContent == null) return Enumerable.Empty<MatchGimmickDefinition>();
             return staticContent.MatchGimmicks.Values
                 .Where(x => x != null && x.MinimumParticipants <= rule.ParticipantCount && x.MaximumParticipants >= rule.ParticipantCount &&
+                    (!x.TwoOutOfThree || rule.TeamCount == 2) &&
                     (x.CompatibleMatchTypeIds == null || x.CompatibleMatchTypeIds.Count == 0 || x.CompatibleMatchTypeIds.Contains(rule.MatchTypeId)))
                 .OrderBy(x => x.Id);
         }

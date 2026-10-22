@@ -53,6 +53,8 @@ namespace PWManager.Domain.Services
         }
 
         public static int MaximumSeconds(MatchEngineState s) => Math.Max(6, Math.Min(120, s.TargetDurationSeconds / 5));
+        public static bool CanChain(MatchEngineState s) => s.Phase == MatchPhase.Opening && !s.Opening.Completed &&
+            s.Opening.Style == MatchOpeningStyle.Probe && !s.Events.Any(e => e.Impact > 0 && e.Type != MatchActionType.Chain);
         public static bool CanLeave(MatchEngineState s)
         {
             if (!s.Opening.Initialized) return true;

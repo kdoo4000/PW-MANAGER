@@ -4,6 +4,7 @@ using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Text.RegularExpressions;
 using PWManager.Domain.Models;
+using PWManager.Domain.Services;
 using UnityEngine;
 using UnityEngine.UIElements;
 using UnityEngine.UIElements.Experimental;
@@ -29,7 +30,8 @@ namespace PWManager.Presentation
             // Names alone cannot identify namesakes; callers should supply the relevant participants.
             var names = wrestlers.Where(w => !string.IsNullOrEmpty(w?.Id))
                 .SelectMany(w => new[] { w.Identity?.RingName, w.Identity?.LegalName }
-                    .Where(n => !string.IsNullOrWhiteSpace(n)).Distinct().Select(n => (Name: n, Wrestler: w)))
+                    .Where(n => !string.IsNullOrWhiteSpace(n)).SelectMany(n => new[] { n, MatchEventNarration.ShortName(n) })
+                    .Distinct().Select(n => (Name: n, Wrestler: w)))
                 .GroupBy(x => x.Name, StringComparer.Ordinal).Where(g => g.Select(x => x.Wrestler.Id).Distinct().Count() == 1)
                 .ToDictionary(g => g.Key, g => g.First().Wrestler.Id, StringComparer.Ordinal);
             if (names.Count == 0) return text;

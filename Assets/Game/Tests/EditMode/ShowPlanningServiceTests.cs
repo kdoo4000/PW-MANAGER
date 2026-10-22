@@ -397,6 +397,48 @@ namespace PWManager.Tests
             Assert.That(show.MainEventId, Is.EqualTo(promoEvent.Id));
         }
 
+        [TestCase("gimmick_005", true, false, false)]
+        [TestCase("gimmick_006", false, true, false)]
+        [TestCase("gimmick_007", false, false, true)]
+        [TestCase("gimmick_008", false, false, false)]
+        public void AddMatch_GimmickAppliesMatchFormat(string gimmickId, bool ironMan, bool tornado, bool elimination)
+        {
+            var save = CreateInitialSave();
+            var service = Service();
+            var show = service.CreateDraft(save, save.Schedules[0].Id, "Format Gimmick", save.VenueContracts[0].Id, 60);
+            var match = Match(save, 0, 1);
+            match.MatchGimmickId = gimmickId;
+            if (tornado)
+            {
+                match.MatchTypeId = "matchtype_002";
+                match.TeamCount = 2;
+                match.MembersPerTeam = 2;
+                match.ParticipantIds = save.Wrestlers.Take(4).Select(x => x.Id).ToList();
+                match.LoserTargetId = match.ParticipantIds[2];
+            }
+
+            service.AddMatch(save, show.Id, match, 60);
+
+            Assert.That(match.IronMan, Is.EqualTo(ironMan));
+            Assert.That(match.Tornado, Is.EqualTo(tornado));
+            Assert.That(match.Elimination, Is.EqualTo(elimination));
+            Assert.That(match.FallsToWin, Is.EqualTo(gimmickId == "gimmick_008" ? 2 : 1));
+            Assert.That(service.Validate(save, show.Id).Where(x => x.Severity == ShowValidationSeverity.Error), Is.Empty);
+        }
+
+        [Test]
+        public void TwoOutOfThreeFalls_RejectsThreeSides()
+        {
+            var save = CreateInitialSave();
+            var service = Service();
+            var show = service.CreateDraft(save, save.Schedules[0].Id, "Two out of Three", save.VenueContracts[0].Id, 60);
+            var match = Match(save, 0, 1);
+            match.MatchGimmickId = "gimmick_008";
+            match.ParticipantIds.Add(save.Wrestlers[2].Id);
+            service.AddMatch(save, show.Id, match, 60);
+            Assert.That(service.Validate(save, show.Id).Any(x => x.Code == "match.two-out-of-three"), Is.True);
+        }
+
         private static MatchPlanState Match(GameSave save, int first, int second) => new()
         {
             MatchTypeId = "matchtype_001",

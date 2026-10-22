@@ -53,15 +53,58 @@ namespace PWManager.Tests
         }
 
         [Test]
-        public void NoSafeLegalRescueReturnsExplicitFailureWithoutFakingWinner()
+        public void NoSafeLegalRescueReturnsExplicitStopWithoutFakingWinner()
         {
             var state = State();
             MatchHealth.ApplyInjury(state, state.Participants[0], InjuryStatus.Moderate, BodyRegion.Head);
             new MatchSimulator(2).Step(state);
-            Assert.That(state.IsAborted, Is.True);
-            Assert.That(state.IsFinished, Is.False);
+            Assert.That(state.IsAborted, Is.False);
+            Assert.That(state.IsFinished, Is.True);
+            Assert.That(state.WasStoppedByExecution, Is.True);
+            Assert.That(state.Events.Last().Type, Is.EqualTo(MatchActionType.ExecutionStop));
             Assert.That(state.WinnerId, Is.Null);
             Assert.That(state.Events.Any(e => e.IsPhysicalAttack), Is.False);
+        }
+
+        [Test]
+        public void OrdinarySpotWaitsForTheCurrentExchangeAndThenRunsOnce()
+        {
+            var state = State(); state.ElapsedSeconds = 80;
+            var spot = new SpotResultState { SpotId = "practice", ActorId = "a", TargetId = "b", Phase = MatchSpotPhase.Early };
+            state.ScheduledSpots.Add(spot);
+            state.Exchange = new() { Kind = ExchangeKind.Hold, ActorId = "a", TargetId = "b" };
+            var simulator = new MatchSimulator(2, accidentsEnabled: false);
+            Assert.That(simulator.Step(state).Type, Is.Not.EqualTo(MatchActionType.Spot));
+            Assert.That(spot.WasApplied, Is.False);
+            state.Exchange = null; state.Participants[0].IsDowned = false; state.Participants[0].Stun = 0;
+            Assert.That(simulator.Step(state).Type, Is.EqualTo(MatchActionType.Spot));
+            Assert.That(spot.WasApplied, Is.True);
+            Assert.That(state.AppliedSpots, Is.EqualTo(new[] { 0 }));
+        }
+
+        [Test]
+        public void InjuredAerialSpotIsSkippedWithoutDamageOrSuccessScore()
+        {
+            var state = State(); state.ElapsedSeconds = 200;
+            state.FindMove = _ => new MatchMoveRules { Kind = MoveKind.Aerial };
+            state.Participants[0].RealInjury = InjuryStatus.Moderate;
+            state.Participants[0].RealInjuryRegion = BodyRegion.Legs;
+            var spot = new SpotResultState { SpotId = "practice", MoveId = "flight", ActorId = "a", TargetId = "b",
+                Phase = MatchSpotPhase.Early, Result = SpotExecutionResult.GreatSuccess, FinalSpotScore = 1 };
+            state.ScheduledSpots.Add(spot);
+            var e = new MatchSimulator(2, accidentsEnabled: false).Step(state);
+            Assert.That(spot.WasSkipped, Is.True);
+            Assert.That(spot.FinalSpotScore, Is.Zero);
+            Assert.That(e.Impact, Is.Zero);
+            Assert.That(state.Participants[1].BodyDamage, Is.Zero);
+            Assert.That(spot.SkipReason, Is.Not.Empty);
+            foreach (var before in e.Before.Participants)
+            {
+                var after = e.After.Participants.Single(p => p.Id == before.Id);
+                Assert.That(after.RingX, Is.EqualTo(before.RingX));
+                Assert.That(after.FacingX, Is.EqualTo(before.FacingX));
+                Assert.That(after.Posture, Is.EqualTo(before.Posture));
+            }
         }
 
         [Test]
@@ -76,17 +119,29 @@ namespace PWManager.Tests
         }
 
         [TestCase(260)]
-        [TestCase(313)]
         public void ReadyBookedCoverFinishesInsideWindow(int elapsed)
         {
             var state = State(); state.ElapsedSeconds = elapsed;
             state.Participants[1].IsDowned = true; state.Participants[1].Posture = MatchPosture.Supine;
             state.Exchange = new() { Kind = ExchangeKind.Cover, ActorId = "a", TargetId = "b", Booked = true };
             var simulator = new MatchSimulator(2);
-            for (int i = 0; i < 20 && !state.IsFinished && !state.IsAborted; i++) simulator.Step(state);
+            for (int i = 0; i < 20 && !state.IsFinished && !state.IsAborted && !state.WasStoppedByExecution; i++) simulator.Step(state);
             Assert.That(state.IsFinished, Is.True, state.FailureReason);
             Assert.That(state.ElapsedSeconds, Is.InRange(285, 315));
             Assert.That(state.Participants[0].Falls, Is.EqualTo(1));
+            Assert.That(state.Events.Any(e => e.Detail == "finish-preparation"), Is.False);
+        }
+
+        [Test]
+        public void LateCoverStopsInsteadOfCompressingTheThreeCount()
+        {
+            var state = State(); state.ElapsedSeconds = 313;
+            state.Participants[1].IsDowned = true;
+            state.Exchange = new() { Kind = ExchangeKind.Cover, ActorId = "a", TargetId = "b", Booked = true };
+            new MatchSimulator(2).Step(state);
+            Assert.That(state.WasStoppedByExecution, Is.True);
+            Assert.That(state.Participants[0].Falls, Is.Zero);
+            Assert.That(state.WinnerId, Is.Null);
         }
 
         [Test]
@@ -141,7 +196,7 @@ namespace PWManager.Tests
                 TargetRegion = id == "old" ? BodyRegion.Arms : BodyRegion.Body, Name = id };
             MatchHealth.ApplyInjury(state, state.Participants[1], InjuryStatus.Moderate, BodyRegion.Arms);
             var simulator = new MatchSimulator(2);
-            for (int i = 0; i < 50 && !state.IsFinished && !state.IsAborted; i++) simulator.Step(state);
+            for (int i = 0; i < 50 && !state.IsFinished && !state.IsAborted && !state.WasStoppedByExecution; i++) simulator.Step(state);
             Assert.That(state.IsFinished, Is.True, state.FailureReason);
             Assert.That(state.ActualFinish, Is.EqualTo(MatchFinishType.TableBreak));
             Assert.That(state.Events.Any(e => e.IsPhysicalAttack && e.MoveId == "safe"), Is.True);
@@ -158,7 +213,7 @@ namespace PWManager.Tests
                 TargetRegion = id == "old" ? BodyRegion.Body : BodyRegion.Legs, Name = id };
             MatchHealth.ApplyInjury(state, state.Participants[1], InjuryStatus.Moderate, BodyRegion.Body);
             var simulator = new MatchSimulator(2);
-            for (int i = 0; i < 40 && !state.IsFinished && !state.IsAborted; i++) simulator.Step(state);
+            for (int i = 0; i < 40 && !state.IsFinished && !state.IsAborted && !state.WasStoppedByExecution; i++) simulator.Step(state);
             Assert.That(state.IsFinished, Is.True, state.FailureReason);
             Assert.That(state.WinnerId, Is.EqualTo("a"));
             Assert.That(state.Events.Any(e => e.MoveId == "old" && e.IsPhysicalAttack), Is.False);

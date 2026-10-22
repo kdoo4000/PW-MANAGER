@@ -113,6 +113,7 @@ namespace PWManager.Presentation
 
         private bool Available(string category, int index)
         {
+            if (!PortraitCatalog.Selectable(gender, category, index)) return false;
             if (category == "clothes" && gender == WrestlerGender.Female && index == 1) return false;
             if (category == "eyewear" && Appearance.Part("mask") > 1) return index == 1;
             if (category == "headwear" && PortraitCatalog.FullMask(Appearance.Part("mask"))) return index == 1;
@@ -134,7 +135,7 @@ namespace PWManager.Presentation
 
         private void AddColor(string category)
         {
-            var labels = new Dictionary<string, string> { ["hair"] = "머리·눈썹 색", ["beard"] = "수염 색", ["eyes"] = "눈 색", ["clothes"] = "의상 주색", ["clothes-secondary"] = "의상 보조색", ["mask"] = "마스크 주색", ["mask-secondary"] = "마스크 보조색", ["facepaint"] = "페인트 주색", ["facepaint-secondary"] = "페인트 보조색", ["tattoo"] = "타투 색", ["bodypaint"] = "바디 페인트 색" };
+            var labels = new Dictionary<string, string> { ["hair"] = "머리·눈썹 색", ["beard"] = "수염 색", ["eyes"] = "눈 색", ["clothes"] = "의상 주색", ["clothes-secondary"] = "의상 보조색", ["mask"] = "마스크 주색", ["mask-secondary"] = "마스크 보조색", ["facepaint"] = "페인트 주색", ["facepaint-secondary"] = "페인트 보조색", ["tattoo"] = "타투 색", ["bodypaint"] = "바디 페인트 색", ["headwear"] = "모자·두건 주색", ["headwear-secondary"] = "모자·두건 무늬색" };
             var row = new VisualElement(); row.AddToClassList("portrait-color-row"); controls.Add(row);
             var input = new TextField(labels[category]) { name = "portrait-color-" + category, maxLength = 7, value = Appearance.Color(category) ?? "" };
             input.AddToClassList("portrait-color-input"); row.Add(input);

@@ -84,7 +84,7 @@ namespace PWManager.Domain.Services
         {
             if ((s.Rules.IronMan || s.Booking?.FinishType == MatchFinishType.Draw) && s.ElapsedSeconds >= s.TargetDurationSeconds - 1)
                 return TimeExpired(s);
-            var spot = ApplyDueSpot(s);
+            var spot = ApplyDueSpot(s, random);
             if (spot != null) return spot;
             foreach (var participant in s.Participants) PlanFinisher(s, participant, random);
             var remaining = s.LatestFinishSeconds - s.ElapsedSeconds;
@@ -99,16 +99,28 @@ namespace PWManager.Domain.Services
                 }
                 return TimeExpired(s);
             }
-            if (s.Exchange != null) return Continue(s, random);
+            if (s.Exchange != null)
+            {
+                var cause = s.Exchange.CauseIndex >= 0 && s.Exchange.CauseIndex < s.Events.Count ? s.Events[s.Exchange.CauseIndex] : null;
+                bool landedDive = cause?.Type == MatchActionType.Dive || MatchTechniques.Find(cause)?.Rules.Kind == MoveKind.Aerial;
+                if (s.Booking != null && s.BookingSequence && s.Participants.Count == 2 && !s.Rules.Tag &&
+                    s.Exchange.Kind == ExchangeKind.FollowUp && s.GetParticipant(s.Exchange.ActorId).Position != MatchPosition.TopRope &&
+                    cause?.Type is not (MatchActionType.Finisher or MatchActionType.Signature) && !MatchMoveMotion.IsBridgingSuplex(s.Exchange.MoveId))
+                    s.Exchange = null;
+                else if (s.Exchange.Kind != ExchangeKind.FollowUp || !landedDive ||
+                    s.GetParticipant(s.Exchange.ActorId).Position == MatchPosition.TopRope) return Continue(s, random);
+            }
             if (s.RescueRequired) return BookedAction(s, random);
             if (s.Booking != null && s.Booking.FinishType != MatchFinishType.Draw &&
-                s.TargetDurationSeconds - s.ElapsedSeconds <= 75 + s.Participants.Count * 5 &&
+                (s.BookingSequence || s.TargetDurationSeconds - s.ElapsedSeconds <= BookedPreparationSeconds(s)) &&
                 (!s.Rules.IronMan || s.Participants.Where(p => p.SideId == s.GetParticipant(s.Booking.WinnerId).SideId).Sum(p => p.Falls) <=
                 s.Participants.Where(p => p.SideId != s.GetParticipant(s.Booking.WinnerId).SideId).GroupBy(p => p.SideId).Max(g => g.Sum(p => p.Falls))))
             {
+                s.Exchange = null;
                 s.BookingSequence = true;
                 return BookedAction(s, random);
             }
+            if (s.Exchange != null) return Continue(s, random);
             s.BookingSequence = false;
             var first = !s.Events.Any(e => e.Type != MatchActionType.Spot);
             var actor = first ? s.GetActiveParticipants().FirstOrDefault(p => p.Id == s.Opening.InitiatorId) : null;
@@ -133,31 +145,77 @@ namespace PWManager.Domain.Services
         public static List<MatchEngineAction> Actions(MatchEngineState s, MatchEngineParticipant a, MatchEngineParticipant b)
         {
             var list = new List<MatchEngineAction>();
+            bool TimeForHold() => s.Participants.Count != 2 || s.Rules.Tag || s.Booking == null || s.Rules.IronMan ||
+                string.IsNullOrEmpty(s.Booking.WinnerId) || string.IsNullOrEmpty(s.Booking.LoserId) ||
+                s.Booking.FinishType == MatchFinishType.Draw || s.TargetDurationSeconds - s.ElapsedSeconds > BookedPreparationSeconds(s) + 30;
             void Add(MatchActionType type, string move = null, string partner = null) => list.Add(new MatchEngineAction
             { Type = type, PerformerId = a.Id, ReceiverId = b.Id, MoveId = move, PartnerId = partner, TargetRegion = a.TargetRegion, ReceiverIds = new() { b.Id } });
             if (!Legal(s, a) || !Legal(s, b)) return list;
-            if (a.IsDowned) { Add(MatchActionType.Recover); return list; }
+            if (a.IsDowned)
+            {
+                Add(MatchActionType.Recover);
+                if ((s.Exchange == null && s.Participants.Count == 2 && !s.Rules.Tag ||
+                    s.Exchange?.Kind == ExchangeKind.FollowUp && s.Exchange.ActorId == a.Id && s.Exchange.TargetId == b.Id) && GroundedReady(s, a, b))
+                {
+                    if (s.Rules.Pinfall && s.RefereeUnavailableUntil <= s.ElapsedSeconds && CanRetryCover(s, a, b)) Add(MatchActionType.Pin);
+                    // A fresh hold would divert a committed finish; a cover can still follow the landing.
+                    if (s.Exchange?.Kind == ExchangeKind.FollowUp && !s.BookingSequence && s.Rules.Submission && TimeForHold() &&
+                        MatchTechniques.Candidates(MatchActionType.Submission, a, b).Count > 0) Add(MatchActionType.Submission);
+                }
+                return list;
+            }
             if (!InRing(a) || !InRing(b)) { Add(MatchActionType.Reposition); return list; }
             if (a.Position == MatchPosition.TopRope)
             { Add(MatchTechniques.Candidates(MatchActionType.Dive, a, b).Count > 0 ? MatchActionType.Dive : MatchActionType.Reposition); return list; }
+            if (!b.IsDowned && MatchOpening.CanChain(s) && s.Opening.CompletedChains == 0 && s.ElapsedSeconds < MatchOpening.MaximumSeconds(s))
+            {
+                foreach (var type in new[] { MatchActionType.Probe, MatchActionType.TieUp })
+                    if (MatchTechniques.Candidates(type, a, b).Count > 0) Add(type);
+                if (list.Count > 0) return list;
+            }
             if (b.IsDowned)
             {
                 Add(MatchActionType.GroundAttack); Add(MatchActionType.LimbAttack);
-                if (s.Rules.Submission && (!s.Rules.RopeBreak || b.Position != MatchPosition.Ropes)) Add(MatchActionType.Submission);
-                if (s.Rules.Pinfall && s.RefereeUnavailableUntil <= s.ElapsedSeconds && (!s.Rules.RopeBreak || b.Position != MatchPosition.Ropes)) Add(MatchActionType.Pin);
+                if (s.Rules.Submission && (!s.Rules.RopeBreak || b.Position != MatchPosition.Ropes) && TimeForHold()) Add(MatchActionType.Submission);
+                if (s.Rules.Pinfall && s.RefereeUnavailableUntil <= s.ElapsedSeconds && (!s.Rules.RopeBreak || b.Position != MatchPosition.Ropes) && CanRetryCover(s, a, b)) Add(MatchActionType.Pin);
                 if (a.Attributes.HighFlying >= 8 && !MatchHealth.Restricted(a, BodyRegion.Legs) && MatchTechniques.Candidates(MatchActionType.Dive, a, b).Count > 0) Add(MatchActionType.Climb);
+                if (CanPrepareOffense(s, a, b))
+                {
+                    if (MatchTechniques.Candidates(MatchActionType.Grapple, a, b, MatchPosture.Standing).Count > 0 ||
+                        MatchTechniques.Candidates(MatchActionType.BasicStrike, a, b, MatchPosture.Standing).Count > 0)
+                        Add(MatchActionType.Lift);
+                    foreach (var posture in new[] { MatchPosture.Prone, MatchPosture.Seated, MatchPosture.Kneeling })
+                    {
+                        if (posture == b.Posture) continue;
+                        var goal = new[] { MatchActionType.Submission, MatchActionType.LimbAttack, MatchActionType.GroundAttack }
+                            .Where(type => type != MatchActionType.Submission || s.Rules.Submission && TimeForHold() &&
+                                (!s.Rules.RopeBreak || b.Position != MatchPosition.Ropes))
+                            .SelectMany(type => MatchTechniques.Candidates(type, a, b, posture))
+                            .Where(t => t.Rules.Situation is MoveSituation.GroundProne or MoveSituation.GroundSeated or MoveSituation.GroundKneeling)
+                            .OrderBy(t => s.Events.TakeLast(12).Count(e => e.PerformerId == a.Id && e.TechniqueId == t.Id))
+                            .FirstOrDefault();
+                        if (goal != null) Add(MatchActionType.TurnOver, goal.Id);
+                    }
+                }
             }
             else
             {
                 Add(MatchActionType.BasicStrike); Add(MatchActionType.HeavyStrike); Add(MatchActionType.Grapple); Add(MatchActionType.LimbAttack);
-                if (s.Rules.Submission && (!s.Rules.RopeBreak || b.Position != MatchPosition.Ropes)) Add(MatchActionType.StandingHold);
+                if (s.Rules.Submission && (!s.Rules.RopeBreak || b.Position != MatchPosition.Ropes) && TimeForHold()) Add(MatchActionType.StandingHold);
                 if (a.Attributes.HighFlying >= 8 && !MatchHealth.Restricted(a, BodyRegion.Legs) && b.Position != MatchPosition.TopRope &&
                     MatchTechniques.Candidates(MatchActionType.Dive, a, b).Count > 0) Add(MatchActionType.Climb);
             }
-            if (!b.IsDowned && s.Phase == MatchPhase.Opening && !s.Opening.Completed)
+            if (!b.IsDowned && MatchOpening.CanChain(s))
             { Add(MatchActionType.Probe); Add(MatchActionType.TieUp); }
-            if (b.Position == MatchPosition.Ropes || !MatchHealth.Restricted(a, BodyRegion.Legs) && !MatchHealth.Restricted(a, BodyRegion.Arms) &&
-                (b.Position == MatchPosition.Corner || b.Position == MatchPosition.Center && MatchMovement.DistanceFromCenter(b) > .65f))
+            if (s.Rules.RopeBreak && MatchMovement.CanReachRopes(b) && s.Rules.Submission && TimeForHold() && CanPrepareOffense(s, a, b))
+            {
+                var hold = MatchTechniques.Candidates(b.IsDowned ? MatchActionType.Submission : MatchActionType.StandingHold, a, b)
+                    .OrderBy(t => s.Events.TakeLast(12).Count(e => e.PerformerId == a.Id && e.TechniqueId == t.Id)).FirstOrDefault();
+                if (hold != null) Add(MatchActionType.Reposition, hold.Id);
+            }
+            if (!list.Any(x => x.Type == MatchActionType.Reposition) &&
+                (b.Position == MatchPosition.Ropes || !MatchHealth.Restricted(a, BodyRegion.Legs) && !MatchHealth.Restricted(a, BodyRegion.Arms) &&
+                (b.Position == MatchPosition.Corner || b.Position == MatchPosition.Center && MatchMovement.DistanceFromCenter(b) > .65f)))
                 Add(MatchActionType.Reposition);
             // Movement begins a linked exchange; a runner cannot randomly stop for another action.
             var movementReady = !MatchHealth.Restricted(a, BodyRegion.Legs) && a.Fatigue < 80 && b.Position != MatchPosition.TopRope &&
@@ -196,7 +254,8 @@ namespace PWManager.Domain.Services
                 foreach (var id in finishers) if (UsableAssignedMove(s, a, id) && CanMove(s, a, b, id)) Add(MatchActionType.Finisher, id);
                 if (finishers.Count == 0 && a.MatchControl >= 78 && MatchTechniques.Candidates(MatchActionType.Finisher, a, b).Count > 0)
                     Add(MatchActionType.Finisher);
-                if (b.IsDowned && finishers.Any(id => s.FindMove?.Invoke(id) is MatchMoveRules m && Kind(m) is MoveKind.Strike or MoveKind.Grapple))
+                if (b.IsDowned && !list.Any(x => x.Type == MatchActionType.Lift) &&
+                    finishers.Any(id => s.FindMove?.Invoke(id) is MatchMoveRules m && Kind(m) is MoveKind.Strike or MoveKind.Grapple))
                     Add(MatchActionType.Lift);
                 if (!string.IsNullOrEmpty(a.PlannedFinisherMoveId) && s.FindMove?.Invoke(a.PlannedFinisherMoveId) is MatchMoveRules goal)
                 {
@@ -281,13 +340,36 @@ namespace PWManager.Domain.Services
         private static int CoverSeconds(MatchEngineParticipant a, float? fatigue = null) => 2 +
             (int)Math.Ceiling(Math.Max(0, (fatigue ?? a.Fatigue) - 70) / 15 * (1 - a.Attributes.RingPsychology / 40));
 
+        private static bool GroundedReady(MatchEngineState s, MatchEngineParticipant a, MatchEngineParticipant b) =>
+            Legal(s, a) && Legal(s, b) && InRing(a) && InRing(b) && b.IsDowned &&
+            a.Position != MatchPosition.TopRope && a.Stun < 12 && a.Fatigue < 80 && a.RealInjury < InjuryStatus.Moderate &&
+            (!s.Rules.RopeBreak || b.Position != MatchPosition.Ropes);
+
+        private static bool CanPrepareOffense(MatchEngineState s, MatchEngineParticipant a, MatchEngineParticipant b) =>
+            s.Participants.Count == 2 && !s.Rules.Tag && !s.BookingSequence && InRing(a) && InRing(b) &&
+            !a.IsDowned && a.Position != MatchPosition.TopRope && b.Position != MatchPosition.TopRope &&
+            a.Stun < 12 && a.Fatigue < 80 && !MatchHealth.Restricted(a, BodyRegion.Arms) && !MatchHealth.Restricted(a, BodyRegion.Legs) &&
+            s.TargetDurationSeconds - s.ElapsedSeconds > 70 &&
+            !(b.LastImpactWasFinisher && s.ElapsedSeconds - b.LastImpactTime <= 30) &&
+            !s.Events.Any(e => e.PerformerId == a.Id && e.ReceiverId == b.Id &&
+                e.Type is MatchActionType.Lift or MatchActionType.TurnOver && s.ElapsedSeconds - e.MatchTimeSeconds < 12);
+
+        private static bool CanRetryCover(MatchEngineState s, MatchEngineParticipant a, MatchEngineParticipant b)
+        {
+            int last = s.Events.FindLastIndex(e => e.Type == MatchActionType.Pin && e.PerformerId == a.Id && e.ReceiverId == b.Id);
+            if (last < 0 || s.Events[last].Result != MatchActionResult.OneCount &&
+                (s.Participants.Count != 2 || s.Rules.Tag || s.Events[last].Result is not (MatchActionResult.TwoCount or MatchActionResult.NearFall))) return true;
+            // An easy kickout needs fresh offense, not another turn-over of the same opponent.
+            return s.Events.Skip(last + 1).Any(e => e.ReceiverId == b.Id && e.Impact > 0);
+        }
+
         public static MoveKind Kind(MatchMoveRules move) => move.Kind != MoveKind.Automatic ? move.Kind :
             move.HighFlyingWeight >= .5f ? MoveKind.Aerial : move.TechnicalWeight > move.BrawlingWeight ? MoveKind.Grapple : MoveKind.Strike;
 
         public static MatchEngineEvent Resolve(MatchEngineState s, MatchEngineAction action, Random random)
         {
             var a = s.GetParticipant(action.PerformerId); var b = s.GetParticipant(action.ReceiverId);
-            if (!Legal(s, a) || !Legal(s, b) || a.SideId != null && a.SideId == b.SideId)
+            if ((!Legal(s, a) && (action.Type != MatchActionType.Recover || a.IsEliminated)) || !Legal(s, b) || a.SideId != null && a.SideId == b.SideId)
                 throw new InvalidOperationException("Illegal exchange participants.");
             var type = action.Type;
             var move = string.IsNullOrEmpty(action.MoveId) ? null : MatchTechniques.Find(action.MoveId)?.Rules ?? s.FindMove?.Invoke(action.MoveId);
@@ -297,14 +379,26 @@ namespace PWManager.Domain.Services
             if (type is MatchActionType.Recover or MatchActionType.Rest)
             {
                 var recovering = a.IsDowned;
+                bool readyRise = recovering && s.Participants.Count == 2 && !s.Rules.Tag && b.IsDowned &&
+                    InRing(a) && InRing(b) && a.Position != MatchPosition.TopRope && a.Posture == MatchPosture.Seated &&
+                    a.Stun <= 0 && s.ElapsedSeconds - a.LastImpactTime >= 15 && a.Fatigue < 80 &&
+                    a.RealInjury < InjuryStatus.Moderate && !MatchHealth.Restricted(a, BodyRegion.Legs);
                 int seconds = recovering ? RecoverySeconds(a) : 10;
                 var recovery = Event(s, recovering ? MatchActionType.Recover : type, MatchActionResult.FullSuccess, a, b, seconds);
                 RecoverFatigue(a, recovery.DurationSeconds);
-                if (recovering) MatchMovement.RecoverPosture(a);
+                if (recovering)
+                {
+                    // An unhurt seated wrestler can stand in one motion, without another idle decision.
+                    if (readyRise) MatchMovement.RecoverPosture(a);
+                    MatchMovement.RecoverPosture(a);
+                }
                 recovery.Detail = recovering ? a.Posture.ToString().ToLowerInvariant() : null;
                 return recovery;
             }
-            if (a.IsDowned && !bridgeCover) throw new InvalidOperationException("A downed participant must recover before attacking.");
+            bool groundAction = a.IsDowned && GroundedReady(s, a, b) && (type == MatchActionType.Pin || type == MatchActionType.Submission &&
+                (string.IsNullOrEmpty(action.MoveId) ? MatchTechniques.Candidates(type, a, b).Count > 0 :
+                    move != null && Kind(move) == MoveKind.Submission && MatchMoveMotion.ActorEndPosture(MatchTechniques.Find(action.MoveId)?.Id ?? action.MoveId) != MatchPosture.Standing));
+            if (a.IsDowned && !bridgeCover && !groundAction) throw new InvalidOperationException("A downed participant must recover before attacking.");
             if (type is MatchActionType.Probe or MatchActionType.TieUp)
             {
                 if (b.IsDowned || !InRing(a) || !InRing(b)) throw new InvalidOperationException("Opening hand fighting requires standing opponents in the ring.");
@@ -359,16 +453,31 @@ namespace PWManager.Domain.Services
             if (type == MatchActionType.Lift)
             {
                 if (!b.IsDowned || !InRing(a) || !InRing(b)) throw new InvalidOperationException("Lifting needs a grounded opponent in the ring.");
-                b.IsDowned = false; Spend(a, 1.5f);
+                b.IsDowned = false; b.Posture = MatchPosture.Standing; Spend(a, 1.5f);
+                if (!s.BookingSequence && s.Participants.Count == 2 && !s.Rules.Tag)
+                {
+                    var followUps = Actions(s, a, b).Where(x => x.Type is MatchActionType.BasicStrike or MatchActionType.HeavyStrike or
+                        MatchActionType.Grapple or MatchActionType.StandingHold or MatchActionType.IrishWhip or MatchActionType.CornerWhip or
+                        MatchActionType.Signature or MatchActionType.Finisher).ToList();
+                    if (followUps.Count > 0)
+                    {
+                        foreach (var follow in followUps) follow.Score = ActionEvaluator.Score(s, follow);
+                        var next = ActionSelector.Select(followUps, random);
+                        Start(s, ExchangeKind.Preparation, a, b, next.MoveId); s.Exchange.ActionType = next.Type;
+                    }
+                }
                 return Event(s, type, MatchActionResult.FullSuccess, a, b, 4);
             }
             if (type == MatchActionType.TurnOver)
             {
                 if (!b.IsDowned) throw new InvalidOperationException("Turning requires a grounded opponent.");
-                var goal = s.FindMove?.Invoke(action.MoveId ?? a.PlannedFinisherMoveId);
+                var goal = MatchTechniques.Find(action.MoveId ?? a.PlannedFinisherMoveId)?.Rules ?? s.FindMove?.Invoke(action.MoveId ?? a.PlannedFinisherMoveId);
                 b.Posture = goal?.Situation switch { MoveSituation.GroundProne => MatchPosture.Prone,
                     MoveSituation.GroundSeated => MatchPosture.Seated, MoveSituation.GroundKneeling => MatchPosture.Kneeling, _ => MatchPosture.Supine };
                 Spend(a, 1);
+                var preparedTechnique = MatchTechniques.Find(action.MoveId);
+                if (!s.BookingSequence && s.Participants.Count == 2 && !s.Rules.Tag && preparedTechnique?.CanUseGenerally == true)
+                { Start(s, ExchangeKind.Preparation, a, b, action.MoveId); s.Exchange.ActionType = preparedTechnique.Action; }
                 return Event(s, type, MatchActionResult.FullSuccess, a, b, 3, detail: "turn-over");
             }
             if (type == MatchActionType.Reposition)
@@ -383,6 +492,10 @@ namespace PWManager.Domain.Services
                 }
                 else a.Position = action.PartnerId != null ? MatchPosition.Corner : MatchPosition.Center;
                 Spend(a, 1);
+                var hold = MatchTechniques.Find(action.MoveId);
+                if (!s.BookingSequence && s.Participants.Count == 2 && !s.Rules.Tag &&
+                    hold?.CanUseGenerally == true && hold.Action is MatchActionType.Submission or MatchActionType.StandingHold)
+                { Start(s, ExchangeKind.Preparation, a, b, hold.Id); s.Exchange.ActionType = hold.Action; }
                 return Event(s, type, MatchActionResult.FullSuccess, a, b, 5, detail: action.PartnerId != null ? "corner" : "center");
             }
             if (type == MatchActionType.Tag)
@@ -553,7 +666,8 @@ namespace PWManager.Domain.Services
                     Start(s, ExchangeKind.Hold, a, b, action.MoveId, region);
                     b.IsDowned = type != MatchActionType.StandingHold;
                 }
-                else if (!outsideDive && type != MatchActionType.RingsideAttack && (impact >= 6 || kind == MoveKind.Grapple))
+                else if (!outsideDive && type != MatchActionType.RingsideAttack && (impact >= 6 || kind == MoveKind.Grapple ||
+                    b.IsDowned && MatchMoveMotion.ActorEndPosture(technique?.Id ?? MatchTechniques.Find(action.MoveId)?.Id ?? action.MoveId) != MatchPosture.Standing))
                 {
                     b.IsDowned = type != MatchActionType.StandingHold;
                     bool bridge = outcome == MatchActionResult.FullSuccess && MatchMoveMotion.IsBridgingSuplex(action.MoveId ?? technique?.Id);
@@ -626,10 +740,11 @@ namespace PWManager.Domain.Services
             }
             if (x.Kind == ExchangeKind.FollowUp)
             {
+                var groundedChoices = a.IsDowned ? Actions(s, a, b) : null;
                 s.Exchange = null;
                 bool bridge = MatchMoveMotion.IsBridgingSuplex(x.MoveId) && a.GripTargetId == b.Id &&
                     s.Rules.Pinfall && b.Posture == MatchPosture.Supine && s.RefereeUnavailableUntil <= s.ElapsedSeconds;
-                if (a.IsDowned && !bridge)
+                if (a.IsDowned && !bridge && !groundedChoices.Any(action => action.Type != MatchActionType.Recover))
                 {
                     if (MatchMoveMotion.IsBridgingSuplex(x.MoveId)) { x.MoveId = null; x.ActionType = default; }
                     s.Exchange = x;
@@ -637,7 +752,16 @@ namespace PWManager.Domain.Services
                 }
                 if (a.Position == MatchPosition.TopRope)
                 {
-                    if (!x.Booked && !s.BookingSequence && b.Stun < 25 && !MatchHealth.Restricted(b, BodyRegion.Legs) && !MatchHealth.Restricted(b, BodyRegion.Arms) && random.NextDouble() < .45)
+                    if (b.IsDowned && b.Posture is MatchPosture.Seated or MatchPosture.Kneeling && InRing(b) &&
+                        !MatchHealth.Restricted(a, BodyRegion.Legs) && !MatchHealth.Restricted(b, BodyRegion.Legs) &&
+                        !MatchHealth.Restricted(b, BodyRegion.Arms) &&
+                        (string.IsNullOrEmpty(x.MoveId) ||
+                         (MatchTechniques.Find(x.MoveId)?.Rules ?? s.FindMove?.Invoke(x.MoveId))?.Situation == MoveSituation.DivingStanding))
+                    {
+                        s.Exchange = x;
+                        return Done(Resolve(s, Action(MatchActionType.Recover, b, a), random));
+                    }
+                    if (InRing(b) && !x.Booked && !s.BookingSequence && b.Stun < 25 && !MatchHealth.Restricted(b, BodyRegion.Legs) && !MatchHealth.Restricted(b, BodyRegion.Arms) && random.NextDouble() < .45)
                     {
                         if (b.IsDowned)
                         {
@@ -648,10 +772,10 @@ namespace PWManager.Domain.Services
                         Start(s, ExchangeKind.TopContest, b, a);
                         return Done(Event(s, MatchActionType.BreakUp, MatchActionResult.Interrupted, b, a, 4, detail: "aerial-interrupted"));
                     }
-                    if (!string.IsNullOrEmpty(x.MoveId) ? !CanMove(s, a, b, x.MoveId) : MatchTechniques.Candidates(MatchActionType.Dive, a, b).Count == 0)
+                    if (!InRing(b) || (!string.IsNullOrEmpty(x.MoveId) ? !CanMove(s, a, b, x.MoveId) : MatchTechniques.Candidates(MatchActionType.Dive, a, b).Count == 0))
                     {
                         a.Position = MatchPosition.Center;
-                        if (!b.IsDowned) Start(s, ExchangeKind.Counter, b, a);
+                        if (InRing(b) && !b.IsDowned) Start(s, ExchangeKind.Counter, b, a);
                         return Done(Event(s, MatchActionType.Climb, MatchActionResult.Interrupted, a, b, 3, detail: "aerial-setup-lost"));
                     }
                     var dive = Resolve(s, Action(string.IsNullOrEmpty(x.MoveId) ? MatchActionType.Dive : x.ActionType, a, b, x.MoveId), random);
@@ -663,15 +787,17 @@ namespace PWManager.Domain.Services
                     s.Exchange = x; RecoverFatigue(a, 4);
                     return Done(Event(s, MatchActionType.Rest, MatchActionResult.Held, a, b, 4, detail: "crowd-pause"));
                 }
-                if (s.Rules.Pinfall && b.IsDowned && s.RefereeUnavailableUntil <= s.ElapsedSeconds && (x.Booked || x.ActionType == MatchActionType.Pin))
+                if (s.Rules.Pinfall && b.IsDowned && s.RefereeUnavailableUntil <= s.ElapsedSeconds &&
+                    (x.Booked || x.ActionType == MatchActionType.Pin || s.Participants.Count == 2 && !s.Rules.Tag && b.LastImpactWasFinisher &&
+                     s.ElapsedSeconds - b.LastImpactTime <= 30 && CanRetryCover(s, a, b)))
                 {
                     var cover = Resolve(s, Action(MatchActionType.Pin, a, b, bridge ? x.MoveId : null), random);
                     s.Exchange.Booked = x.Booked; s.Exchange.Id = x.Id;
                     return Done(cover);
                 }
-                var followUps = Actions(s, a, b).Where(action => action.Type is MatchActionType.GroundAttack or MatchActionType.LimbAttack or
+                var followUps = (groundedChoices ?? Actions(s, a, b)).Where(action => action.Type is MatchActionType.GroundAttack or MatchActionType.LimbAttack or
                     MatchActionType.Submission or MatchActionType.StandingHold or MatchActionType.Lift or MatchActionType.TurnOver or MatchActionType.Rest or
-                    MatchActionType.Pin or MatchActionType.Reposition or MatchActionType.Climb).ToList();
+                    MatchActionType.Pin or MatchActionType.Reposition or MatchActionType.Climb or MatchActionType.Recover).ToList();
                 foreach (var action in followUps) action.Score = ActionEvaluator.Score(s, action);
                 return Done(Resolve(s, ActionSelector.Select(followUps, random), random));
             }
@@ -724,6 +850,10 @@ namespace PWManager.Domain.Services
                 b.Position = MatchPosition.Ropes; s.Exchange = null;
                 return Done(Event(s, MatchActionType.RopeBreak, MatchActionResult.RopeBreak, b, a, 2));
             }
+            if (x.Booked && !s.Rules.IronMan && !s.RescueRequired && s.ElapsedSeconds + 3 < s.EarliestFinishSeconds &&
+                (s.Rules.Elimination ? s.GetOpponents(a.Id).Count == 1 :
+                    s.Participants.Where(p => p.SideId == a.SideId).Sum(p => p.Falls) >= s.Rules.FallsToWin - 1))
+                x.Booked = false;
             if (!x.Booked)
             {
                 var helper = s.Participants.FirstOrDefault(p => p.Id != a.Id && p.Id != b.Id && !p.IsEliminated && !p.IsDowned &&
@@ -736,11 +866,6 @@ namespace PWManager.Domain.Services
             }
             if (x.Kind == ExchangeKind.Cover)
             {
-                if (x.Booked && !s.Rules.IronMan && !s.RescueRequired && s.ElapsedSeconds + 3 < s.EarliestFinishSeconds &&
-                    (s.Rules.Elimination ? s.GetOpponents(a.Id).Count == 1 :
-                        s.Participants.Where(p => p.SideId == a.SideId).Sum(p => p.Falls) >= s.Rules.FallsToWin - 1))
-                    return Done(Event(s, MatchActionType.Cover, MatchActionResult.Held, a, b,
-                        Math.Min(5, s.EarliestFinishSeconds - s.ElapsedSeconds - 3), detail: "finish-preparation"));
                 s.Exchange = null;
                 if (s.RefereeUnavailableUntil > s.ElapsedSeconds)
                     return Done(Event(s, MatchActionType.Pin, MatchActionResult.Interrupted, a, b, 3, detail: "referee"));
@@ -759,7 +884,7 @@ namespace PWManager.Domain.Services
             if (x.Booked || random.NextDouble() < .03 + Damage(b, x.Region) * .003 && CanAward(s, a, b))
             {
                 s.Exchange = null;
-                return Done(Award(s, a, b, b.HeadDamage > 60 ? MatchActionResult.PassedOut : MatchActionResult.Submitted, MatchFinishType.Submission, x.Booked));
+                return Done(Award(s, a, b, !s.Rules.IronMan && b.HeadDamage > 60 ? MatchActionResult.PassedOut : MatchActionResult.Submitted, MatchFinishType.Submission, x.Booked));
             }
             if (x.Beats >= 3 || random.NextDouble() < .20 + b.Attributes.Technical * .008)
             {
@@ -927,14 +1052,15 @@ namespace PWManager.Domain.Services
             }
             if (x.Kind is ExchangeKind.Preparation or ExchangeKind.GripCombo)
             {
-                if (b.Stun < 30 && !b.IsDowned && random.NextDouble() < .18 + b.Attributes.Technical * .006 - a.MatchControl * .001)
+                if (b.Stun < 30 && (!b.IsDowned || x.Kind == ExchangeKind.Preparation && x.ActionType is MatchActionType.GroundAttack or MatchActionType.LimbAttack or MatchActionType.Submission) &&
+                    random.NextDouble() < .18 + b.Attributes.Technical * .006 - a.MatchControl * .001)
                 {
                     Start(s, ExchangeKind.Counter, b, a);
                     var blocked = Event(s, MatchActionType.PrepareAttack, MatchActionResult.Blocked, a, b, 3, detail: "grip-broken");
-                    blocked.TechniqueName = s.FindMove?.Invoke(x.MoveId)?.Name;
+                    blocked.TechniqueName = MatchTechniques.Find(x.MoveId)?.Rules.Name ?? (x.MoveId == null ? null : s.FindMove?.Invoke(x.MoveId)?.Name);
                     return blocked;
                 }
-                if (!CanMove(s, a, b, x.MoveId))
+                if (x.MoveId == null ? !Actions(s, a, b).Any(action => action.Type == x.ActionType) : !CanMove(s, a, b, x.MoveId))
                 {
                     s.Exchange = null;
                     return Event(s, MatchActionType.PrepareAttack, MatchActionResult.Interrupted, a, b, 2, detail: "setup-lost");
@@ -942,6 +1068,8 @@ namespace PWManager.Domain.Services
                 if (x.Kind == ExchangeKind.Preparation) s.Exchange = null;
                 var follow = Resolve(s, Action(x.Kind == ExchangeKind.GripCombo ? MatchActionType.Finisher : x.ActionType,
                     a, b, x.MoveId, continuation: true), random);
+                if (x.Kind == ExchangeKind.Preparation && x.ActionType is MatchActionType.GroundAttack or MatchActionType.LimbAttack or MatchActionType.Submission or MatchActionType.StandingHold)
+                    follow.MoveId = null;
                 if (x.Kind == ExchangeKind.GripCombo) follow.Detail = "grip-follow-up";
                 return follow;
             }
@@ -1069,6 +1197,11 @@ namespace PWManager.Domain.Services
         private static MatchEngineEvent Award(MatchEngineState s, MatchEngineParticipant a, MatchEngineParticipant b,
             MatchActionResult outcome, MatchFinishType finish, bool booked)
         {
+            if (!s.Rules.IronMan && s.ElapsedSeconds + 3 > s.LatestFinishSeconds)
+            {
+                s.IsAborted = true; s.FailureReason = "A legal finish could not complete within the allowed time.";
+                return Event(s, MatchActionType.Rest, MatchActionResult.Interrupted, a, b, 1);
+            }
             a.Falls++;
             if (s.Rules.Elimination) b.IsEliminated = true;
             var score = s.Participants.Where(x => x.SideId == a.SideId).Sum(x => x.Falls);
@@ -1089,10 +1222,7 @@ namespace PWManager.Domain.Services
             MatchActionResult outcome, MatchFinishType finish, int seconds)
         {
             s.IsFinished = true; s.WinnerId = a?.Id; s.ActualFinish = finish; s.Phase = MatchPhase.Finish; s.Exchange = null;
-            if (s.Booking != null && !s.Rules.IronMan && !s.RescueRequired)
-                seconds = Math.Max(seconds, s.EarliestFinishSeconds - s.ElapsedSeconds);
-            return Event(s, MatchActionType.Finish, outcome, a, b,
-                Math.Min(seconds, Math.Max(1, s.LatestFinishSeconds - s.ElapsedSeconds)));
+            return Event(s, MatchActionType.Finish, outcome, a, b, seconds);
         }
 
         private static MatchEngineEvent TimeExpired(MatchEngineState s)
@@ -1101,7 +1231,45 @@ namespace PWManager.Domain.Services
             var winner = leader != null && leader[0].Sum(p => p.Falls) > leader[1].Sum(p => p.Falls) ? leader[0].First() : null;
             if (s.Rules.IronMan && s.Booking?.WinnerId != null && winner?.SideId != s.GetParticipant(s.Booking.WinnerId).SideId)
             { s.IsAborted = true; s.FailureReason = "Booked Iron Man side did not lead at time expiry."; }
-            return End(s, winner, null, MatchActionResult.Draw, winner == null ? MatchFinishType.Draw : s.Booking?.FinishType ?? MatchFinishType.Pinfall, 1);
+            return End(s, winner, null, winner == null ? MatchActionResult.Draw : MatchActionResult.TimeLimitDecision,
+                winner == null ? MatchFinishType.Draw : s.Booking?.FinishType ?? MatchFinishType.Pinfall, 1);
+        }
+
+        public static int BookedPreparationSeconds(MatchEngineState s)
+        {
+            var a = s.GetParticipant(s.Booking.WinnerId); var b = s.GetParticipant(s.Booking.LoserId);
+            var finish = s.Booking.FinishType;
+            var id = a.FinisherMoveIds.Concat(new[] { a.FinisherMoveId }).Concat(a.SignatureMoveIds).Concat(new[] { a.SignatureMoveId })
+                .Where(id => !string.IsNullOrEmpty(id) && UsableAssignedMove(s, a, id))
+                .OrderByDescending(id => id == a.PlannedFinisherMoveId)
+                .FirstOrDefault(id => (Kind(s.FindMove?.Invoke(id) ?? MatchTechniques.Find(id)?.Rules ?? new MatchMoveRules()) == MoveKind.Submission) == (finish == MatchFinishType.Submission));
+            var move = string.IsNullOrEmpty(id) ? null : s.FindMove?.Invoke(id) ?? MatchTechniques.Find(id)?.Rules;
+            var kind = move == null ? finish == MatchFinishType.Submission ? MoveKind.Submission : MoveKind.Strike : Kind(move);
+            int seconds = finish switch
+            {
+                MatchFinishType.RollUp => CoverSeconds(a) + 4,
+                MatchFinishType.Submission => 10,
+                MatchFinishType.CountOut => s.Rules.CountOutSeconds + 6,
+                MatchFinishType.Disqualification => 6,
+                MatchFinishType.Escape or MatchFinishType.ObjectRetrieval or MatchFinishType.TableBreak => s.ObjectReady ? 17 : 22,
+                _ => (kind == MoveKind.Aerial ? 5 : 7) + CoverSeconds(a) + 3
+            };
+            if (a.IsDowned) seconds += RecoverySeconds(a) * (a.Posture == MatchPosture.Kneeling ? 1 : a.Posture == MatchPosture.Seated ? 2 : 3);
+            if (!Legal(s, a) || !Legal(s, b)) seconds += 8;
+            if (!InRing(a) || !InRing(b) || MatchMovement.DistanceFromCenter(b) > .25f) seconds += 4;
+            if (kind == MoveKind.Aerial && a.Position != MatchPosition.TopRope) seconds += 5;
+            if (move != null && !CanMove(s, a, b, id)) seconds += b.IsDowned ? 4 : 7;
+            if (move?.EndPosture is MatchPosture.Prone or MatchPosture.Seated or MatchPosture.Kneeling) seconds += 3;
+            if ((a.Stun >= 12 || a.Fatigue >= 80 || a.RealInjury >= InjuryStatus.Moderate) &&
+                (id == null || kind == MoveKind.Aerial || MatchMoveMotion.ActorEndPosture(id) != MatchPosture.Standing && !MatchMoveMotion.IsBridgingSuplex(id))) seconds += RecoverySeconds(a) * 3;
+            int falls = s.Rules.Elimination ? s.GetOpponents(a.Id).Count : s.Rules.IronMan ?
+                Math.Max(1, s.Participants.Where(p => p.SideId != a.SideId).GroupBy(p => p.SideId).Max(g => g.Sum(p => p.Falls)) -
+                    s.Participants.Where(p => p.SideId == a.SideId).Sum(p => p.Falls) + 1) :
+                Math.Max(1, s.Rules.FallsToWin - s.Participants.Where(p => p.SideId == a.SideId).Sum(p => p.Falls));
+            seconds += (falls - 1) * 18;
+            // Short matches get a proportionate margin; low improvisation needs more preparation.
+            return seconds + 7 + RecoverySeconds(a) * 3 + Math.Min(s.TargetDurationSeconds / 10, seconds / 2) + Math.Min(s.TargetDurationSeconds / 20, 3 + (int)((40 - a.Attributes.RingImprovisation - a.Attributes.RingPsychology) / 4)) +
+                (s.Rules.IronMan ? 30 : 0);
         }
 
         private static MatchEngineEvent BookedAction(MatchEngineState s, Random random)
@@ -1116,6 +1284,7 @@ namespace PWManager.Domain.Services
                 {
                     var active = s.Participants.Single(x => x.SideId == p.SideId && Legal(s, x));
                     if (active.IsDowned) return Resolve(s, Action(MatchActionType.Recover, active, s.GetOpponents(active.Id).First(x => Legal(s, x))), random);
+                    if (p.IsDowned) return Resolve(s, Action(MatchActionType.Recover, p, s.GetOpponents(p.Id).First(x => Legal(s, x))), random);
                     if (active.Position != MatchPosition.Corner)
                         return Resolve(s, new MatchEngineAction { Type = MatchActionType.Reposition, PerformerId = active.Id,
                             ReceiverId = s.GetOpponents(active.Id).First(x => Legal(s, x)).Id, PartnerId = p.Id }, random);
@@ -1179,17 +1348,16 @@ namespace PWManager.Domain.Services
             if (s.RefereeUnavailableUntil > s.ElapsedSeconds)
                 return Event(s, MatchActionType.Rest, MatchActionResult.Held, a, b, 5, detail: "referee-recovery");
             var finish = s.Booking.FinishType;
-            var outstanding = s.Rules.Elimination ? s.GetOpponents(a.Id).Count : s.Rules.IronMan ?
-                Math.Max(1, s.Participants.Where(x => x.SideId != a.SideId).GroupBy(x => x.SideId).Max(x => x.Sum(p => p.Falls)) -
-                    s.Participants.Where(x => x.SideId == a.SideId).Sum(x => x.Falls) + 1) :
-                Math.Max(1, s.Rules.FallsToWin - s.Participants.Where(x => x.SideId == a.SideId).Sum(x => x.Falls));
             var assigned = a.FinisherMoveIds.Concat(new[] { a.FinisherMoveId }).Distinct().Select(id => (id, type: MatchActionType.Finisher))
                 .Concat(a.SignatureMoveIds.Concat(new[] { a.SignatureMoveId }).Distinct().Select(id => (id, type: MatchActionType.Signature)))
                 .Concat(s.RescueRequired && a.PlannedFinisherMoveId != null ? new[] { (id: a.PlannedFinisherMoveId, type: MatchActionType.Finisher) } : Array.Empty<(string id, MatchActionType type)>())
                 .Where(x => !string.IsNullOrEmpty(x.id) && (!s.RescueRequired || x.id != a.ReplacedFinishMoveId) && UsableAssignedMove(s, a, x.id) &&
                     MatchHealth.CanReceive(s.FindMove?.Invoke(x.id) ?? MatchTechniques.Find(x.id)?.Rules, b) &&
                     (s.FindMove?.Invoke(x.id) is not MatchMoveRules m || (Kind(m) == MoveKind.Submission) == (finish == MatchFinishType.Submission)))
-                .OrderByDescending(x => x.type == MatchActionType.Finisher).ThenByDescending(x => x.id == a.PlannedFinisherMoveId).ToList();
+                .OrderBy(x => s.Participants.Count == 2 && !s.Rules.Tag && s.Events.Count(e => e.PerformerId == a.Id && e.MoveId == x.id &&
+                    e.MatchTimeSeconds >= s.EarliestFinishSeconds - 60 &&
+                    e.Result is MatchActionResult.ExecutionFailure or MatchActionResult.ReceptionFailure) >= 2 ? 1 : 0)
+                .ThenByDescending(x => x.type == MatchActionType.Finisher).ThenByDescending(x => x.id == a.PlannedFinisherMoveId).ToList();
             var selected = assigned.FirstOrDefault();
             if (selected.id == null && finish == MatchFinishType.Submission)
             {
@@ -1207,31 +1375,51 @@ namespace PWManager.Domain.Services
             var kind = selectedRule == null ? finish == MatchFinishType.Submission ? MoveKind.Submission : MoveKind.Strike : Kind(selectedRule);
             var attackType = selected.id != null ? selected.type : finish == MatchFinishType.Submission ? MatchActionType.Submission :
                 a.FinisherMoveIds.Count > 0 || !string.IsNullOrEmpty(a.FinisherMoveId) ? MatchActionType.HeavyStrike : MatchActionType.Finisher;
-            int setupTime = finish switch
+            bool generalFinish = selected.id == null && attackType == MatchActionType.Finisher &&
+                MatchTechniques.Candidates(attackType, a, b).Count > 0;
+            if (generalFinish)
             {
-                MatchFinishType.RollUp => CoverSeconds(a) + 4 + (b.IsDowned && b.Posture != MatchPosture.Supine ? 3 : 0),
-                MatchFinishType.Submission => 10 + (!b.IsDowned && (selectedRule?.Situation != MoveSituation.StandingSubmission && selectedRule?.Situation != MoveSituation.StandingRearSubmission) ? 7 : 0),
-                MatchFinishType.CountOut => s.Rules.CountOutSeconds + 6,
-                MatchFinishType.Disqualification => 4,
-                MatchFinishType.Escape or MatchFinishType.ObjectRetrieval or MatchFinishType.TableBreak => s.ObjectReady ? 17 : 22,
-                _ => (kind == MoveKind.Aerial ? 5 : 7) + CoverSeconds(a) + 3 +
-                    (kind == MoveKind.Aerial && a.Position != MatchPosition.TopRope ? 5 : 0) +
-                    (!string.IsNullOrEmpty(selected.id) && !CanMove(s, a, b, selected.id) ? b.IsDowned ? 4 : 7 : 0) +
-                    (selectedRule?.EndPosture is MatchPosture.Prone or MatchPosture.Seated or MatchPosture.Kneeling ? 3 : 0) +
-                    (MatchMoveMotion.ActorEndPosture(selected.id) == MatchPosture.Standing || MatchMoveMotion.IsBridgingSuplex(selected.id) ? 0 : 9)
-            };
-            setupTime += (outstanding - 1) * 18;
+                var technique = MatchTechniques.Select(s, attackType, a, b, random);
+                selected = (technique.Id, attackType); selectedRule = technique.Rules; kind = Kind(selectedRule);
+            }
             bool centerFinish = finish is MatchFinishType.Pinfall or MatchFinishType.RollUp or MatchFinishType.Submission &&
                 MatchMovement.DistanceFromCenter(b) > .25f;
-            if (centerFinish) setupTime += 4;
-            if (!s.RescueRequired && remaining > setupTime + Math.Min(10, s.DurationToleranceSeconds) +
-                (s.Rules.Tag || s.Rules.IronMan ? 15 : 0))
+            int naturalFinish = finish switch
             {
-                // Avoid starting a long hold or rope sequence while the finish is being prepared.
-                var actions = Actions(s, a, b).Where(x => x.Type is MatchActionType.Rest or
-                    MatchActionType.BasicStrike or MatchActionType.GroundAttack or MatchActionType.Lift).ToList();
+                MatchFinishType.RollUp => CoverSeconds(a) + 4,
+                MatchFinishType.Submission => 10,
+                MatchFinishType.CountOut => s.Rules.CountOutSeconds + 6,
+                MatchFinishType.Disqualification => 6,
+                MatchFinishType.Escape or MatchFinishType.ObjectRetrieval or MatchFinishType.TableBreak => s.ObjectReady ? 17 : 22,
+                _ => (kind == MoveKind.Aerial ? 5 : 7) + CoverSeconds(a) + 3
+            };
+            if (centerFinish) naturalFinish += 4;
+            bool attackFinish = finish is MatchFinishType.Pinfall or MatchFinishType.Submission;
+            if (attackFinish && kind == MoveKind.Aerial && a.Position != MatchPosition.TopRope) naturalFinish += 5;
+            if (attackFinish && selectedRule != null && !CanMove(s, a, b, selected.id)) naturalFinish += b.IsDowned ? 4 : 7;
+            if (finish == MatchFinishType.Pinfall && !MatchMoveMotion.IsBridgingSuplex(selected.id))
+            {
+                if ((a.Stun >= 12 || a.Fatigue >= 80 || a.RealInjury >= InjuryStatus.Moderate) &&
+                    (kind == MoveKind.Aerial || MatchMoveMotion.ActorEndPosture(selected.id) != MatchPosture.Standing))
+                    naturalFinish += RecoverySeconds(a) * 3;
+                if (selectedRule?.EndPosture is MatchPosture.Prone or MatchPosture.Seated or MatchPosture.Kneeling)
+                    naturalFinish += 3;
+            }
+            bool finalFall = s.Rules.Elimination ? s.GetOpponents(a.Id).Count == 1 :
+                s.Participants.Where(p => p.SideId == a.SideId).Sum(p => p.Falls) >= s.Rules.FallsToWin - 1;
+            int retryMargin = s.Participants.Count == 2 && !s.Rules.Tag && finish is MatchFinishType.Pinfall or MatchFinishType.Submission
+                ? Math.Min(s.TargetDurationSeconds / 10, (kind == MoveKind.Aerial ? 5 : 7) * 3) : 0;
+            if (!s.RescueRequired && !s.Rules.IronMan && finalFall && s.ElapsedSeconds + naturalFinish + retryMargin < s.EarliestFinishSeconds)
+            {
+                // Keep wrestling until the decisive sequence fits; never hold a cover for the clock.
+                var actions = MatchTechniques.Candidates(b.IsDowned ? MatchActionType.GroundAttack : MatchActionType.BasicStrike, a, b)
+                    .Where(m => m.Rules.MotionProfile != MoveMotionProfile.GroundDrop && MatchMoveMotion.ActorEndPosture(m.Id) == MatchPosture.Standing)
+                    .Select(m => Action(b.IsDowned ? MatchActionType.GroundAttack : MatchActionType.BasicStrike, a, b, m.Id)).ToList();
+                if (actions.Count == 0) return Resolve(s, Action(b.IsDowned ? MatchActionType.Lift : MatchActionType.BasicStrike, a, b), random);
                 foreach (var action in actions) action.Score = ActionEvaluator.Score(s, action);
-                return Resolve(s, ActionSelector.Select(actions, random), random);
+                var ordinary = Resolve(s, ActionSelector.Select(actions, random), random);
+                ordinary.MoveId = null;
+                return ordinary;
             }
             if (centerFinish)
             {
@@ -1318,25 +1506,71 @@ namespace PWManager.Domain.Services
             }
             if (attackType == MatchActionType.HeavyStrike && b.IsDowned) return Resolve(s, Action(MatchActionType.Lift, a, b), random);
             var attack = Resolve(s, Action(attackType, a, b, selected.id), random);
+            if (generalFinish) attack.MoveId = null;
             if (s.Exchange?.Kind == ExchangeKind.FollowUp) s.Exchange.Booked = true;
             else s.Exchange = null;
             return attack;
         }
 
-        private static MatchEngineEvent ApplyDueSpot(MatchEngineState s)
+        private static MatchEngineEvent ApplyDueSpot(MatchEngineState s, Random random)
         {
             for (var i = 0; i < s.ScheduledSpots.Count; i++)
             {
                 var spot = s.ScheduledSpots[i];
-                if (spot.Phase == MatchSpotPhase.PostMatch || s.AppliedSpots.Contains(i)) continue;
+                if (spot.Phase == MatchSpotPhase.PostMatch || spot.WasSkipped || s.AppliedSpots.Contains(i)) continue;
                 var at = spot.Phase switch { MatchSpotPhase.Entrance => 0, MatchSpotPhase.Early => .2f, MatchSpotPhase.Middle => .5f, _ => .8f };
                 if (s.ElapsedSeconds < s.TargetDurationSeconds * at) continue;
-                s.AppliedSpots.Add(i); s.Exchange = null;
                 var target = s.GetParticipant(spot.TargetId);
                 var actor = s.Participants.FirstOrDefault(x => x.Id == spot.ActorId);
+                var definition = SpecialMatchSpotCatalog.Find(spot.SpotId);
+                bool interrupts = spot.ScriptedEffect != SpotScriptedEffect.None || actor == null ||
+                    definition?.ActorScope == SpotActorScope.Outsider || definition?.Relationship == SpotRelationship.Teammates ||
+                    spot.SpotId is "spot_005" or "spot_006" || spot.Phase == MatchSpotPhase.Entrance;
+                float until = spot.Phase switch { MatchSpotPhase.Entrance => .2f, MatchSpotPhase.Early => .5f, MatchSpotPhase.Middle => .8f, _ => 1.05f };
+                string reason = target.IsEliminated || actor?.IsEliminated == true ? "참가 선수가 경기에 남아 있지 않습니다." :
+                    target.RealInjury == InjuryStatus.Severe || actor?.RealInjury == InjuryStatus.Severe ? "선수의 부상으로 안전하게 실행할 수 없습니다." : null;
+                if (actor != null && MatchHealth.Restricted(actor, BodyRegion.Arms))
+                    reason = "선수의 팔 부상으로 예정된 공격을 안전하게 실행할 수 없습니다.";
+                if (spot.ScriptedEffect == SpotScriptedEffect.Disqualification && !s.Rules.Disqualification)
+                    reason = "이 경기에서는 실격 판정을 사용할 수 없습니다.";
+                if (!interrupts && s.ElapsedSeconds >= s.TargetDurationSeconds * until)
+                    reason = "지정된 실행 구간이 지났습니다.";
+                var move = string.IsNullOrEmpty(spot.MoveId) ? null : s.FindMove?.Invoke(spot.MoveId) ?? MatchTechniques.Find(spot.MoveId)?.Rules;
+                if (!string.IsNullOrEmpty(spot.MoveId) && (move == null || actor == null || !MatchTechniques.CanExecute(move, actor) || !MatchHealth.CanReceive(move, target)))
+                    reason = "예정된 기술을 안전하게 시전하거나 접수할 수 없습니다.";
+                if (reason == null && !interrupts && (s.Exchange != null || !Legal(s, actor) || !Legal(s, target) || actor.IsDowned || !InRing(actor) || !InRing(target) ||
+                    actor.Stun >= 12 || move != null && (!CanMove(s, actor, target, spot.MoveId) ||
+                    Kind(move) == MoveKind.Aerial && actor.Position != MatchPosition.TopRope && !MatchTechniques.IsOutsideDive(move.Situation))))
+                {
+                    if (s.ElapsedSeconds < s.TargetDurationSeconds * until) continue;
+                    reason = "지정 구간 안에 필요한 자세와 공방 조건이 갖춰지지 않았습니다.";
+                }
+                if (reason != null)
+                {
+                    spot.WasSkipped = true; spot.SkipReason = reason; spot.FinalSpotScore = 0;
+                    var skipped = Event(s, MatchActionType.Spot, MatchActionResult.Interrupted, null, null, 1, detail: "spot-skipped:" + spot.SpotId);
+                    skipped.TechniqueName = reason;
+                    return skipped;
+                }
+                s.AppliedSpots.Add(i); spot.WasApplied = true;
+                var interrupted = s.Exchange;
+                s.Exchange = null;
+                if (move != null)
+                {
+                    var action = MatchTechniques.Find(spot.MoveId)?.Action ?? (Kind(move) == MoveKind.Submission ? MatchActionType.Submission : MatchActionType.HeavyStrike);
+                    var execution = Resolve(s, Action(action, actor, target, spot.MoveId), random);
+                    if (execution.Result is MatchActionResult.ExecutionFailure or MatchActionResult.ReceptionFailure or MatchActionResult.Countered)
+                    {
+                        spot.Result = SpotExecutionResult.Failure;
+                        spot.FinalSpotScore = definition == null ? 0 : MatchSpotEvaluator.Score(definition.BasePoint, spot.Result, spot.RepeatCount);
+                    }
+                    return execution;
+                }
                 Hit(s, target, BodyRegion.Body, spot.Result >= SpotExecutionResult.Success ? 7 : 2, false);
                 if (spot.SpotId is "spot_005" or "spot_006") s.RefereeUnavailableUntil = s.ElapsedSeconds + 18;
                 var e = Event(s, MatchActionType.Spot, MatchActionResult.FullSuccess, actor, target, 4, detail: spot.SpotId);
+                if (interrupted != null)
+                { e.ExchangeId = interrupted.Id; e.CauseEventIndex = interrupted.CauseIndex < s.Events.Count ? interrupted.CauseIndex : -1; }
                 e.PerformerId = spot.ActorId;
                 if (spot.ScriptedEffect != SpotScriptedEffect.None)
                 {
@@ -1350,6 +1584,7 @@ namespace PWManager.Domain.Services
             }
             return null;
         }
+
 
         private static MatchEngineEvent ContinueComeback(MatchEngineState s, Random random, MatchExchange x, MatchEngineParticipant a, MatchEngineParticipant b)
         {
@@ -1444,7 +1679,8 @@ namespace PWManager.Domain.Services
             var reaction = major ? Math.Max(1, 7 - repeats) : impact * .2f;
             if (result is MatchActionResult.ExecutionFailure or MatchActionResult.ReceptionFailure) reaction = -2;
             return new MatchEngineEvent { Type = type, Result = result, PerformerId = a?.Id, ReceiverId = b?.Id,
-                DurationSeconds = s.IsFinished ? seconds : Math.Min(seconds, Math.Max(1, s.LatestFinishSeconds - s.ElapsedSeconds - 1)),
+                DurationSeconds = s.IsFinished || s.Booking != null && !s.Rules.IronMan && s.Booking.FinishType != MatchFinishType.Draw
+                    ? seconds : Math.Min(seconds, Math.Max(1, s.LatestFinishSeconds - s.ElapsedSeconds - 1)),
                 MatchTimeSeconds = s.ElapsedSeconds, Phase = s.Phase, Impact = impact,
                 ExchangeId = s.Exchange?.Id ?? ++s.NextExchangeId,
                 CauseEventIndex = s.Exchange != null && s.Exchange.CauseIndex < s.Events.Count ? s.Exchange.CauseIndex : -1,

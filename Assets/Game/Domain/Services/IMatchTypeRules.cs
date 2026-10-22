@@ -14,6 +14,7 @@ namespace PWManager.Domain.Services
         public readonly MatchRuleOverride CountOutRule;
         public readonly MatchRuleOverride RopeBreakRule;
         public readonly int CountOutSeconds;
+        public readonly bool IronMan, Tornado, Elimination, TwoOutOfThree;
         public readonly System.Collections.Generic.IReadOnlyList<PWManager.Domain.Models.MatchFinishType> AllowedSpecialFinishTypes;
 
         public MatchGimmickRules(int minimumParticipants, int maximumParticipants,
@@ -23,7 +24,8 @@ namespace PWManager.Domain.Services
             MatchRuleOverride pinfallRule = MatchRuleOverride.Default,
             MatchRuleOverride submissionRule = MatchRuleOverride.Default,
             System.Collections.Generic.IReadOnlyList<PWManager.Domain.Models.MatchFinishType> allowedSpecialFinishTypes = null,
-            MatchRuleOverride ropeBreakRule = MatchRuleOverride.Default, int countOutSeconds = 10)
+            MatchRuleOverride ropeBreakRule = MatchRuleOverride.Default, int countOutSeconds = 10,
+            bool ironMan = false, bool tornado = false, bool elimination = false, bool twoOutOfThree = false)
         {
             MinimumParticipants = minimumParticipants;
             MaximumParticipants = maximumParticipants;
@@ -35,12 +37,26 @@ namespace PWManager.Domain.Services
             CountOutRule = countOutRule;
             RopeBreakRule = ropeBreakRule;
             CountOutSeconds = countOutSeconds > 0 ? countOutSeconds : 10;
+            IronMan = ironMan;
+            Tornado = tornado;
+            Elimination = elimination;
+            TwoOutOfThree = twoOutOfThree;
             AllowedSpecialFinishTypes = allowedSpecialFinishTypes;
         }
 
         public bool IsCompatible(string matchTypeId, int participantCount) =>
             participantCount >= MinimumParticipants && participantCount <= MaximumParticipants &&
             CompatibleMatchTypeIds != null && System.Linq.Enumerable.Contains(CompatibleMatchTypeIds, matchTypeId);
+
+        public void ApplyFormat(PWManager.Domain.Models.MatchPlanState match)
+        {
+            // Ordinary gimmicks preserve format flags in existing saves.
+            if (!IronMan && !Tornado && !Elimination && !TwoOutOfThree) return;
+            match.IronMan = IronMan;
+            match.Tornado = Tornado;
+            match.Elimination = Elimination;
+            match.FallsToWin = TwoOutOfThree ? 2 : 1;
+        }
     }
 
     public interface IMatchTypeRules

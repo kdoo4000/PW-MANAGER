@@ -25,6 +25,9 @@ namespace PWManager.Domain.Models
         public string TargetId;
         public string PartnerId;
         public GameDate Date;
+        public string MoveId;
+        public bool WasApplied, WasSkipped;
+        public string SkipReason;
         public int VariantIndex;
         public string ScriptedMoment;
         public SpotExecutionResult InitialResult;

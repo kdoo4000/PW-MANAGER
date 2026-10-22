@@ -11,3 +11,7 @@ Player creation exposes the three named body choices and all appearance parts. S
 Runtime textures are composed at 512×461 and reused when colors or wardrobe change. Raw reference artwork, backups and width slider variants are not game assets.
 
 Color controls provide quick swatches, an expandable 44-color palette and custom hex input. Profile and editor portrait frames follow the illustration's aspect ratio. The wardrobe button is in the profile card header, and players can edit their own wardrobe without a contract.
+
+Street parts were integrated on 2026-10-14: male hair 17–19, female hair 11–15, headwear 5–7, mask 12, male outfit 14/female outfit 17, male tattoos 13–14/female tattoos 10–11. Existing body-paint IDs remain reserved in tattoo slots and are excluded from selection and generation. Headwear primary/pattern colors are independent. The compositor uses face-specific cropped hair, dread hat variants, fitted bald beanies and matching rear-hair variants.
+
+Unity 6000.5.4f1 passed 15 integration/compatibility tests using identical portrait source and texture copies in an isolated project. Reports are in `output/portrait-editor/unity-integration/street-parts-tests.xml`, `street-parts-compatibility-tests.xml` and `street-parts-verification.json`. The main Editor was already open without a reachable Pipeline server; its live UI was not inspected.

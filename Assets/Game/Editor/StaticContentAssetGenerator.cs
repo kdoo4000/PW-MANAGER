@@ -30,7 +30,9 @@ namespace PWManager.Editor
             { "venue_005", "LargeArena" }, { "venue_006", "Stadium" },
             { "matchtype_001", "Individual" }, { "matchtype_002", "TagTeam" },
             { "gimmick_001", "SteelCage" }, { "gimmick_002", "Ladder" },
-            { "gimmick_003", "Tables" }, { "gimmick_004", "Hardcore" }
+            { "gimmick_003", "Tables" }, { "gimmick_004", "Hardcore" },
+            { "gimmick_005", "IronMan" }, { "gimmick_006", "TornadoTag" }, { "gimmick_007", "Elimination" },
+            { "gimmick_008", "TwoOutOfThreeFalls" }
         };
 
         private static readonly Dictionary<string, string> KoreanNames = new()
@@ -38,6 +40,8 @@ namespace PWManager.Editor
             { "matchtype_001", "개인전" }, { "matchtype_002", "태그팀 경기" },
             { "gimmick_000", "기본 경기" }, { "gimmick_001", "스틸 케이지" },
             { "gimmick_002", "래더 매치" }, { "gimmick_003", "테이블 매치" }, { "gimmick_004", "하드코어" },
+            { "gimmick_005", "아이언맨 매치" }, { "gimmick_006", "토네이도 태그 매치" }, { "gimmick_007", "탈락 매치" },
+            { "gimmick_008", "3판 2선승제 경기" },
             { "venue_001", "스튜디오" }, { "venue_002", "커뮤니티 체육관" },
             { "venue_003", "소형 아레나" }, { "venue_004", "중형 아레나" },
             { "venue_005", "대형 아레나" }, { "venue_006", "스타디움" },
@@ -66,7 +70,9 @@ namespace PWManager.Editor
             { "staff_003", "Promotion Team" }, { "staff_004", "Commentary Team" },
             { "venue_002", "Community Gym" }, { "venue_003", "Small Arena" },
             { "venue_004", "Medium Arena" }, { "venue_005", "Large Arena" },
-            { "matchtype_002", "Tag Team" }, { "gimmick_001", "Steel Cage" }
+            { "matchtype_002", "Tag Team" }, { "gimmick_001", "Steel Cage" },
+            { "gimmick_005", "Iron Man" }, { "gimmick_006", "Tornado Tag" },
+            { "gimmick_008", "Two out of Three Falls" }
         };
 
         [MenuItem("PW Manager/Generate Confirmed Static Content")]
@@ -289,8 +295,49 @@ namespace PWManager.Editor
                 MatchRuleOverride.Disabled, MatchRuleOverride.Disabled, MatchRuleOverride.Disabled, MatchRuleOverride.Disabled,
                 MatchFinishType.TableBreak),
             MatchGimmick("gimmick_004", "Hardcore", 1.25f, 6,
-                MatchRuleOverride.Allowed, MatchRuleOverride.Allowed, MatchRuleOverride.Disabled, MatchRuleOverride.Disabled)
+                MatchRuleOverride.Allowed, MatchRuleOverride.Allowed, MatchRuleOverride.Disabled, MatchRuleOverride.Disabled),
+            FormatGimmick("gimmick_005", "Iron Man", ironMan: true),
+            FormatGimmick("gimmick_006", "Tornado Tag", tornado: true),
+            FormatGimmick("gimmick_007", "Elimination", elimination: true),
+            FormatGimmick("gimmick_008", "Two out of Three Falls", twoOutOfThree: true)
         };
+
+        public static void GenerateMatchFormatGimmicks()
+        {
+            var gimmicks = new[]
+            {
+                FormatGimmick("gimmick_005", "Iron Man", ironMan: true),
+                FormatGimmick("gimmick_006", "Tornado Tag", tornado: true),
+                FormatGimmick("gimmick_007", "Elimination", elimination: true),
+                FormatGimmick("gimmick_008", "Two out of Three Falls", twoOutOfThree: true)
+            };
+            foreach (var guid in AssetDatabase.FindAssets("t:StaticContentCatalog", new[] { "Assets/Game" }))
+            {
+                var catalog = AssetDatabase.LoadAssetAtPath<StaticContentCatalog>(AssetDatabase.GUIDToAssetPath(guid));
+                catalog.MatchGimmicks.RemoveAll(x => x != null && System.Array.Exists(gimmicks, added => added.Id == x.Id));
+                catalog.MatchGimmicks.AddRange(gimmicks);
+                EditorUtility.SetDirty(catalog);
+            }
+            AssetDatabase.SaveAssets();
+        }
+
+        private static MatchGimmickDefinition FormatGimmick(string id, string name,
+            bool ironMan = false, bool tornado = false, bool elimination = false, bool twoOutOfThree = false)
+        {
+            var value = MatchGimmick(id, name, 1f, 8, MatchRuleOverride.Default, MatchRuleOverride.Default,
+                MatchRuleOverride.Default, MatchRuleOverride.Default);
+            value.IronMan = ironMan;
+            value.Tornado = tornado;
+            value.Elimination = elimination;
+            value.TwoOutOfThree = twoOutOfThree;
+            if (tornado)
+            {
+                value.MinimumParticipants = 4;
+                value.CompatibleMatchTypeIds = new List<string> { "matchtype_002" };
+            }
+            EditorUtility.SetDirty(value);
+            return value;
+        }
 
         private static MatchGimmickDefinition MatchGimmick(string id, string name, float conditionCostMultiplier,
             int maximumParticipants, MatchRuleOverride pinfallRule, MatchRuleOverride submissionRule,

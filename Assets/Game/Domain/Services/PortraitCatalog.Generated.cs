@@ -4,14 +4,11 @@ namespace PWManager.Domain.Services
 {
     public static partial class PortraitCatalog
     {
-        private static readonly int[] MaleBodyPaintSources = { 11, 12 };
-        private static readonly int[] FemaleBodyPaintSources = { 8, 9 };
-        public static int[] BodyPaintSources(WrestlerGender gender) => gender == WrestlerGender.Female ? FemaleBodyPaintSources : MaleBodyPaintSources;
         private static readonly PortraitPartGroup[] MaleGroups =
         {
             new("bodytype", "체형", 3, false, false),
             new("head", "얼굴", 4, false, false),
-            new("hair", "앞머리", 16, false, false),
+            new("hair", "앞머리", 19, false, false),
             new("hairback", "뒷머리", 6, true, false),
             new("eyes", "눈", 6, false, false),
             new("pupils", "동공", 4, false, true),
@@ -22,12 +19,12 @@ namespace PWManager.Domain.Services
             new("freckles", "주근깨", 3, true, false),
             new("scars", "흉터", 3, true, false),
             new("facepaint", "페이스 페인트", 6, true, true),
-            new("tattoo", "타투", 10, true, false),
+            new("tattoo", "타투", 14, true, false),
             new("bodypaint", "바디 페인트", 3, true, true),
-            new("clothes", "의상", 13, true, true),
-            new("mask", "마스크", 11, true, true),
+            new("clothes", "의상", 14, true, true),
+            new("mask", "마스크", 12, true, true),
             new("eyewear", "안경", 3, true, true),
-            new("headwear", "모자", 4, true, true),
+            new("headwear", "모자", 7, true, true),
         };
         private static int[] MaleRearHair(int front) => front switch
         {
@@ -39,16 +36,19 @@ namespace PWManager.Domain.Services
             14 => new[] { 4, 3, 6 },
             15 => new[] { 5, 4, 6 },
             16 => new[] { 1 },
+            17 => new[] { 1 },
+            18 => new[] { 1 },
+            19 => new[] { 1 },
             _ => null
         };
-        public static readonly int[] ClosedMasks = { 4, 6, 7, 8, 10, 11 };
+        public static readonly int[] ClosedMasks = { 4, 6, 7, 8, 10, 11, 12 };
         public static readonly int[] CoveredEyes = { 10, 11 };
         public static readonly int[] LuchaMasks = { 2, 3, 4, 5, 9, 10, 11 };
         private static readonly PortraitPartGroup[] FemaleGroups =
         {
             new("bodytype", "체형", 3, false, false),
             new("head", "얼굴", 3, false, false),
-            new("hair", "앞머리", 10, false, false),
+            new("hair", "앞머리", 15, false, false),
             new("hairback", "뒷머리", 7, true, false),
             new("eyes", "눈", 6, false, false),
             new("pupils", "동공", 4, false, true),
@@ -58,12 +58,12 @@ namespace PWManager.Domain.Services
             new("freckles", "주근깨", 3, true, false),
             new("scars", "흉터", 3, true, false),
             new("facepaint", "페이스 페인트", 6, true, true),
-            new("tattoo", "타투", 7, true, false),
+            new("tattoo", "타투", 11, true, false),
             new("bodypaint", "바디 페인트", 3, true, true),
-            new("clothes", "의상", 16, true, true),
-            new("mask", "마스크", 11, true, true),
+            new("clothes", "의상", 17, true, true),
+            new("mask", "마스크", 12, true, true),
             new("eyewear", "안경", 3, true, true),
-            new("headwear", "모자", 4, true, true),
+            new("headwear", "모자", 7, true, true),
         };
         private static int[] FemaleRearHair(int front) => front switch
         {
@@ -75,7 +75,15 @@ namespace PWManager.Domain.Services
             8 => new[] { 1, 2, 3, 4, 7 },
             9 => new[] { 1, 4, 7 },
             10 => new[] { 4, 3, 1 },
+            11 => new[] { 1 },
+            12 => new[] { 1 },
+            13 => new[] { 3, 1 },
+            14 => new[] { 4, 1 },
+            15 => new[] { 1 },
             _ => null
         };
+        private static readonly int[] MaleBodyPaintSources = { 11, 12 };
+        private static readonly int[] FemaleBodyPaintSources = { 8, 9 };
+        public static int[] BodyPaintSources(WrestlerGender gender) => gender == WrestlerGender.Female ? FemaleBodyPaintSources : MaleBodyPaintSources;
     }
 }

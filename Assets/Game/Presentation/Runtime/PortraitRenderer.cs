@@ -71,8 +71,10 @@ namespace PWManager.Presentation
                     }
                 }
                 var mask = Part("mask"); var fullMask = PortraitCatalog.FullMask(mask);
-                var hat = Part("headwear") > 1 && !fullMask;
+                var showHeadwear = Part("headwear") > 1 && !fullMask;
+                var hat = showHeadwear && Part("headwear") != 7;
                 var rear = "hairback-" + Part("hairback") + (hat ? "-headwear-" + Part("headwear") : "");
+                if (!hat && Load(gender, rear + "-front-" + Part("hair")) != null) rear += "-front-" + Part("hair");
                 if (!fullMask && Part("hairback") > 1) Layer(rear, "hair");
                 var suit = Load(gender, "body-clothes-" + Part("clothes")) != null;
                 Layer(suit ? Typed("body-clothes-" + Part("clothes")) : appearance.BodyType == 1 ? "body" : "body-type-" + appearance.BodyType, skin: true);
@@ -87,7 +89,8 @@ namespace PWManager.Presentation
                     if (category == "facepaint") Materials(name, category); else Layer(name, skin: true);
                 }
                 if (mask == 1 && gender == WrestlerGender.Male && Part("beard") > 1) Layer("beard-" + Part("beard") + "-face-" + Part("head"), "beard");
-                if (mask == 1) { Layer("nose-" + Part("nose")); Layer("brows-" + Part("brows"), "hair"); }
+                if (mask == 1) Layer("nose-" + Part("nose"));
+                if (mask == 1 || mask == 12) Layer("brows-" + Part("brows"), "hair");
                 if (!PortraitCatalog.CoveredEyes.Contains(mask))
                 {
                     var eyes = "eyes-" + Part("eyes");
@@ -99,11 +102,25 @@ namespace PWManager.Presentation
                 if (mask > 1) Materials("mask-" + mask + "-face-" + Part("head"), "mask");
                 if (!fullMask)
                 {
-                    if (!hat) Layer("hair-" + Part("hair"), "hair");
-                    else if (!(gender == WrestlerGender.Male && Part("hair") == 11)) Layer("headwear-" + Part("headwear") + "-hair", "hair");
+                    if (!hat)
+                    {
+                        var front = "hair-" + Part("hair");
+                        if (Load(gender, front + "-face-" + Part("head")) != null) front += "-face-" + Part("head");
+                        Layer(front, "hair");
+                    }
+                    else if (!(gender == WrestlerGender.Male && Part("hair") == 11))
+                    {
+                        var fringe = "hair-" + Part("hair") + "-headwear-" + Part("headwear");
+                        Layer(Load(gender, fringe) != null ? fringe : "headwear-" + Part("headwear") + "-hair", "hair");
+                    }
                 }
                 if (mask == 1 && Part("eyewear") > 1) Layer("eyewear-" + Part("eyewear"));
-                if (hat) Layer("headwear-" + Part("headwear"));
+                if (showHeadwear)
+                {
+                    var headwear = "headwear-" + Part("headwear");
+                    if (gender == WrestlerGender.Male && Part("hair") == 11 && Part("headwear") == 3) headwear += "-bald";
+                    Materials(headwear, "headwear");
+                }
                 RenderTexture.active = current;
                 if (reuse == null) reuse = new Texture2D(Width, Height, TextureFormat.RGBA32, false) { name = "Wrestler portrait", filterMode = FilterMode.Bilinear };
                 reuse.wrapMode = TextureWrapMode.Clamp;

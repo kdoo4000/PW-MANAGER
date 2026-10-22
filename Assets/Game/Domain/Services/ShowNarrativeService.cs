@@ -251,23 +251,25 @@ namespace PWManager.Domain.Services
             foreach (var line in MatchContexts(save, plan, result, actor, target).Take(2))
                 beats.Add(Beat(MatchBeatType.Context, actor, target, line, 0));
             // Select whole causal exchanges. A cover must not survive without its setup.
-            var groups = state.Events.Select((value, index) => (value, index)).Where(x => x.value.Type is not (MatchActionType.Finish or MatchActionType.MedicalStop))
+            var groups = state.Events.Select((value, index) => (value, index)).Where(x => x.value.Type is not (MatchActionType.Finish or MatchActionType.MedicalStop or MatchActionType.ExecutionStop))
                 .GroupBy(x => x.value.ExchangeId).ToList();
             var selected = groups.OrderByDescending(g => g.Any(x => x.value.Type == MatchActionType.Spot))
                 .ThenByDescending(g => g.Sum(x => x.value.IsMajorMoment ? 8 : x.value.Impact)).Take(8)
                 .SelectMany(g => g.Select(x => x.index)).ToHashSet();
             foreach (var item in state.Events.Select((e, index) => (e, index)).Where(x => x.e.InjurySeverity != InjuryStatus.None && x.e.Type != MatchActionType.MedicalStop)) selected.Add(item.index);
-            foreach (var index in selected.ToList())
+            var pending = new Stack<int>(selected);
+            while (pending.Count > 0)
             {
+                var index = pending.Pop();
+                var visible = MatchEventNarration.CommentaryIndex(result, index);
+                if (selected.Add(visible)) pending.Push(visible);
                 var cause = state.Events[index].CauseEventIndex;
-                while (cause >= 0 && cause < index && selected.Add(cause)) cause = state.Events[cause].CauseEventIndex;
+                if (cause >= 0 && cause < index && selected.Add(cause)) pending.Push(cause);
             }
             foreach (var index in selected.OrderBy(x => x))
             {
                 var item = state.Events[index];
-                if (item.Type == MatchActionType.Recover && index + 1 < state.Events.Count && selected.Contains(index + 1) &&
-                    state.Events[index + 1].Type == MatchActionType.Recover && state.Events[index + 1].PerformerId == item.PerformerId &&
-                    !item.SellingProtectedRegion && item.InjurySeverity == InjuryStatus.None) continue;
+                if (!MatchEventNarration.ShouldNarrate(item, result)) continue;
                 var phase = Math.Min(3, 1 + (int)((long)item.MatchTimeSeconds * 3 / state.TargetDurationSeconds));
                 var planned = item.Type == MatchActionType.Spot ? result.SpotResults.FirstOrDefault(x => x.SpotId == item.Detail && x.ActorId == item.PerformerId) : null;
                 if (planned != null) phase = (int)planned.Phase;
@@ -278,13 +280,13 @@ namespace PWManager.Domain.Services
                 beat.CrowdReaction = item.CrowdReaction;
                 beats.Add(beat);
             }
-            if (!state.WasStoppedByInjury || state.ElapsedSeconds >= state.TargetDurationSeconds / 2)
+            if ((!state.WasStoppedByInjury && !state.WasStoppedByExecution) || state.ElapsedSeconds >= state.TargetDurationSeconds / 2)
                 AddSpot(beats, MatchBeatType.PlannedSpot, plan.MiddleSpot, target, actor, 2);
             var finish = state.Events.Last();
             var endingSpot = result.SpotResults.FirstOrDefault(x => x.SpotId == finish.Detail && x.ScriptedEffect != SpotScriptedEffect.None);
             if (endingSpot != null)
                 beats.Add(Beat(MatchBeatType.PlannedSpot, endingSpot.ActorId, endingSpot.TargetId, endingSpot.ScriptedMoment, 4));
-            else if (finish.Type == MatchActionType.MedicalStop)
+            else if (finish.Type is MatchActionType.MedicalStop or MatchActionType.ExecutionStop)
             {
                 var beat = Beat(MatchBeatType.EngineAction, finish.PerformerId, finish.ReceiverId, null, 4);
                 beat.EngineEventIndex = state.Events.Count - 1; beats.Add(beat);
@@ -292,7 +294,7 @@ namespace PWManager.Domain.Services
             else beats.Add(Beat(MatchBeatType.Finish, finish.PerformerId, finish.ReceiverId, result.FinishType.ToString(), 4));
             foreach (var injury in result.InjuryChanges.Where(i => i.IsKayfabe))
                 beats.Add(Beat(MatchBeatType.Context, injury.WrestlerId, null, $"story-injury:{(int)injury.Region}:{injury.RecoveryDays}", 4));
-            if (!state.WasStoppedByInjury)
+            if (!state.WasStoppedByInjury && !state.WasStoppedByExecution && !result.WasStoppedBySpot)
             {
                 AddSpot(beats, MatchBeatType.PlannedSpot, plan.ClosingSpot, finish.PerformerId ?? actor, finish.ReceiverId ?? target, 4);
                 AddEvaluatedSpots(beats, result, MatchSpotPhase.PostMatch);
@@ -311,6 +313,7 @@ namespace PWManager.Domain.Services
             if (index < 0 || index >= result.EngineState.Events.Count) throw new ArgumentOutOfRangeException(nameof(index));
             if (name == null) throw new ArgumentNullException(nameof(name));
             var value = result.EngineState.Events[index];
+            if (!MatchEventNarration.ShouldNarrate(value, result)) return string.Empty;
             if (result.EngineState.EngineVersion >= 2) return MatchEventNarration.Text(value, result, name);
             if (value.Type == MatchActionType.Finish)
                 return FinishText(result.FinishType.ToString(), string.IsNullOrEmpty(value.PerformerId) ? null : name(value.PerformerId),
@@ -447,7 +450,7 @@ namespace PWManager.Domain.Services
 
         private static void AddEvaluatedSpots(List<MatchSimulationBeatState> beats, MatchResultState result, MatchSpotPhase phase)
         {
-            foreach (var spot in (result.SpotResults ?? new List<SpotResultState>()).Where(x => x.Phase == phase))
+            foreach (var spot in (result.SpotResults ?? new List<SpotResultState>()).Where(x => x.Phase == phase && !x.WasSkipped))
             {
                 var performance = spot.Result switch
                 {
@@ -468,7 +471,7 @@ namespace PWManager.Domain.Services
         }
 
         private static bool EndsAt(MatchResultState result, MatchSpotPhase phase) =>
-            (result.SpotResults ?? new List<SpotResultState>()).Any(x => x.Phase == phase &&
+            (result.SpotResults ?? new List<SpotResultState>()).Any(x => !x.WasSkipped && x.Phase == phase &&
                 (x.ScriptedEffect == SpotScriptedEffect.MatchStopped || x.ScriptedEffect == SpotScriptedEffect.Disqualification));
 
         private static List<MatchSimulationBeatState> FinalizeBeats(List<MatchSimulationBeatState> beats, MatchResultState result, GameSave save)
@@ -504,23 +507,23 @@ namespace PWManager.Domain.Services
             return beat.BeatType switch
             {
                 MatchBeatType.Opening => Pick(random,
-                    $"공이 울렸습니다! {actor}, 그리고 {target}. 서로 거리를 재며 기회를 살핍니다.",
+                    $"공이 울렸습니다! {actor}, 그리고 {target}. 서로 거리를 재네요. 누가 먼저 나올까요?",
                     $"자, 경기 시작합니다! {actor}, {target}. 먼저 주도권을 잡는 쪽은 누구일까요?",
-                    $"시작을 알리는 공입니다! {actor}, 조심스럽게 다가갑니다. {target}의 첫 대응을 살피는군요.",
-                    $"드디어 맞붙습니다! {actor}, {target}. 첫 공방부터 눈여겨봐야겠습니다!"),
+                    $"시작을 알리는 공입니다! {actor}, 조심스럽게 다가갑니다. {target}도 보고 있죠. 눈치 싸움부터네요!",
+                    $"드디어 맞붙습니다! {actor}, {target}. 자, 첫 공방부터 놓치지 마세요!"),
                 MatchBeatType.Control => ControlText(style, actor, target, random),
                 MatchBeatType.Counter => CounterText(style, actor, target, random),
                 MatchBeatType.Comeback => Pick(random,
-                    $"{actor}, 다시 거리를 벌립니다. 초반과 같은 공방을 허용하지 않겠다는 움직임입니다!",
+                    $"{actor}, 다시 거리를 벌립니다. 초반처럼 당해줄 생각은 없죠!",
                     $"{actor}, 호흡을 가다듬고 다시 나옵니다! {target}에게 흐름을 내줄 생각이 없습니다.",
-                    $"{actor}, 물러서지 않습니다! 다시 공격에 나서며 경기의 흐름을 바꾸려 합니다!"),
+                    $"{actor}, 물러서지 않습니다! 다시 공격에 나섭니다. 이제 자기 차례라는 거죠!"),
                 // Authored spots are quoted intact: assigning a guessed actor could reverse their meaning.
                 MatchBeatType.PlannedSpot => $"자, 이 장면 보시죠! {beat.Detail}",
                 MatchBeatType.Context or MatchBeatType.Execution => beat.Detail,
                 MatchBeatType.FinisherAttempt => Pick(random,
-                    "경기 막판입니다! 한 번의 실수가 승부를 가를 수 있습니다. 끝까지 집중해야 합니다!",
-                    "이제 마무리를 노릴 시간입니다! 결정적인 공격을 연결할 틈이 생길까요?",
-                    "마지막까지 긴장을 놓을 수 없습니다! 승부를 끝낼 기회를 누가 잡을까요?"),
+                    "경기 막판입니다! 한 번 삐끗하면 끝이에요. 저도 눈을 못 떼겠네요!",
+                    "이제 마무리를 노릴 시간입니다! 결정적인 공격, 그 한 번이 쉽지 않죠!",
+                    "아직 끝난 게 아닙니다! 승부를 끝낼 기회, 누가 먼저 잡나요!"),
                 MatchBeatType.Finish => FinishText(beat.Detail, actor, target),
                 _ => beat.Detail
             };
@@ -543,75 +546,75 @@ namespace PWManager.Domain.Services
             "style_001" or nameof(MatchArchetype.Brawler) => Pick(random,
                 $"{actor}, 거리를 주지 않습니다! 타격을 이어가며 {target} 쪽으로 밀고 들어갑니다.",
                 $"{actor}, 짧은 타격을 연달아 꽂습니다! {target}, 숨 돌릴 틈이 없습니다.",
-                $"{actor}, 거칠게 파고듭니다! 몸을 맞대고 타격으로 압박하는군요!"),
+                $"{actor}, 거칠게 파고듭니다! 몸을 맞대고 타격으로 압박합니다. 한 발도 안 주네요!"),
             "style_002" or nameof(MatchArchetype.Power) => Pick(random,
                 $"{actor}, 힘으로 중심을 무너뜨립니다! {target}, 정면 대결은 부담스럽겠습니다.",
-                $"{actor}, 허리를 붙잡고 들어 올립니다! 힘으로 공방을 끝내려는 움직임입니다.",
-                $"{actor}, 강하게 밀어붙입니다! {target}의 버티는 힘을 시험하는군요!"),
+                $"{actor}, 허리를 붙잡고 들어 올립니다! 힘으로 끝내보겠다는 거죠!",
+                $"{actor}, 강하게 밀어붙입니다! {target}, 버티는 것도 일이겠어요!"),
             "style_003" or nameof(MatchArchetype.Technical) => Pick(random,
-                $"{actor}, 팔을 잡고 매트로 끌고 갑니다. {target}, 먼저 이 압박부터 풀어야 합니다.",
-                $"{actor}, 손목에서 팔꿈치로 이어갑니다! 관절을 하나씩 통제하는 정교한 공방입니다.",
-                $"{actor}, 매트에서 유리한 자세를 잡습니다. {target}의 빠져나갈 방향까지 막는군요!"),
+                $"{actor}, 팔을 잡고 매트로 끌고 갑니다. {target}, 일단 이 팔부터 빼야죠!",
+                $"{actor}, 손목에서 팔꿈치로 이어갑니다! 관절을 하나씩 잡네요. 참 꼼꼼해요!",
+                $"{actor}, 매트에서 유리한 자세를 잡습니다. {target}의 빠져나갈 길까지 막네요!"),
             "style_004" or nameof(MatchArchetype.HighFlying) => Pick(random,
-                $"{actor}, 로프를 타고 속도를 올립니다! {target}, 빠른 움직임을 따라가야 합니다.",
+                $"{actor}, 로프를 타고 속도를 올립니다! {target}, 눈도 발도 바쁘겠어요!",
                 $"{actor}, 높이 뛰어오릅니다! 공중에서 {target}을 향해 몸을 던집니다!",
-                $"{actor}, 탄력을 살려 날아듭니다! 지상에만 머물지 않는 공격입니다!"),
+                $"{actor}, 탄력을 살려 날아듭니다! 공중까지 써가며 공격하네요!"),
             "style_005" => Pick(random,
                 $"{actor}, 가위처럼 다리를 걸고 회전합니다! 루차 특유의 움직임으로 {target}을 넘깁니다!",
-                $"{actor}, 몸을 비틀어 상대의 옆으로 돌아갑니다! 회전이 끊이지 않는 루차 공방입니다!",
+                $"{actor}, 몸을 비틀어 상대의 옆으로 돌아갑니다! 루차 공방, 따라보는 저도 바쁘네요!",
                 $"{actor}, 가볍게 뛰어올라 회전으로 중심을 빼앗습니다! {target}, 방향을 따라가기 어렵겠습니다!"),
             "style_006" => Pick(random,
                 $"{actor}, 큰 보폭으로 공간을 좁힙니다! 거구가 다가오자 {target}의 움직일 곳이 줄어듭니다.",
-                $"{actor}, 긴 팔로 상대를 붙잡습니다! 자이언트의 리치가 압박으로 이어집니다!",
+                $"{actor}, 긴 팔로 상대를 붙잡습니다! 자이언트의 리치, 저 거리도 닿네요!",
                 $"{actor}, 체중을 실어 누릅니다! {target}, 이 거대한 벽을 어떻게 벗어날까요?"),
             nameof(MatchArchetype.Fundamentals) => Pick(random,
                 $"{actor}, 기본에 충실한 헤드록입니다. 자세를 낮추고 단단히 잡습니다.",
-                $"{actor}, 차근차근 자세를 잡습니다. 기본기에서 빈틈을 주지 않는군요.",
-                $"{actor}, 무리하지 않고 중심을 지킵니다. 안정적인 기본기로 압박합니다."),
+                $"{actor}, 차근차근 자세를 잡습니다. 기본기가 좋으니 빈틈도 없네요.",
+                $"{actor}, 무리하지 않고 중심을 지킵니다. 기본기만으로도 이렇게 까다롭죠."),
             nameof(MatchArchetype.Spot) => Pick(random,
                 $"{actor}, 크게 몸을 날립니다! 한 장면에 힘을 쏟는 과감한 공격입니다!",
-                $"{actor}, 공격에 속도를 붙입니다! 큰 동작으로 단번에 흐름을 잡으려 합니다!",
+                $"{actor}, 공격에 속도를 붙입니다! 큰 동작으로 한 번에 잡겠다는 거죠!",
                 $"{actor}, 과감하게 치고 나옵니다! 위험을 감수하고 큰 기술을 노립니다!"),
             _ => Pick(random,
                 $"{actor}, 타격 뒤에 곧바로 잡기입니다! 여러 공격을 섞어 {target}을 압박합니다.",
-                $"{actor}, 거리에 맞춰 공격을 바꿉니다. 올라운더다운 유연한 경기 운영입니다!",
-                $"{actor}, 서서 싸우다 매트로 이어갑니다! 한 가지 방식에 머물지 않습니다!")
+                $"{actor}, 거리에 맞춰 공격을 바꿉니다. 올라운더라 꺼낼 게 많네요!",
+                $"{actor}, 서서 싸우다 매트로 이어갑니다! 상대도 맞춰가려면 바쁘겠죠!")
         };
 
         private static string CounterText(string style, string actor, string target, Random random) => style switch
         {
             "style_001" or nameof(MatchArchetype.Brawler) => Pick(random,
-                $"{actor}, 짧은 타격으로 끊습니다! 맞붙은 채로 반격하는 브롤러입니다!",
+                $"{actor}, 짧은 타격으로 끊습니다! 브롤러답게 붙어서 돌려주네요!",
                 $"{actor}, 물러서는 대신 맞받아칩니다! {target}도 타격을 경계해야 합니다!",
                 $"{actor}, 거칠게 치고 나옵니다! 연속 타격으로 압박을 되돌려줍니다!"),
             "style_002" or nameof(MatchArchetype.Power) => Pick(random,
                 $"{actor}, 버텨냅니다! 힘으로 상대를 밀어내며 흐름을 끊습니다.",
-                $"{actor}, 들어 올리려는 상대를 오히려 밀어붙입니다! 힘으로 뒤집는 공방입니다!",
+                $"{actor}, 들어 올리려는 상대를 오히려 밀어붙입니다! 힘겨루기, 상대를 잘못 골랐나요!",
                 $"{actor}, 중심을 낮추고 버팁니다! {target}의 공격을 완력으로 막아냅니다!"),
             "style_003" or nameof(MatchArchetype.Technical) => Pick(random,
                 $"{actor}, 손목을 잡아 공격을 끊습니다! 이번에는 팔을 묶고 움직임을 제한합니다.",
-                $"{actor}, 잡힌 팔을 돌려 관절기를 되겁니다! 기술로 풀어내는 반격입니다!",
-                $"{actor}, 체중을 옮겨 위아래를 바꿉니다! 매트에서의 수 싸움이 좋습니다!"),
+                $"{actor}, 잡힌 팔을 돌려 관절기를 되겁니다! 잡았다고 안심하면 이렇게 되죠!",
+                $"{actor}, 체중을 옮겨 위아래를 바꿉니다! 매트에서 한 수 돌려주네요!"),
             "style_004" or nameof(MatchArchetype.HighFlying) => Pick(random,
                 $"{actor}, 몸을 낮춰 피합니다! 빠르게 돌아서며 반격할 공간을 만듭니다.",
-                $"{actor}, 훌쩍 뛰어넘습니다! 착지하자마자 다음 공격을 준비합니다!",
+                $"{actor}, 훌쩍 뛰어넘습니다! 착지하자마자 다음 공격. 발이 쉴 틈이 없네요!",
                 $"{actor}, 로프의 탄력으로 되돌아옵니다! 속도를 살린 반격입니다!"),
             "style_005" => Pick(random,
-                $"{actor}, 공중에서 몸을 돌려 빠져나옵니다! 루차 특유의 유연한 탈출입니다!",
+                $"{actor}, 공중에서 몸을 돌려 빠져나옵니다! 루차다운 탈출, 저기서도 빠져나가네요!",
                 $"{actor}, 다리를 걸어 상대의 힘을 회전으로 바꿉니다! 순식간에 방향이 뒤집힙니다!",
                 $"{actor}, 옆으로 굴러 잡기를 벗어납니다! 회전과 함께 반격까지 이어갑니다!"),
             "style_006" => Pick(random,
-                $"{actor}, 긴 팔로 접근을 막습니다! 거구의 리치가 반격의 출발점입니다!",
+                $"{actor}, 긴 팔로 접근을 막습니다! 거구의 리치, 가까이 가는 것도 일이죠!",
                 $"{actor}, 몸을 세워 버팁니다! {target}, 이 큰 체격을 넘어뜨리기가 쉽지 않습니다!",
                 $"{actor}, 거대한 몸으로 길을 막습니다! 달려들던 {target}의 흐름이 끊깁니다!"),
             nameof(MatchArchetype.Fundamentals) => Pick(random,
                 $"{actor}, 자세부터 바로잡습니다! 기본에 충실하게 잡기를 풀어냅니다.",
                 $"{actor}, 발을 고쳐 딛고 버팁니다. 안정적인 중심이 반격을 만듭니다.",
-                $"{actor}, 정석적인 탈출입니다! 서두르지 않고 다시 마주 섭니다."),
+                $"{actor}, 정석대로 빠져나옵니다! 서두르지 않고 다시 마주 서네요. 기본이 든든해요."),
             nameof(MatchArchetype.Spot) => Pick(random,
                 $"{actor}, 과감한 반격입니다! 큰 동작으로 흐름을 단번에 바꾸려 합니다!",
                 $"{actor}, 틈을 보자마자 몸을 던집니다! 위험을 감수하는 선택입니다!",
-                $"{actor}, 여기서 큰 기술을 시도합니다! 수비에만 머물 생각이 없습니다!"),
+                $"{actor}, 여기서 큰 기술을 시도합니다! 막기만 하자니 성에 안 차죠!"),
             _ => Pick(random,
                 $"{actor}, 잡기를 풀고 타격으로 되받습니다! 반격의 방식도 다양합니다!",
                 $"{actor}, 상대의 공격에 맞춰 자세를 바꿉니다! 올라운더의 대응력을 보여줍니다!",

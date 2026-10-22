@@ -191,7 +191,7 @@ namespace PWManager.Tests
                             new MatchRuntimeRules { ImportantMatch = scenario == 2, Disqualification = scenario != 2, CountOut = scenario != 2 });
                     }
                     var s = Run();
-                    Assert.That(s.IsFinished && !s.IsAborted, Is.True, $"{scenario}/{seed}: {s.FailureReason}");
+                    Assert.That(s.IsFinished && !s.IsAborted && !s.WasStoppedByExecution, Is.True, $"{scenario}/{seed}: {s.FailureReason}");
                     Assert.That(s.WinnerId, Is.EqualTo("b")); Assert.That(s.ElapsedSeconds, Is.InRange(1200 * .95, 1200 * 1.05));
                     Assert.That(s.ActualFinish, Is.EqualTo(MatchFinishType.Pinfall));
                     var exits = s.Events.Where(e => e.Type == MatchActionType.ExitRing).ToList();
@@ -302,7 +302,7 @@ namespace PWManager.Tests
             {
                 var s = new MatchSimulator(seed, accidentsEnabled: false).Simulate(new[] { P("a"), P("b") }, 600,
                     new MatchEngineBooking { WinnerId = "a", LoserId = "b" });
-                Assert.That(s.IsFinished && !s.IsAborted, Is.True, $"Seed {seed}: {s.FailureReason}");
+                Assert.That(s.IsFinished && !s.IsAborted && !s.WasStoppedByExecution, Is.True, $"Seed {seed}: {s.FailureReason}");
                 Assert.That(s.WinnerId, Is.EqualTo("a"));
                 Assert.That(s.ElapsedSeconds, Is.InRange(600 * .95, 600 * 1.05));
                 foreach (var e in s.Events.Where(e => names.Contains(e.Type.ToString())))
@@ -365,7 +365,7 @@ namespace PWManager.Tests
                     { Name = "그립 피니셔", Kind = MoveKind.Grapple, TechnicalWeight = 1 })
                     .Simulate(new[] { a, b }, 900, new MatchEngineBooking { WinnerId = "a", LoserId = "b" },
                         new MatchRuntimeRules { CountOutSeconds = 30 });
-                Assert.That(s.IsFinished && !s.IsAborted, Is.True, $"Seed {seed}: {s.FailureReason}");
+                Assert.That(s.IsFinished && !s.IsAborted && !s.WasStoppedByExecution, Is.True, $"Seed {seed}: {s.FailureReason}");
                 Assert.That(s.WinnerId, Is.EqualTo("a"));
                 Assert.That(s.ElapsedSeconds, Is.InRange(900 * .95, 900 * 1.05));
                 foreach (var e in s.Events)
@@ -420,7 +420,7 @@ namespace PWManager.Tests
                 var flight = new MatchSimulator(seed, accidentsEnabled: false, findMove: _ => new MatchMoveRules
                     { Name = "등록 공중기", Kind = MoveKind.Aerial, HighFlyingWeight = 1 })
                     .Simulate(new[] { flyer, P("b") }, 900, new MatchEngineBooking { WinnerId = "a", LoserId = "b" });
-                Assert.That(flight.IsFinished && !flight.IsAborted, Is.True, $"Aerial seed {seed}: {flight.FailureReason}");
+                Assert.That(flight.IsFinished && !flight.IsAborted && !flight.WasStoppedByExecution, Is.True, $"Aerial seed {seed}: {flight.FailureReason}");
                 Assert.That(flight.ElapsedSeconds, Is.InRange(900 * .95, 900 * 1.05));
                 foreach (var attempt in flight.Events.Where(e => e.MoveId == "aerial" && e.Type is MatchActionType.Signature or MatchActionType.Finisher))
                     Assert.That(attempt.Before.Participants.Single(p => p.Id == attempt.ReceiverId).IsDowned, Is.True);
@@ -742,7 +742,7 @@ namespace PWManager.Tests
             var beats = new MatchNarrationService().CreateBeats(new MatchPlanState(), result);
             var indices = beats.Where(x => x.BeatType == MatchBeatType.EngineAction).Select(x => x.EngineEventIndex).ToHashSet();
             foreach (var i in indices)
-                if (s.Events[i].CauseEventIndex >= 0) Assert.That(indices.Contains(s.Events[i].CauseEventIndex), Is.True);
+                if (s.Events[i].CauseEventIndex >= 0) Assert.That(indices.Contains(MatchEventNarration.CommentaryIndex(result, s.Events[i].CauseEventIndex)), Is.True);
             Assert.That(UnityEngine.JsonUtility.FromJson<MatchEngineState>("{}" ).EngineVersion, Is.Zero);
         }
     }

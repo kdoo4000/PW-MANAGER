@@ -20,6 +20,7 @@ namespace PWManager.Data.Definitions
         [EnumToggleButtons] public MatchRuleOverride CountOutRule;
         [EnumToggleButtons] public MatchRuleOverride RopeBreakRule;
         [Min(1)] public int CountOutSeconds = 10;
+        public bool IronMan, Tornado, Elimination, TwoOutOfThree;
         [ListDrawerSettings] public List<MatchFinishType> AllowedSpecialFinishTypes = new();
     }
 }

@@ -150,6 +150,7 @@ namespace PWManager.Domain.Services
                     var plan = save.MatchPlans.Single(x => x.Id == result.MatchPlanId);
                     void AddSpot(SpotResultState spot)
                     {
+                        if (spot.WasSkipped) return;
                         // Spot outcome grades execution, not whether the scripted betrayal happened.
                         var incident = spot.SpotId is "spot_009" or "spot_016" ? StoryIncident.Betrayal :
                             spot.SpotId is "spot_001" or "spot_002" or "spot_003" or "spot_004" or "spot_007" or
@@ -162,6 +163,7 @@ namespace PWManager.Domain.Services
                             result.Id, StoryEventType.Match, incident, spot.ActorId, spot.TargetId, 50f);
                     }
                     foreach (var spot in (result.SpotResults ?? new()).Where(x => x.Phase != MatchSpotPhase.PostMatch).OrderBy(x => x.Phase)) AddSpot(spot);
+                    if (result.WasStoppedByExecution) continue;
                     Add(save, output, plan.StorylineId, plan.StoryAction, result.Id, StoryEventType.Match,
                         StoryIncident.Competition, result.FinishPerformerId ?? plan.WinnerId, result.LoserTargetId,
                         result.FinalMatchQuality * 5f);

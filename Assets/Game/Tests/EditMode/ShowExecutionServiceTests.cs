@@ -10,6 +10,37 @@ namespace PWManager.Tests
     public sealed class ShowExecutionServiceTests
     {
         [Test]
+        public void ImpossibleFinishStopsOnlyThatMatchAndPreservesReplayAndCondition()
+        {
+            var save = CreateSave();
+            save.MatchPlans[0].FinishType = MatchFinishType.Submission;
+            save.MatchPlans[0].StoryInjuries.Add(new() { WrestlerId = "b", Severity = InjuryStatus.Minor, Region = BodyRegion.Legs, Days = 3 });
+            save.MatchPlans.Add(new MatchPlanState { Id = "second", MatchTypeId = "singles", ParticipantIds = { "a", "b" },
+                WinnerId = "b", LoserTargetId = "a", FinishType = MatchFinishType.Pinfall });
+            save.ShowEvents.Add(new() { Id = "second-event", ShowId = "show", EventType = ShowEventType.Match, DetailId = "second", PlannedDuration = 5 });
+            save.Shows[0].TimelineEventIds.Add("second-event");
+            save.Shows[0].DurationLimit = 25;
+            var rules = new Rules();
+            var evaluator = new MatchEvaluator(rules, rules, accidentsEnabled: false,
+                findMove: _ => new MatchMoveRules { Kind = MoveKind.Strike });
+            save.Wrestlers[0].Condition.InjuryStatus = InjuryStatus.Moderate;
+            save.Wrestlers[0].Condition.InjuryRegion = BodyRegion.Arms;
+            var service = new ShowExecutionService(new ShowPlanningService(rules), evaluator, new PromoEvaluator(), () => Guid.NewGuid().ToString("N"));
+            service.Execute(save, "show", 73, 1000, 100);
+            var stopped = save.MatchResults.Single(x => x.MatchPlanId == "match");
+            Assert.That(stopped.WasStoppedByExecution, Is.True);
+            Assert.That(stopped.WinnerId, Is.Null);
+            Assert.That(stopped.InterruptionReason, Is.Not.Empty);
+            Assert.That(stopped.CriticReview, Is.Null);
+            Assert.That(stopped.InjuryChanges.Any(x => x.IsKayfabe), Is.False);
+            Assert.That(stopped.WrestlerConditionChanges.All(x => x.ConditionDelta < 0), Is.True);
+            Assert.That(save.MatchResults.Single(x => x.MatchPlanId == "second").WinnerId, Is.EqualTo("b"));
+            var copy = UnityEngine.JsonUtility.FromJson<GameSave>(UnityEngine.JsonUtility.ToJson(save));
+            Assert.That(copy.MatchResults.Single(x => x.MatchPlanId == "match").InterruptionReason, Is.EqualTo(stopped.InterruptionReason));
+            Assert.That(stopped.NarrativeLines.Any(x => x.Text.Contains("중단")), Is.True);
+        }
+
+        [Test]
         public void GroupFormation_PreservesSaveUntilConfirmation_AndSurvivesReload()
         {
             var save = CreateSave();

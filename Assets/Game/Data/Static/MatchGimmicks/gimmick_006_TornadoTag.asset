@@ -1,0 +1,33 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 28966a9dff1c2924db78c33b865ffebd, type: 3}
+  m_Name: gimmick_006_TornadoTag
+  m_EditorClassIdentifier: PWMANAGER.Data::PWManager.Data.Definitions.MatchGimmickDefinition
+  id: gimmick_006
+  koreanName: "\uD1A0\uB124\uC774\uB3C4 \uD0DC\uADF8 \uB9E4\uCE58"
+  englishName: Tornado Tag
+  MinimumParticipants: 4
+  MaximumParticipants: 8
+  CompatibleMatchTypeIds:
+  - matchtype_002
+  ConditionCostMultiplier: 1
+  PinfallRule: 0
+  SubmissionRule: 0
+  DisqualificationRule: 0
+  CountOutRule: 0
+  RopeBreakRule: 0
+  CountOutSeconds: 10
+  IronMan: 0
+  Tornado: 1
+  Elimination: 0
+  TwoOutOfThree: 0
+  AllowedSpecialFinishTypes: 

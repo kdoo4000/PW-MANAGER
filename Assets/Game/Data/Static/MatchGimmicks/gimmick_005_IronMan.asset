@@ -1,0 +1,34 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 28966a9dff1c2924db78c33b865ffebd, type: 3}
+  m_Name: gimmick_005_IronMan
+  m_EditorClassIdentifier: PWMANAGER.Data::PWManager.Data.Definitions.MatchGimmickDefinition
+  id: gimmick_005
+  koreanName: "\uC544\uC774\uC5B8\uB9E8 \uB9E4\uCE58"
+  englishName: Iron Man
+  MinimumParticipants: 2
+  MaximumParticipants: 8
+  CompatibleMatchTypeIds:
+  - matchtype_001
+  - matchtype_002
+  ConditionCostMultiplier: 1
+  PinfallRule: 0
+  SubmissionRule: 0
+  DisqualificationRule: 0
+  CountOutRule: 0
+  RopeBreakRule: 0
+  CountOutSeconds: 10
+  IronMan: 1
+  Tornado: 0
+  Elimination: 0
+  TwoOutOfThree: 0
+  AllowedSpecialFinishTypes: 

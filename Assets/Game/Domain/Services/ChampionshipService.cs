@@ -162,7 +162,7 @@ namespace PWManager.Domain.Services
                 var beforePrestige = title.Prestige;
                 var defendingMembers = string.IsNullOrEmpty(before) ? new List<string>() : HolderMembers(staged, title, before, false);
                 var challengers = actual.Sides.SelectMany(x => x.MemberIds).Except(defendingMembers).ToList();
-                var stopped = result.WasStoppedByInjury || result.WasStoppedBySpot;
+                var stopped = result.WasStoppedByInjury || result.WasStoppedBySpot || result.WasStoppedByExecution;
                 var protectedFinish = result.FinishType is MatchFinishType.Draw or MatchFinishType.Disqualification or MatchFinishType.CountOut;
                 var winning = stopped || result.FinishType == MatchFinishType.Draw ? null : actual.Sides.FirstOrDefault(x => x.Id == result.WinningSideId);
                 if (!protectedFinish && !stopped)

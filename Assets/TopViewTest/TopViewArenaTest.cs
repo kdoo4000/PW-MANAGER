@@ -12,7 +12,7 @@ using UnityEngine.InputSystem;
 using UnityEngine.UIElements;
 
 // Replays engine events without changing the player's save or the engine's results.
-public sealed class TopViewArenaTest : MonoBehaviour
+public sealed partial class TopViewArenaTest : MonoBehaviour
 {
     public Camera viewCamera;
     public Transform blue, red;
@@ -39,6 +39,7 @@ public sealed class TopViewArenaTest : MonoBehaviour
     private struct Contact { public float time, along, secondsPerEngineSecond, strength; public int side; }
     private readonly List<Frame> frames = new();
     private readonly List<Contact> contacts = new();
+    private List<MatchEngineEvent> replayMotions;
     private Transform[] markers;
     private readonly List<Transform> additionalMarkers = new();
     public Transform MarkerFor(string participantId) => Engine == null || Index(participantId) < 0 ? null : markers[Index(participantId)];
@@ -72,6 +73,12 @@ public sealed class TopViewArenaTest : MonoBehaviour
     private Mesh chipTriangle, chipCircle, chipFacingCylinder;
     private Material chipFacingMaterial;
     private MaterialPropertyBlock chipFill;
+    public Renderer[] crowdPanels = Array.Empty<Renderer>();
+    public float ringsideViewSize = 5;
+    private MaterialPropertyBlock crowdFill;
+    private Vector3[] crowdPanelRestPositions;
+    private float crowdMotionTime;
+    private float crowdAccent;
 
     public static float RopeOffset(float along, float contact, float elapsed, float strength)
     {
@@ -83,10 +90,13 @@ public sealed class TopViewArenaTest : MonoBehaviour
 
     private void Start()
     {
+        if (gameObject.scene.name == "TopView Show Simulation") { StartShowSimulation(); return; }
+        InitializeMatchReview();
         if (Engine == null) InitializeMatch();
         target = ringCenter;
         CreateCommentary();
         CreateProfile();
+        CreateMatchReviewControls();
         Seek(clock);
         UpdateCommentary();
     }
@@ -152,7 +162,7 @@ public sealed class TopViewArenaTest : MonoBehaviour
         markerFills = markers.Select(t => t.Find("Fill").GetComponent<Renderer>()).ToArray();
         markerColors = markerFills.Select(r => r.sharedMaterial.GetColor("_BaseColor")).ToArray();
         for (int i = 2; i < markers.Length; i++) markerColors[i] = i % 2 == 0 ? new Color(.95f, .65f, .12f) : new Color(.15f, .75f, .48f);
-        if (previewSave != null) previewSave.Wrestlers = Wrestlers.Where(w => w != null).ToList();
+        if (previewSave != null && previewSave != showSimulationSave) previewSave.Wrestlers = Wrestlers.Where(w => w != null).ToList();
         if (statesRow != null && rosterChanged && Wrestlers.All(w => w != null))
         { var root = statesRow.parent; statesRow.RemoveFromHierarchy(); CreateStates(root); }
         frames.Clear(); contacts.Clear();
@@ -207,6 +217,7 @@ public sealed class TopViewArenaTest : MonoBehaviour
                     along = Mathf.InverseLerp(-ropeEnd, ropeEnd, initial.X * halfRing) });
             }
         }
+        BuildReplayMotion();
         Seek(0);
     }
 
@@ -357,13 +368,13 @@ public sealed class TopViewArenaTest : MonoBehaviour
     {
         automaticCamera = false;
         target = preset == 0 ? Vector3.Lerp(ringCenter, entrance, .38f) : preset == 2 ? entrance : ringCenter;
-        targetSize = preset == 0 ? 15 : preset == 2 ? 7 : 6;
+        targetSize = preset == 0 ? 15 : preset == 2 ? 7 : Mathf.Max(6, ringsideViewSize);
     }
 
     public void RestartDemo() { paused = false; Seek(0); automaticCamera = true; }
 
     // Keep engine time and outcomes intact; only compress the screen time of each action.
-    public float PlaybackRate(MatchEngineEvent e)
+    public float PlaybackRate(MatchEngineEvent e, float? atProgress = null)
     {
         if (e == null) return 0;
         if (e.Detail == "double-down") return e.DurationSeconds * Mathf.Max(0, playbackSpeed) / 2.8f;
@@ -386,7 +397,7 @@ public sealed class TopViewArenaTest : MonoBehaviour
         bool charging = move?.Rules.ExecutionStyle == MoveExecutionStyle.Running;
         bool quickStrike = move?.Rules.ExecutionStyle == MoveExecutionStyle.Stationary && move.Rules.Kind == MoveKind.Strike &&
             move.Rules.MotionProfile is MoveMotionProfile.Strike or MoveMotionProfile.Kick;
-        float progress = Mathf.Clamp01((clock - e.MatchTimeSeconds) / Math.Max(1, e.DurationSeconds));
+        float progress = atProgress ?? Mathf.Clamp01((clock - e.MatchTimeSeconds) / Math.Max(1, e.DurationSeconds));
         float burst = charging ? Mathf.SmoothStep(0, 1, Mathf.InverseLerp(.25f, .3f, progress)) *
             (1 - Mathf.SmoothStep(0, 1, Mathf.InverseLerp(.6f, .65f, progress))) : 0;
         float snap = quickStrike ? Mathf.SmoothStep(0, 1, Mathf.InverseLerp(.5f, .55f, progress)) *
@@ -448,7 +459,7 @@ public sealed class TopViewArenaTest : MonoBehaviour
                 {
                     float sample = needsContact && i == receiver && progress > .5f ? progress <= .65f ? .5f :
                         progress < .8f ? progress - .15f : .65f + (progress - .8f) * 1.75f : progress;
-                    var pose = MatchMovement.Sample(e, Engine.Participants[i].Id, sample);
+                    var pose = MatchMovement.Sample(replayMotions[EventIndex], Engine.Participants[i].Id, sample);
                     if (needsContact && i == receiver && progress > .65f && progress < .8f)
                     {
                         var waiting = MatchMovement.Sample(e, e.ReceiverId, .5f);
@@ -559,16 +570,84 @@ public sealed class TopViewArenaTest : MonoBehaviour
         UpdateRopes();
         UpdateCommentary();
         UpdateFeedback();
+        UpdateCrowdPanels();
+        UpdateReferee();
         UpdateStates();
         UpdateFacingVisibility();
+    }
+
+    private void BuildReplayMotion()
+    {
+        replayMotions = Engine.Events.Select(e => new MatchEngineEvent
+        {
+            DurationSeconds = e.DurationSeconds, MotionSeconds = e.MotionSeconds,
+            Motion = e.Motion?.Select(f => new MatchMotionFrame { Progress = f.Progress,
+                Participants = f.Participants.Select(p => p.Copy()).ToList() }).ToList()
+        }).ToList();
+        if (Engine.EngineVersion < 3) return;
+        for (int i = 0; i + 1 < replayMotions.Count; i++)
+        {
+            if (!Connects(i) || Engine.Events[i].Impact > 0 || IsHit(Engine.Events[i]) || !Preparation(Engine.Events[i].Type)) continue;
+            var motion = replayMotions[i].Motion;
+            // Use empty settling time for the approach when the same exchange continues.
+            while (motion.Count > 2 && motion[^1].Participants.All(p => Same(p, motion[^2].Participants.Single(q => q.Id == p.Id))))
+                motion.RemoveAt(motion.Count - 1);
+            float finish = motion[^1].Progress;
+            foreach (var frame in motion) frame.Progress /= finish;
+        }
+        for (int i = 0; i + 1 < replayMotions.Count; i++)
+        {
+            if (!Connects(i)) continue;
+            var previous = replayMotions[i]; var next = replayMotions[i + 1];
+            float previousRate = PlaybackRate(Engine.Events[i], 0), nextRate = PlaybackRate(Engine.Events[i + 1], 0);
+            if (previousRate <= 0 || nextRate <= 0) continue;
+            float leftSeconds = (1 - previous.Motion[^2].Progress) * previous.DurationSeconds / Mathf.Max(.0001f, previousRate);
+            float rightSeconds = next.Motion[1].Progress * next.DurationSeconds / Mathf.Max(.0001f, nextRate);
+            foreach (var end in previous.Motion[^1].Participants)
+            {
+                var start = next.Motion[0].Participants.Single(p => p.Id == end.Id);
+                if (end.HasVelocity || start.HasVelocity || !Same(end, start)) continue;
+                var before = previous.Motion[^2].Participants.Single(p => p.Id == end.Id);
+                var after = next.Motion[1].Participants.Single(p => p.Id == end.Id);
+                if (before.Posture != end.Posture || after.Posture != start.Posture) continue;
+                var incoming = (Point(end) - Point(before)) / Mathf.Max(.0001f, leftSeconds);
+                var outgoing = (Point(after) - Point(start)) / Mathf.Max(.0001f, rightSeconds);
+                if (incoming.sqrMagnitude < .000001f || outgoing.sqrMagnitude < .000001f || Vector2.Dot(incoming.normalized, outgoing.normalized) < -.25f) continue;
+                var velocity = (incoming.normalized + outgoing.normalized).normalized * Mathf.Min(incoming.magnitude, outgoing.magnitude);
+                end.HasVelocity = start.HasVelocity = true;
+                end.VelocityX = velocity.x / previousRate; end.VelocityZ = velocity.y / previousRate;
+                start.VelocityX = velocity.x / nextRate; start.VelocityZ = velocity.y / nextRate;
+            }
+        }
+
+        bool Connects(int index)
+        {
+            var previous = Engine.Events[index]; var next = Engine.Events[index + 1];
+            return previous.Motion?.Count >= 2 && next.Motion?.Count >= 2 && previous.MotionSeconds <= 0 && next.MotionSeconds <= 0 &&
+                !Pause(previous.Type) && !Pause(next.Type) &&
+                previous.Result is not (MatchActionResult.Countered or MatchActionResult.Escaped or MatchActionResult.Interrupted or MatchActionResult.ExecutionFailure) &&
+                MatchTechniques.Find(previous)?.Rules.Kind != MoveKind.Aerial && MatchTechniques.Find(next)?.Rules.Kind != MoveKind.Aerial &&
+                (next.CauseEventIndex == index || previous.ExchangeId > 0 && previous.ExchangeId == next.ExchangeId || Preparation(previous.Type));
+        }
+        Vector2 Point(MatchMotionPose p) => new(p.X, p.Z);
+        bool Same(MatchMotionPose a, MatchMotionPose b) => (Point(a) - Point(b)).sqrMagnitude < .00000001f &&
+            Mathf.Abs(a.Height - b.Height) < .0001f && Mathf.Abs(a.Tilt - b.Tilt) < .0001f && Mathf.Abs(a.Grounded - b.Grounded) < .0001f &&
+            a.Posture == b.Posture && a.Grip == b.Grip && a.GripTargetId == b.GripTargetId &&
+            Mathf.Abs(a.FacingX - b.FacingX) < .0001f && Mathf.Abs(a.FacingZ - b.FacingZ) < .0001f;
+        bool Preparation(MatchActionType type) => type is MatchActionType.Probe or MatchActionType.TieUp or MatchActionType.Chain or
+            MatchActionType.Lift or MatchActionType.PrepareAttack or MatchActionType.Reposition or MatchActionType.TurnOver;
+        bool Pause(MatchActionType type) => type is MatchActionType.Rest or MatchActionType.Hold or MatchActionType.StandingHold or
+            MatchActionType.Submission or MatchActionType.Pin or MatchActionType.Finish or MatchActionType.Fall or MatchActionType.Recover or
+            MatchActionType.RopeBreak or MatchActionType.Climb or MatchActionType.Tag or MatchActionType.Taunt or
+            MatchActionType.ObjectSetup or MatchActionType.ObjectClimb or MatchActionType.ObjectFinish or MatchActionType.MedicalStop or MatchActionType.ExecutionStop;
     }
 
     public void UpdateFacingVisibility()
     {
         var chips = markers ?? new[] { blue, red };
-        for (int i = 0; i < chips.Length; i++)
+        for (int i = 0; i < chips.Length + (refereeMarker ? 1 : 0); i++)
         {
-            var marker = chips[i];
+            var marker = i < chips.Length ? chips[i] : refereeMarker;
             var facing = marker.Find("Facing"); var fill = marker.Find("Fill");
             if (!facing || !fill) continue;
             var renderer = facing.GetComponent<Renderer>();
@@ -598,7 +677,7 @@ public sealed class TopViewArenaTest : MonoBehaviour
             backRenderer.sharedMaterial = fillRenderer.sharedMaterial;
             chipFill ??= new MaterialPropertyBlock();
             fillRenderer.GetPropertyBlock(chipFill); backRenderer.SetPropertyBlock(chipFill);
-            var posture = markerPostures == null ? MatchPosture.Standing : markerPostures[i];
+            var posture = i == chips.Length ? refereeChipPosture : markerPostures == null ? MatchPosture.Standing : markerPostures[i];
             var mesh = posture == MatchPosture.Supine ? chipCircle : chipTriangle;
             if (symbol.sharedMesh != mesh)
             {
@@ -689,35 +768,43 @@ public sealed class TopViewArenaTest : MonoBehaviour
 
     private void Update()
     {
+        if (!paused && !ViewingProfile) crowdMotionTime += Time.deltaTime;
+        if (showSimulationUI != null)
+        {
+            UpdateShowSimulation();
+            if (showPromo || showSummary) return;
+        }
         var display = ViewingProfile ? DisplayStyle.None : DisplayStyle.Flex;
         if (statesRow != null) statesRow.style.display = display;
         if (commentaryBar != null) commentaryBar.style.display = display;
+        UpdateMatchReview(display);
         var key = Keyboard.current;
         if (ViewingProfile)
         {
             if (key?.escapeKey.wasPressedThisFrame == true) WrestlerProfileController.CloseOpenProfile(false);
             return;
         }
-        if (!paused) Seek(clock + Time.deltaTime * PlaybackRate(CurrentEvent));
+        AdvancePlayback(Time.deltaTime);
         if (key != null)
         {
             if (key.digit1Key.wasPressedThisFrame) SetView(0);
             if (key.digit2Key.wasPressedThisFrame) SetView(1);
             if (key.digit3Key.wasPressedThisFrame) SetView(2);
-            if (key.spaceKey.wasPressedThisFrame) automaticCamera = !automaticCamera;
-            if (key.pKey.wasPressedThisFrame) paused = !paused;
-            if (key.rKey.wasPressedThisFrame) RestartDemo();
+            if (showSimulationUI == null && key.spaceKey.wasPressedThisFrame) automaticCamera = !automaticCamera;
+            if (key.pKey.wasPressedThisFrame) ToggleReviewPlayback();
+            if (key.rKey.wasPressedThisFrame) { if (reviewControls != null) PauseReviewAt(0); else RestartDemo(); }
         }
         if (automaticCamera)
         {
             var snapshot = CurrentEvent == null ? null : clock < CurrentEvent.MatchTimeSeconds + CurrentEvent.DurationSeconds * .65f ? CurrentEvent.Before : CurrentEvent.After;
             var active = snapshot == null ? new[] { blue, red } : snapshot.Participants.Where(p => !p.IsEliminated &&
                 (!Engine.Rules.Tag || Engine.Rules.Tornado || p.IsLegal)).Select(p => MarkerFor(p.Id)).ToArray();
-            target = active.Length == 0 ? ringCenter : active.Aggregate(Vector3.zero, (sum, marker) => sum + marker.position) / active.Length;
-            targetSize = Mathf.Max(5, active.Select(marker => Vector3.Distance(marker.position, target)).DefaultIfEmpty(0).Max() * 1.2f + 2.5f);
+            var actionCenter = active.Length == 0 ? ringCenter : active.Aggregate(Vector3.zero, (sum, marker) => sum + marker.position) / active.Length;
+            target = crowdPanels.Length > 0 ? Vector3.Lerp(ringCenter, actionCenter, .25f) : actionCenter;
+            targetSize = Mathf.Max(ringsideViewSize, active.Select(marker => Vector3.Distance(marker.position, target)).DefaultIfEmpty(0).Max() * 1.2f + 2.5f);
         }
         var mouse = Mouse.current;
-        if (mouse != null)
+        if (mouse != null && !PointerOverReviewUI(mouse.position.ReadValue()))
         {
             Vector2 position = mouse.position.ReadValue();
             if (mouse.rightButton.isPressed && !mouse.rightButton.wasPressedThisFrame)
@@ -741,6 +828,62 @@ public sealed class TopViewArenaTest : MonoBehaviour
         viewCamera.orthographicSize = Mathf.Lerp(viewCamera.orthographicSize, targetSize, 1 - Mathf.Exp(-Time.deltaTime * 4));
     }
 
+    private void UpdateCrowdPanels()
+    {
+        if (Engine == null || markerColors == null || crowdPanels.Length == 0) return;
+        crowdFill ??= new MaterialPropertyBlock();
+        var neutral = new Color(.09f, .105f, .12f);
+        int reactingTo = -1;
+        for (int i = EventIndex; i >= 0; i--)
+        {
+            var e = Engine.Events[i];
+            float reactionTime = e.MatchTimeSeconds + e.DurationSeconds * .65f;
+            if (reactionTime > clock) continue;
+            if (Mathf.Abs(e.CrowdReaction) < .01f) continue;
+            reactingTo = Index(e.Result is MatchActionResult.Countered or MatchActionResult.Escaped ? e.ReceiverId : e.PerformerId);
+            if (reactingTo >= 0) break;
+        }
+        var current = CurrentEvent;
+        var snapshot = clock >= current.MatchTimeSeconds + current.DurationSeconds * .65f ? current.After : current.Before;
+        float contactTime = current.MatchTimeSeconds + current.DurationSeconds * .65f;
+        float reactionAge = (clock - contactTime) / Mathf.Max(.01f, PlaybackRate(current));
+        bool majorReaction = current.CrowdReaction >= 5 || current.Impact >= 12;
+        crowdAccent = majorReaction && reactionAge >= 0 ? Mathf.Clamp01(1 - reactionAge / 1.2f) : 0;
+        if (showSimulationUI != null && showFanFrames != null)
+        {
+            int frame = clock >= current.MatchTimeSeconds + current.DurationSeconds * .65f ? EventIndex : EventIndex - 1;
+            AnimateShowFanCrowd(frame >= 0 ? showFanFrames[frame] : new TopViewFanCrowdFrame());
+            return;
+        }
+        int litCount = reactingTo < 0 ? 0 : Mathf.RoundToInt(Mathf.Clamp01(snapshot.CrowdHeat / 100f) * crowdPanels.Length);
+        AnimateCrowdPanels(litCount, reactingTo < 0 ? neutral : markerColors[reactingTo]);
+    }
+
+    private void AnimateCrowdPanels(int litCount, Color activeColor)
+    {
+        AnimateCrowdPanels(i => i < litCount, _ => activeColor);
+    }
+
+    private void AnimateCrowdPanels(Func<int, bool> isCheering, Func<int, Color> activeColor)
+    {
+        if (crowdPanelRestPositions == null || crowdPanelRestPositions.Length != crowdPanels.Length)
+            crowdPanelRestPositions = crowdPanels.Select(r => r.transform.position).ToArray();
+        crowdFill ??= new MaterialPropertyBlock();
+        var neutral = new Color(.09f, .105f, .12f);
+        for (int i = 0; i < crowdPanels.Length; i++)
+        {
+            if (!crowdPanels[i]) continue;
+            bool cheering = isCheering(i);
+            float wave = .5f + .5f * Mathf.Sin(crowdMotionTime * 8.2f + i * 2.39996f);
+            float brightness = .07f + .05f * wave + crowdAccent * .35f * wave;
+            var color = cheering ? Color.Lerp(neutral, activeColor(i), brightness) : neutral;
+            // Screen-up motion remains visible with the overhead camera.
+            crowdPanels[i].transform.position = crowdPanelRestPositions[i] + (cheering ? viewCamera.transform.up * ((wave - .5f) * .14f * (.25f + crowdAccent * .75f)) : Vector3.zero);
+            crowdFill.SetColor("_BaseColor", color);
+            crowdPanels[i].SetPropertyBlock(crowdFill);
+        }
+    }
+
     private void CreateCommentary()
     {
         var root = GetComponent<UIDocument>().rootVisualElement;
@@ -752,7 +895,7 @@ public sealed class TopViewArenaTest : MonoBehaviour
         var bar = commentaryBar = new VisualElement { name = "match-commentary", pickingMode = PickingMode.Ignore };
         bar.style.position = Position.Absolute;
         bar.style.left = bar.style.right = 24;
-        bar.style.bottom = 24;
+        bar.style.bottom = reviewControls != null && reviewControls.layout.height > 0 ? reviewControls.layout.height + 32 : 24;
         bar.style.paddingLeft = bar.style.paddingRight = 24;
         bar.style.paddingTop = bar.style.paddingBottom = 18;
         bar.style.flexDirection = FlexDirection.Row;
@@ -781,14 +924,22 @@ public sealed class TopViewArenaTest : MonoBehaviour
         if (Engine == null) return;
         if (narratedIndex != EventIndex)
         {
-            CommentaryText = MatchNarrationService.NarrateEngineEvent(narrationMatch, EventIndex,
+            int index = MatchEventNarration.CommentaryIndex(narrationMatch, EventIndex);
+            var text = MatchNarrationService.NarrateEngineEvent(narrationMatch, index,
                 id => WrestlerNameText.DisplayName(Wrestlers?.FirstOrDefault(w => w?.Id == id)));
-            if (commentary != null) WrestlerNameText.Set(commentary, CommentaryText, Wrestlers);
+            if (!string.IsNullOrEmpty(text) && text != CommentaryText)
+            {
+                CommentaryText = text;
+                if (commentary != null) WrestlerNameText.Set(commentary, CommentaryText, Wrestlers);
+            }
             narratedIndex = EventIndex;
         }
         if (matchTime != null) matchTime.text = $"{(int)clock / 60:00}:{(int)clock % 60:00}";
     }
-    public static bool IsHit(MatchEngineEvent e) => e != null && e.Impact > 0 &&
+    public static bool IsHit(MatchEngineEvent e) => e != null &&
+        (e.Impact > 0 || e.Type == MatchActionType.Chain &&
+            e.Result is MatchActionResult.FullSuccess or MatchActionResult.PartialSuccess &&
+            MatchTechniques.Find(e)?.Rules.MotionProfile == MoveMotionProfile.Takedown) &&
         MatchTechniques.Find(e)?.Rules.Kind != MoveKind.Submission &&
         MatchTechniques.Find(e)?.Rules.MotionProfile is not (MoveMotionProfile.Chain or MoveMotionProfile.Hold) &&
         e.Result is not (MatchActionResult.Countered or MatchActionResult.ExecutionFailure or MatchActionResult.Blocked or MatchActionResult.Escaped) &&
@@ -817,10 +968,11 @@ public sealed class TopViewArenaTest : MonoBehaviour
             clock < e.MatchTimeSeconds + e.DurationSeconds)
         {
             float progress = Mathf.Clamp01((clock - e.MatchTimeSeconds) / e.DurationSeconds);
-            var grip = e.Motion.FirstOrDefault(f => f.Participants.Any(p => p.Grip != MatchGrip.None && !string.IsNullOrEmpty(p.GripTargetId)));
+            var motion = replayMotions[EventIndex];
+            var grip = motion.Motion.FirstOrDefault(f => f.Participants.Any(p => p.Grip != MatchGrip.None && !string.IsNullOrEmpty(p.GripTargetId)));
             foreach (var participant in e.Before.Participants)
             {
-                var pose = MatchMovement.Sample(e, participant.Id, progress);
+                var pose = MatchMovement.Sample(motion, participant.Id, progress);
                 if (pose.Grip != MatchGrip.None && !string.IsNullOrEmpty(pose.GripTargetId))
                 { controlled = Index(pose.GripTargetId); break; }
             }
@@ -831,7 +983,7 @@ public sealed class TopViewArenaTest : MonoBehaviour
             float controlAge = (clock - e.MatchTimeSeconds - e.DurationSeconds * (grip?.Progress ?? .5f)) / Mathf.Max(.01f, PlaybackRate(e));
             float controlPhase = Mathf.Repeat(Mathf.Max(0, controlAge), .8f);
             if (controlled >= 0 && controlAge >= 0 && controlPhase < .24f)
-                ControlEnvelope = .35f * Mathf.Sin(Mathf.PI * controlPhase / .24f);
+                ControlEnvelope = .65f * Mathf.Sin(Mathf.PI * controlPhase / .24f);
         }
         flash ??= new MaterialPropertyBlock();
         int receiver = Index(e.ReceiverId);
@@ -908,6 +1060,8 @@ public sealed class TopViewArenaTest : MonoBehaviour
 
     private void OnDestroy()
     {
+        if (refereeStripeMaterial) DestroyImmediate(refereeStripeMaterial);
+        if (refereeStripeTexture) DestroyImmediate(refereeStripeTexture);
         if (chipTriangle) DestroyImmediate(chipTriangle);
         if (chipCircle) DestroyImmediate(chipCircle);
         if (profileObject) Destroy(profileObject);
@@ -996,15 +1150,27 @@ public sealed class TopViewArenaTest : MonoBehaviour
             string area = p.Position switch { MatchPosition.Ropes => "로프", MatchPosition.Corner => "코너", MatchPosition.TopRope => "코너 위", MatchPosition.Apron => "에이프런", MatchPosition.Outside => "링 밖", _ => "링 중앙" };
             var pose = CurrentEvent.Motion != null ? MatchMovement.Sample(CurrentEvent, p.Id, Mathf.Clamp01((clock - CurrentEvent.MatchTimeSeconds) / CurrentEvent.DurationSeconds)).Posture : p.Posture;
             string posture = pose switch { MatchPosture.Supine => "바로 누움", MatchPosture.Prone => "엎드림", MatchPosture.Seated => "앉음", MatchPosture.Kneeling => "무릎을 짚음", _ => p.IsDowned ? "다운" : "서 있음" };
-            stateLabels[i].text = area + " · " + (p.IsEliminated ? "탈락" : Engine.Rules.Tag && !Engine.Rules.Tornado && !p.IsLegal ? "태그 대기" :
+            if (showSimulationUI != null) posture = pose switch
+            {
+                MatchPosture.Supine or MatchPosture.Prone => "쓰러짐", MatchPosture.Seated => "앉아 있음",
+                MatchPosture.Kneeling => "무릎을 짚음", _ => p.IsDowned ? "쓰러짐" : "서 있음"
+            };
+            stateLabels[i].text = (showSimulationUI == null ? area + " · " : "") + (p.IsEliminated ? "탈락" : Engine.Rules.Tag && !Engine.Rules.Tornado && !p.IsLegal ? "태그 대기" :
                 Finished && Engine.WinnerId == p.Id ? "승리" : HitEnvelope > 0 && p.Id == CurrentEvent.ReceiverId ? "피격" : posture);
+            if (showSimulationUI != null) stateLabels[i].text = posture;
             stateLabels[i].style.color = p.IsDowned ? new Color(1, .7f, .35f) : Color.white;
             damageIndicators[i].SetDamage(p.HeadDamage, p.BodyDamage, p.ArmDamage, p.LegDamage);
+            if (showConditionGauges != null && i < showConditionGauges.Length)
+            {
+                float condition = Mathf.Clamp(100 - p.Fatigue, 0, 100);
+                showConditionGauges[i].SetValue("컨디션", condition, $"{condition:0}%", new Color(.9f, .77f, .49f));
+            }
             var values = new[] { p.Fatigue, p.Stun, p.MatchControl };
             for (int j = 0; j < values.Length; j++)
             {
                 stateBars[i][j].value = values[j];
-                stateBars[i][j].title = $"{titles[j]} {values[j]:0}";
+                stateBars[i][j].title = showSimulationUI == null ? $"{titles[j]} {values[j]:0}" : "";
+                if (showSimulationUI != null) showStatCaptions[i][j].text = $"{titles[j]}  {values[j]:0}";
             }
         }
     }
