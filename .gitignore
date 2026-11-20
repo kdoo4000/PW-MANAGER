@@ -115,6 +115,8 @@ InitTestScene*.unity*
 
 # Local screenshots and runtime captures
 /Assets/Game/Presentation/RuntimeCaptures/
+/Assets/Game/Presentation/RuntimeCaptures.meta
+/Assets/Screenshots.meta
 /**/Screenshots/
 /**/screenshots/
 /**/Captures/
@@ -125,62 +127,8 @@ InitTestScene*.unity*
 /[Oo]utput/
 /GeneratedAssets/
 /TestResults/
+/Reports/
 /tmp/
-
-# Raw local test runs and playthrough saves
-/Reports/*.xml
-/Reports/*.json
-/Reports/hidden-long-run-comparison.csv
-/Reports/full-game-playthrough/*.json
-/Reports/full-game-playthrough/*.bak
-/Reports/full-game-playthrough/events.csv
-/Reports/storyline-ports/*.json
-/Reports/storyline-proximity/**/*.json
-/Reports/storyline-proximity/**/*.txt
-
-# Local captures without documentation links
-/Reports/full-game-playthrough/ingame-locker-social-groups*.png
-/Reports/full-game-playthrough/ingame-story-outside-ports.png
-/Reports/full-game-playthrough/ingame-story-ports.png
-/Reports/full-game-playthrough/ingame-story-top-*.png
-/Reports/full-game-playthrough/ingame-window.png
-/Reports/storyline-proximity/scenarios/mixed24-readability.png
-/Reports/storyline-proximity/scenarios/solo12-readability.png
-/Reports/storyline-proximity/scenarios/stables16-readability.png
-/Docs/finance-income-20261106.png
-/Docs/finance-projection-20261106.png
-/Docs/finance-sponsors-20261106.png
-/Docs/finance-sponsors-three-columns-narrow-20261106-v2.png
-/Docs/finance-wages-20261106.png
-/Docs/profile-*-20261106*.png
-/Docs/scouting-assignment-ui-preview-20261103.png
-/Docs/sponsor-cards-*-20261106-*.png
-/Docs/storyline-map-45-detail-20261105.png
-/Docs/storyline-map-aligned-detail-20261105.png
-/Docs/storyline-map-aligned-focus-20261105.png
-/Docs/storyline-map-aligned-group-20261105.png
-/Docs/storyline-map-attached-detail-20261105.png
-/Docs/storyline-map-attached-focus-20261105.png
-/Docs/storyline-map-clean45-detail-20261105.png
-/Docs/storyline-map-clean45-group-20261105.png
-/Docs/storyline-map-contacts-detail-20261105.png
-/Docs/storyline-map-contacts-focus-20261105.png
-/Docs/storyline-map-contacts-group-20261105.png
-/Docs/storyline-map-contacts-pair-20261105.png
-/Docs/storyline-map-diagonal-detail-20261105.png
-/Docs/storyline-map-solid-detail-20261105.png
-/Docs/storyline-map-solid-focus-20261105.png
-/Docs/storyline-map-straight-ports-detail-20261105.png
-/Docs/storyline-map-straight-ports-exits-20261105.png
-/Docs/storyline-map-straight-ports-focus-20261105.png
-/Docs/storyline-map-straight-ports-group-20261105.png
-/Docs/storyline-map-straight-ports-pair-20261105.png
-/Docs/storyline-map-two-bends*-20261105.png
-/Docs/training-resources-ui-preview-20261103.png
-/Docs/wrestler-compact*-ui-preview-20261103.png
-/Docs/wrestler-standing-ui-preview-20261104.png
-/Docs/wrestler-ui-preview-20261103.png
-/Docs/wrestler-ui-preview-20261106-fan-reaction.png
 
 # OS metadata
 .DS_Store
