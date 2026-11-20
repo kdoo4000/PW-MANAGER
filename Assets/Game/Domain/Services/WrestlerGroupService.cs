@@ -8,6 +8,24 @@ namespace PWManager.Domain.Services
 {
     public static class WrestlerGroupService
     {
+        public static void Rename(GameSave save, string groupId, bool isStable, string name)
+        {
+            name = name?.Trim();
+            if (save?.Promotion == null || string.IsNullOrWhiteSpace(name)) throw new InvalidOperationException("그룹 이름을 입력하세요.");
+            if (isStable)
+            {
+                var stable = save.Stables.SingleOrDefault(x => x.Id == groupId && x.PromotionId == save.Promotion.Id && x.Status == TagTeamStatus.Active)
+                    ?? throw new InvalidOperationException("활동 중인 소속 스테이블을 선택하세요.");
+                stable.Name = name;
+            }
+            else
+            {
+                var team = save.TagTeams.SingleOrDefault(x => x.Id == groupId && x.PromotionId == save.Promotion.Id && x.Status == TagTeamStatus.Active)
+                    ?? throw new InvalidOperationException("활동 중인 소속 태그팀을 선택하세요.");
+                team.Name = name;
+            }
+        }
+
         public static TagTeamState CreateTagTeam(GameSave save, string name, IEnumerable<string> memberIds, string id = null)
         {
             var members = Members(save, name, memberIds, 2, 2);

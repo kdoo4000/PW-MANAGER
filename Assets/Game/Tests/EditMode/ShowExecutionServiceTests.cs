@@ -10,6 +10,45 @@ namespace PWManager.Tests
     public sealed class ShowExecutionServiceTests
     {
         [Test]
+        public void Execute_CapturesPpvVenueAndSuccessAndPreservesThemInJson()
+        {
+            var save = CreateSave(); save.Shows[0].ShowType = ScheduledShowType.PpvRegular; save.Schedules[0].ShowType = ScheduledShowType.PpvRegular;
+            var result = Service().Execute(save, "show", 73, 500, 30);
+            Assert.That(result.HasPrestigeSnapshot, Is.True); Assert.That(result.PrestigeVenueCapacity, Is.EqualTo(500));
+            Assert.That(result.PrestigeShowType, Is.EqualTo(ScheduledShowType.PpvRegular));
+            Assert.That(result.PpvPrestigeBonus, Is.EqualTo(PromotionPrestigeRules.PpvBonus(ScheduledShowType.PpvRegular,
+                result.FinancialSettlement.Attendance, 500, result.ShowEvaluation.Score)));
+            var restored = UnityEngine.JsonUtility.FromJson<ShowResultState>(UnityEngine.JsonUtility.ToJson(result));
+            Assert.That(restored.PpvPrestigeBonus, Is.EqualTo(result.PpvPrestigeBonus)); Assert.DoesNotThrow(() => PromotionPrestigeRules.Validate(restored));
+        }
+
+        [Test]
+        public void Execute_SnapshotsFameReachBeforeLaterAudienceChanges()
+        {
+            var save = CreateSave(); save.Promotion.Audience = FanAudienceService.CreateInitial(save.CurrentDate);
+            save.Promotion.Audience.Mark.Followers = 10000; save.Promotion.Audience.Casual.Followers = save.Promotion.Audience.Hardcore.Followers = 0;
+            var result = Service().Execute(save, "show", 73, 500, 30);
+            Assert.That(result.HasFameSnapshot, Is.True); Assert.That(result.FameReach, Is.EqualTo(10000));
+            save.Promotion.Audience.Mark.Followers = 500;
+            Assert.That(result.FameReach, Is.EqualTo(10000));
+        }
+
+        [Test]
+        public void Execute_UnpaidContractsRemainEligibleToEarnShowRevenue()
+        {
+            var save = CreateSave();
+            save.Promotion.InitialCash = 0;
+            foreach (var contract in save.Contracts) contract.MonthlySalary = 200;
+            new SalaryPaymentService().ProcessDay(save, save.CurrentDate);
+            Assert.That(save.Contracts.All(x => x.Status == ContractStatus.Overdue), Is.True);
+            var result = Service().Execute(save, "show", 73, 500, 30);
+            Assert.That(result.MatchResultIds, Is.Not.Empty);
+            save.Shows[0].Status = ShowStatus.ResultsReviewed;
+            new ShowResultApplicationService().Apply(save, result.Id);
+            Assert.That(SalaryPaymentService.Outstanding(save), Is.LessThan(400));
+        }
+
+        [Test]
         public void ImpossibleFinishStopsOnlyThatMatchAndPreservesReplayAndCondition()
         {
             var save = CreateSave();
@@ -112,6 +151,7 @@ namespace PWManager.Tests
         public void Execute_SinglesStoresEngineTimeline_AndReplaysAfterSaveRoundTrip()
         {
             var save = CreateSave();
+            foreach (var wrestler in save.Wrestlers) wrestler.Identity.RingName = wrestler.Id;
             var plan = save.MatchPlans[0];
             plan.WinnerId = "b";
             plan.LoserTargetId = "a";

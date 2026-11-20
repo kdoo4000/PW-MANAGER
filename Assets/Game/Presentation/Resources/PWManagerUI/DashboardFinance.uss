@@ -1,0 +1,97 @@
+.finance-screen { flex-grow:1; min-height:0; padding:20px 24px 22px; color:#d9d6cf; -unity-font-definition:url("project://database/Assets/Game/Presentation/Resources/PWManagerUI/Fonts/SEBANGGothic-Regular.ttf"); }
+.finance-tabs { height:44px; min-height:44px; flex-direction:row; align-items:stretch; border-bottom-width:1px; border-bottom-color:#343238; margin-bottom:16px; }
+.finance-tab { min-width:76px; margin:0 12px 0 0; padding:0 14px; font-size:16px; color:#918c84; background-color:transparent; border-width:0; border-bottom-width:3px; border-bottom-color:transparent; border-radius:0; }
+.finance-tab.active { color:#f4f0e7; border-bottom-color:#d9b45b; }
+.finance-tab:hover, .finance-tab:focus { color:#f4f0e7; background-color:#242327; }
+.finance-body, .finance-scroll { flex-grow:1; min-height:0; }
+.finance-scroll > .unity-scroll-view__content-viewport { flex-grow:1; }
+.finance-metrics { flex-direction:row; margin-bottom:16px; }
+.finance-metric { flex-grow:1; flex-basis:0; min-width:0; padding:16px; margin-right:12px; background-color:#141518; border-width:1px; border-color:#343238; border-radius:3px; }
+.finance-metric:last-child { margin-right:0; }
+.finance-value { margin-top:8px; font-size:24px; color:#f4f0e7; white-space:normal; -unity-font-definition:url("project://database/Assets/Game/Presentation/Resources/PWManagerUI/Fonts/SEBANGGothic-Bold.ttf"); }
+.finance-columns { flex-direction:row; align-items:stretch; }
+.finance-main { flex-grow:2; flex-basis:0; min-width:0; margin-right:16px; }
+.finance-side { flex-grow:1; flex-basis:0; min-width:260px; }
+.finance-card { min-width:0; padding:16px; margin-bottom:16px; border-width:1px; border-color:#343238; background-color:#141518; border-radius:3px; }
+.finance-card-title { height:32px; min-height:32px; margin:0 0 12px; font-size:17px; color:#f4f0e7; -unity-text-align:middle-left; -unity-font-definition:url("project://database/Assets/Game/Presentation/Resources/PWManagerUI/Fonts/SEBANGGothic-Bold.ttf"); }
+.finance-muted, .finance-legend { font-size:14px; color:#a39d94; white-space:normal; }
+.finance-legend { margin-bottom:12px; }
+.finance-pair { min-height:36px; flex-direction:row; align-items:center; justify-content:space-between; border-bottom-width:1px; border-bottom-color:#27262b; }
+.finance-pair .finance-muted { flex-grow:1; min-width:0; margin-right:12px; }
+.finance-amount { font-size:16px; color:#e6dfd3; white-space:nowrap; }
+.finance-controls { flex-direction:row; align-items:center; margin-bottom:12px; }
+.finance-controls > .unity-popup-field { min-width:160px; margin-right:12px; }
+.finance-action { height:32px; margin:12px 0 0; padding:0 12px; font-size:14px; color:#ead6a6; border-width:1px; border-color:#66542b; background-color:#302719; border-radius:3px; }
+.finance-controls .finance-action { margin-top:0; }
+.finance-table-row { min-height:38px; flex-shrink:0; flex-direction:row; align-items:center; border-bottom-width:1px; border-bottom-color:#2b292e; }
+.finance-table-heading { background-color:#1d1e22; }
+.finance-cell { flex-grow:1; flex-basis:0; min-width:0; padding:8px; margin:0; font-size:15px; color:#d9d6cf; white-space:normal; -unity-text-align:middle-right; }
+.finance-first { flex-grow:1.5; -unity-text-align:middle-left; }
+.finance-first .wrestler-link { width:100%; white-space:normal; -unity-text-align:middle-left; }
+.finance-category { margin:0; padding:0; border-top-width:0; border-left-width:0; border-right-width:0; border-radius:0; background-color:transparent; }
+.finance-category:hover, .finance-category:focus { background-color:#292724; }
+.finance-chart { height:160px; min-height:160px; margin:0 8px; }
+.finance-chart-labels { flex-direction:row; margin:6px 8px 0; }
+.finance-month { flex-grow:1; flex-basis:0; font-size:12px; color:#a39d94; -unity-text-align:middle-center; margin:0; padding:0; }
+.finance-empty { padding:24px 16px; font-size:16px; color:#a39d94; white-space:normal; }
+.finance-narrow .finance-columns { flex-direction:column; }
+.finance-narrow .finance-main { margin-right:0; }
+.finance-narrow .finance-side { min-width:0; }
+.finance-narrow .finance-value { font-size:20px; }
+.finance-narrow .finance-cell { padding:6px 4px; font-size:14px; }
+.finance-screen .sponsor-screen { flex-grow:1; }
+.finance-flow-legend { flex-direction:row; margin-bottom:12px; }
+.finance-income-key { color:#7cb28b; font-size:14px; margin-right:20px; }
+.finance-expense-key { color:#cb8b7b; font-size:14px; }
+.finance-plot { flex-direction:row; }
+.finance-axis { width:100px; flex-shrink:0; height:152px; justify-content:space-between; padding-top:8px; }
+.finance-axis-label { font-size:12px; color:#a39d94; -unity-text-align:middle-right; margin:0; padding:0; }
+.finance-chart { flex-grow:1; min-width:0; }
+.finance-chart-labels { margin-left:108px; }
+.finance-metrics, .finance-columns, .finance-card { flex-shrink:0; }
+.finance-narrow .finance-main, .finance-narrow .finance-side { flex-grow:0; flex-shrink:0; flex-basis:auto; width:100%; }
+.finance-controls .unity-base-popup-field__input { min-height:32px; padding:0 10px; background-color:#1d1e22; border-width:1px; border-color:#454047; border-radius:3px; }
+.finance-controls .unity-base-popup-field__text { color:#d9d6cf; font-size:15px; }
+.finance-sponsor-columns { flex-direction:row; align-items:stretch; }
+.finance-sponsor-column { flex-grow:1; flex-basis:0; flex-shrink:0; min-width:0; margin-right:16px; padding:20px; border-width:1px; border-color:#343238; border-radius:3px; background-color:#141518; }
+.finance-sponsor-column:last-child { margin-right:0; }
+.finance-sponsor-info { flex-shrink:0; }
+.finance-sponsor-logo { height:112px; margin-bottom:16px; }
+.finance-sponsor-name { min-height:32px; margin:0 0 12px; padding:0; font-size:20px; color:#f4f0e7; white-space:normal; -unity-text-align:middle-center; -unity-font-definition:url("project://database/Assets/Game/Presentation/Resources/PWManagerUI/Fonts/SEBANGGothic-Bold.ttf"); }
+.finance-sponsor-description { min-height:64px; margin:0 0 12px; font-size:15px; color:#b8b1a6; white-space:normal; }
+.finance-sponsor-period { margin:12px 0 0; font-size:13px; color:#a39d94; white-space:normal; }
+.finance-sponsor-mission-heading { min-height:32px; margin-top:20px; padding-top:12px; border-top-width:1px; border-top-color:#343238; flex-direction:row; justify-content:space-between; align-items:center; }
+.finance-sponsor-section-title { font-size:17px; color:#f4f0e7; -unity-font-definition:url("project://database/Assets/Game/Presentation/Resources/PWManagerUI/Fonts/SEBANGGothic-Bold.ttf"); }
+.finance-sponsor-status { font-size:14px; color:#d9b45b; }
+.finance-sponsor-status.failed { color:#cb8b7b; }
+.finance-sponsor-status.paid { color:#7cb28b; }
+.finance-sponsor-count { margin:8px 0 16px; font-size:14px; color:#a39d94; }
+.finance-sponsor-goal { padding:16px 0; border-top-width:1px; border-top-color:#2b292e; }
+.finance-sponsor-goal-text { min-height:44px; margin:8px 0; font-size:16px; color:#e6dfd3; white-space:normal; }
+.finance-sponsor-goal .wrestler-link { margin:0 0 10px; white-space:normal; }
+.finance-sponsor-progress { height:12px; min-height:12px; margin:0; padding:0; }
+.finance-sponsor-progress .unity-progress-bar__container, .finance-sponsor-progress .unity-progress-bar__background { height:12px; min-height:12px; margin:0; padding:0; border-width:0; background-color:#303136; }
+.finance-sponsor-progress .unity-progress-bar__progress { background-color:#d9b45b; }
+.finance-sponsor-progress.failed .unity-progress-bar__progress { background-color:#8f6a60; }
+.finance-sponsor-progress .unity-progress-bar__title { display:none; }
+.finance-sponsor-goal-value { margin:8px 0 0; font-size:15px; color:#d9b45b; }
+.finance-narrow .finance-sponsor-column { padding:12px; margin-right:10px; }
+.finance-narrow .finance-sponsor-column:last-child { margin-right:0; }
+.finance-narrow .finance-sponsor-name { font-size:17px; }
+.finance-narrow .finance-sponsor-description { min-height:88px; font-size:14px; }
+.finance-narrow .finance-sponsor-period { min-height:36px; }
+.finance-narrow .finance-sponsor-column .finance-pair { flex-direction:column; align-items:flex-start; justify-content:center; min-height:52px; }
+.finance-narrow .finance-sponsor-column .finance-pair .finance-muted { flex-grow:0; margin-right:0; }
+.finance-sponsor-column { padding:16px; }
+.finance-sponsor-logo { height:80px; margin-bottom:12px; }
+.finance-sponsor-name { min-height:28px; margin-bottom:8px; }
+.finance-sponsor-description { min-height:44px; margin-bottom:8px; }
+.finance-sponsor-info .finance-pair { min-height:30px; }
+.finance-sponsor-mission-heading { margin-top:16px; }
+.finance-sponsor-count { margin:8px 0; }
+.finance-sponsor-goal { padding:12px 0; }
+.finance-sponsor-goal-text { min-height:36px; }
+.finance-narrow .finance-sponsor-description { min-height:64px; }
+.finance-narrow .finance-sponsor-period { min-height:18px; }
+.finance-narrow .finance-sponsor-column .finance-pair { flex-direction:row; align-items:center; justify-content:space-between; min-height:32px; }
+.finance-narrow .finance-sponsor-column .finance-pair .finance-muted { flex-grow:1; margin-right:8px; }

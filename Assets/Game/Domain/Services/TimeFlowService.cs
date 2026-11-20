@@ -49,7 +49,7 @@ namespace PWManager.Domain.Services
             save.InboxMessages ??= new List<InboxMessageState>();
             ResolveCompletedShowDecisions(save);
             var dateKey = DateKey(save.CurrentDate);
-            var active = (save.Wrestlers ?? new List<WrestlerState>()).Count(x => x?.Roster?.ActivityState == RosterActivityState.Active);
+            var active = (save.Wrestlers ?? new List<WrestlerState>()).Count(x => x?.Roster?.PromotionId == save.Promotion.Id && x.Roster.ActivityState == RosterActivityState.Active);
             var cash = save.Promotion.CalculateCurrentCash(save.Transactions ?? new List<TransactionRecord>());
             Publish(save, $"daily-brief:{dateKey}", InboxMessageType.Information, InboxPriority.Normal, "운영실",
                 $"{save.CurrentDate.Month}월 {save.CurrentDate.Day}일 단체 운영 브리핑",
@@ -65,7 +65,7 @@ namespace PWManager.Domain.Services
                     InboxTargetType.Show, show?.Id, save.CurrentDate);
             }
 
-            foreach (var contract in (save.Contracts ?? new List<ContractState>()).Where(x => x != null && x.Status is ContractStatus.Active or ContractStatus.Expiring))
+            foreach (var contract in save.OwnContracts.Where(x => x != null && x.IsInForce))
             {
                 var days = save.CurrentDate.DaysUntil(contract.EndDate);
                 if (days < 0 || days > 28) continue;
@@ -74,6 +74,10 @@ namespace PWManager.Domain.Services
                 Publish(save, $"contract-expiry-warning:{contract.Id}:28", InboxMessageType.Navigation, InboxPriority.Important, "계약 담당",
                     $"{name}의 계약이 {days}일 후 만료됩니다", "계약 조건과 선수의 향후 활용 계획을 확인하세요.", InboxTargetType.Wrestler, contract.PersonId);
             }
+            if (SeasonTransitionService.CanConfigure(save))
+                Publish(save, $"season-end:{save.SeasonPolicy.Id}", InboxMessageType.Decision, InboxPriority.Required, "운영실",
+                    "시즌 결산과 다음 시즌 설정을 확인하세요", "시즌 결과와 계약 상태를 확인한 뒤 다음 시즌 운영 설정을 확정하세요.",
+                    InboxTargetType.Season, save.SeasonPolicy.Id, save.CurrentDate);
         }
 
         public InboxMessageState GetBlockingMessage(GameSave save) => (save?.InboxMessages ?? new List<InboxMessageState>())
@@ -94,7 +98,8 @@ namespace PWManager.Domain.Services
             {
                 var scheduleId = message.SourceEventId.Substring("show-card-required:".Length);
                 var show = (save.Shows ?? new List<ShowState>()).FirstOrDefault(x => x?.ScheduleId == scheduleId);
-                if (show != null && show.Status is not (ShowStatus.Draft or ShowStatus.Preparing or ShowStatus.Review)) message.Status = InboxMessageStatus.Resolved;
+                if (show != null && show.Status is not (ShowStatus.Draft or ShowStatus.Preparing or ShowStatus.Review) ||
+                    save.Schedules.Any(x => x.Id == scheduleId && x.Status == ScheduleStatus.Cancelled)) message.Status = InboxMessageStatus.Resolved;
             }
         }
 
@@ -105,21 +110,25 @@ namespace PWManager.Domain.Services
     {
         public const int MaxAdvanceDays = 30;
         private readonly Func<string> createId;
+        private readonly Action<GameSave> processScouting;
 
-        public TimeFlowService(Func<string> createId = null)
+        public TimeFlowService(Func<string> createId = null, Action<GameSave> processScouting = null)
         {
             this.createId = createId ?? EntityId.CreateRuntimeId;
+            this.processScouting = processScouting;
         }
 
         public TimeFlowResult AdvanceTo(GameSave save, GameDate targetDate)
         {
             if (save == null) throw new ArgumentNullException(nameof(save));
             if (save.Promotion == null) throw new ArgumentException("Promotion is required.", nameof(save));
+            WrestlerBehaviorService.ValidateState(save);
             var days = save.CurrentDate.DaysUntil(targetDate);
             if (days < 1) throw new ArgumentException("Target date must be after the current date.", nameof(targetDate));
             if (days > MaxAdvanceDays) throw new ArgumentException($"Time can advance at most {MaxAdvanceDays} days.", nameof(targetDate));
 
             var inbox = new InboxService(createId);
+            SeasonTransitionService.RefreshClosingResults(save);
             FanAudienceService.Initialize(save);
             inbox.EnsureForCurrentDate(save);
             var result = new TimeFlowResult { State = TimeFlowState.Completed, ReachedDate = save.CurrentDate };
@@ -133,19 +142,25 @@ namespace PWManager.Domain.Services
                     return result;
                 }
                 var nextDate = save.CurrentDate.AddDays(1);
-                if (!CanPaySalaries(save, nextDate, out var required))
-                {
-                    result.State = TimeFlowState.Blocked;
-                    result.BlockingReason = $"Insufficient cash for salaries due on {nextDate.Year:D4}-{nextDate.Month:D2}-{nextDate.Day:D2}. Required: {required}.";
-                    return result;
-                }
-
+                var career = new WrestlerCareerService(createId).PrepareDue(save, rookieDate: nextDate);
+                var growth = new WrestlerGrowthService(createId).PrepareDue(save, projectedMomentum: career.MomentumForGrowth);
+                var behavior = new WrestlerBehaviorService(createId).PrepareDay(save, nextDate);
+                WrestlerGrowthService.ValidateNewIds(save, career.NewRecordIds.Concat(growth.NewRecordIds).Concat(behavior.NewRecordIds));
+                MerchandiseService.Initialize(save);
+                career.Apply(); growth.Apply();
+                new SponsorMissionService(createId).ProcessDay(save);
                 save.CurrentDate = nextDate;
                 ProcessContracts(save, nextDate, result.ProcessedIds);
+                new MerchandiseService(createId).ProcessDay(save);
+                new SalaryPaymentService(createId).ProcessDay(save, nextDate, result.ProcessedIds);
                 foreach (var wrestler in save.Wrestlers.Where(x => x?.Condition != null)) MatchHealth.Recover(wrestler, nextDate);
                 foreach (var wrestler in save.Wrestlers.Where(x => x?.Condition != null && x.Condition.InjuryStatus == InjuryStatus.None))
                     wrestler.Condition.Condition = Math.Min(100f, wrestler.Condition.Condition + 3f);
                 FanAudienceService.AdvanceWeek(save, nextDate);
+                new TrainingService(createId).ProcessDay(save);
+                processScouting?.Invoke(save);
+                behavior.Apply();
+                new SponsorMissionService(createId).ProcessDay(save);
                 inbox.EnsureForCurrentDate(save);
                 result.ProcessedDays++;
                 result.ReachedDate = nextDate;
@@ -166,35 +181,47 @@ namespace PWManager.Domain.Services
                         ? "오늘 쇼의 편성을 확정해야 합니다."
                         : "오늘 마감되는 쇼의 편성을 확정해야 합니다.";
             }
-            return null;
+            if (save.Shows.Any(x => x != null && x.Date.Equals(save.CurrentDate) && x.Status != ShowStatus.Completed && !save.IsCancelledShow(x)))
+                return "오늘 쇼의 결과를 먼저 반영해야 합니다.";
+            return SeasonTransitionService.RequiresSetup(save) ? "시즌 결산과 다음 시즌 설정을 먼저 완료해야 합니다." : null;
         }
 
         private void ProcessContracts(GameSave save, GameDate date, List<string> processedThisRun)
         {
-            foreach (var contract in save.Contracts.Where(x => x != null))
+            // shortcut: external contract lifecycles wait for external promotion simulation.
+            var expired = new List<ContractState>();
+            foreach (var contract in save.OwnContracts.Where(x => x != null))
             {
-                if (contract.Status == ContractStatus.Active && date.DaysUntil(contract.EndDate) <= 30 && date.CompareTo(contract.EndDate) <= 0)
-                    contract.Status = ContractStatus.Expiring;
-
-                if (date.Day == 1 && contract.MonthlySalary > 0 &&
-                    contract.StartDate.CompareTo(date) <= 0 && contract.EndDate.CompareTo(date) >= 0 && IsPayable(contract.Status))
+                if (contract.Status == ContractStatus.Scheduled && date.CompareTo(contract.StartDate) >= 0)
                 {
-                    var sourceId = SalarySourceId(contract.Id, date);
-                    if (!save.ProcessedIds.Contains(sourceId))
+                    contract.Status = ContractStatus.Active;
+                    if (contract.Type == ContractType.Wrestler)
                     {
-                        save.Transactions.Add(new TransactionRecord
+                        var wrestler = save.Wrestlers.SingleOrDefault(x => x.Id == contract.PersonId);
+                        if (wrestler != null)
                         {
-                            Id = createId(), PromotionId = save.Promotion.Id, Date = date,
-                            Type = TransactionType.Salary, Amount = -contract.MonthlySalary, ReasonId = contract.Id
-                        });
-                        save.ProcessedIds.Add(sourceId);
-                        processedThisRun.Add(sourceId);
+                            wrestler.PromotionId = save.Promotion.Id;
+                            if (wrestler.Roster.ActivityState != RosterActivityState.Suspended) wrestler.Roster.ActivityState = RosterActivityState.Active;
+                            wrestler.Identity.ExpiryDate = default; save.ScoutCandidates.RemoveAll(x => x.WrestlerId == wrestler.Id);
+                        }
+                    }
+                    else
+                    {
+                        var manager = save.Managers.SingleOrDefault(x => x.Id == contract.PersonId);
+                        if (manager != null)
+                        {
+                            manager.PromotionId = save.Promotion.Id;
+                            if (manager.ActivityState != RosterActivityState.Suspended) manager.ActivityState = RosterActivityState.Active;
+                        }
                     }
                 }
+                if (contract.Status == ContractStatus.Active && date.DaysUntil(contract.EndDate) <= 30 && date.CompareTo(contract.EndDate) <= 0)
+                    contract.Status = ContractStatus.Expiring;
 
                 if (date.CompareTo(contract.EndDate) > 0 && IsPayable(contract.Status))
                 {
                     contract.Status = ContractStatus.Expired;
+                    expired.Add(contract);
                     var sourceId = $"contract-expiry:{contract.Id}:{DateKey(date)}";
                     if (!save.ProcessedIds.Contains(sourceId))
                     {
@@ -203,25 +230,14 @@ namespace PWManager.Domain.Services
                     }
                 }
             }
-        }
-
-        private static bool CanPaySalaries(GameSave save, GameDate date, out long required)
-        {
-            required = 0;
-            if (date.Day != 1) return true;
-            foreach (var contract in save.Contracts.Where(x => x != null && x.MonthlySalary > 0 && IsPayable(x.Status)))
-            {
-                if (contract.StartDate.CompareTo(date) <= 0 && contract.EndDate.CompareTo(date) >= 0 &&
-                    !save.ProcessedIds.Contains(SalarySourceId(contract.Id, date))) required += contract.MonthlySalary;
-            }
-            return save.Promotion.CalculateCurrentCash(save.Transactions) >= required;
+            foreach (var contract in expired)
+                if (!save.OwnContracts.Any(x => x.PersonId == contract.PersonId && x.Type == contract.Type && x.Covers(date)) &&
+                    (contract.Type == ContractType.Wrestler ? save.Wrestlers.Any(x => x.Id == contract.PersonId) : save.Managers.Any(x => x.Id == contract.PersonId)))
+                    ContractTerminationService.ExpireEmployment(save, contract.PersonId, contract.Type);
         }
 
         private static bool IsPayable(ContractStatus status) =>
             status is ContractStatus.Active or ContractStatus.Expiring or ContractStatus.Overdue;
-
-        private static string SalarySourceId(string contractId, GameDate date) =>
-            $"salary:{contractId}:{DateKey(date)}";
 
         private static string DateKey(GameDate date) => $"{date.Year:D4}{date.Month:D2}{date.Day:D2}";
     }

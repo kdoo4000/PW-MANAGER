@@ -38,6 +38,7 @@
                     <ui:DropdownField name="show-editor-finish-performer" label="승부를 결정할 선수" class="show-editor-field"/>
                     <ui:DropdownField name="show-editor-loser" label="패배 대상" class="show-editor-field"/>
                 </ui:VisualElement>
+                <ui:VisualElement name="show-editor-momentum-risks"/>
                 <ui:VisualElement class="show-editor-finish-row">
                     <ui:DropdownField name="show-editor-dominant-side" label="경기 주도 선수 / 팀" class="show-editor-field"/>
                 </ui:VisualElement>

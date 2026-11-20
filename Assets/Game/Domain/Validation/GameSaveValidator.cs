@@ -32,9 +32,22 @@ namespace PWManager.Domain.Validation
             }
 
             ValidatePromotion(save.Promotion, errors);
+            var promotionIds = new HashSet<string>(StringComparer.Ordinal) { save.Promotion.Id };
+            foreach (var promotion in save.OtherPromotions ?? new())
+            {
+                if (promotion == null) { errors.Add("Other promotion cannot be null."); continue; }
+                ValidatePromotion(promotion, errors);
+                if (!promotionIds.Add(promotion.Id)) errors.Add($"Duplicate promotion ID: {promotion.Id}");
+            }
             ValidateAudience(save, errors);
+            try { MerchandiseService.ValidateState(save); }
+            catch (InvalidOperationException exception) { errors.Add(exception.Message); }
             ValidateWrestlers(save, errors);
             ValidateScouting(save, errors);
+            try { WrestlerBehaviorService.ValidateState(save); }
+            catch (InvalidOperationException exception) { errors.Add(exception.Message); }
+            try { SponsorMissionService.ValidateState(save); }
+            catch (InvalidOperationException exception) { errors.Add(exception.Message); }
             ValidateTagTeams(save, errors);
             try { ChampionshipService.ValidateState(save); }
             catch (InvalidOperationException exception) { errors.Add(exception.Message); }
@@ -42,6 +55,20 @@ namespace PWManager.Domain.Validation
             ValidateStorylines(save, errors);
             ValidateManagers(save, errors);
             ValidateContracts(save, errors);
+            try { ContractNegotiationService.ValidateState(save); }
+            catch (InvalidOperationException exception) { errors.Add(exception.Message); }
+            try { ContractTerminationService.ValidateState(save); }
+            catch (InvalidOperationException exception) { errors.Add(exception.Message); }
+            try { SeasonTransitionService.ValidateState(save); }
+            catch (InvalidOperationException exception) { errors.Add(exception.Message); }
+            try { WrestlerGrowthService.ValidateState(save); }
+            catch (InvalidOperationException exception) { errors.Add(exception.Message); }
+            try { TrainingService.ValidateState(save); }
+            catch (InvalidOperationException exception) { errors.Add(exception.Message); }
+            try { WrestlerCareerService.ValidateState(save); }
+            catch (InvalidOperationException exception) { errors.Add(exception.Message); }
+            try { SalaryPaymentService.ValidateState(save); }
+            catch (InvalidOperationException exception) { errors.Add(exception.Message); }
             ValidateOperations(save, errors);
             ValidateShows(save, errors);
             ValidateTransactions(save, errors);
@@ -217,13 +244,14 @@ namespace PWManager.Domain.Validation
                 if (!string.IsNullOrEmpty(manager.StaticDataId) &&
                     (!EntityId.IsValidStaticId(manager.StaticDataId) || !manager.StaticDataId.StartsWith("manager_", StringComparison.Ordinal)))
                     errors.Add($"Invalid manager static ID: {manager.StaticDataId}");
-                if (manager.PromotionId != save.Promotion.Id) errors.Add($"Manager {manager.Id} references another promotion.");
+                if (save.FindPromotion(manager.PromotionId) == null) errors.Add($"Manager {manager.Id} references an unknown promotion.");
                 var values = new[] { manager.Attributes.Charisma, manager.Attributes.MicWork,
                     manager.Attributes.Improvisation, manager.Attributes.Acting, manager.Attributes.FaceWork,
                     manager.Attributes.HeelWork, manager.Attributes.Comedy, manager.Attributes.RingImprovisation,
                     manager.Attributes.SpotWork, manager.Attributes.Selling };
                 foreach (var value in values) ValidateRange(value, 1, 20, "Manager attribute", errors);
                 ValidateRange(manager.PromoPotentialCap, 1, 20, "Manager PromoPotentialCap", errors);
+                ValidateRange(manager.Satisfaction, 0, 100, "Manager Satisfaction", errors);
             }
         }
 
@@ -238,18 +266,18 @@ namespace PWManager.Domain.Validation
         private static void ValidateWrestlers(GameSave save, List<string> errors)
         {
             var ids = new HashSet<string>(StringComparer.Ordinal);
-            var candidateIds = new HashSet<string>((save.ScoutCandidates ?? new List<ScoutCandidateState>())
-                .Where(x => x != null).Select(x => x.WrestlerId), StringComparer.Ordinal);
             foreach (var wrestler in save.Wrestlers ?? new List<WrestlerState>())
             {
                 if (wrestler == null) { errors.Add("Wrestler cannot be null."); continue; }
                 if (!EntityId.IsValidRuntimeId(wrestler.Id)) errors.Add("Wrestler.Id must be a runtime GUID.");
                 else if (!ids.Add(wrestler.Id)) errors.Add($"Duplicate Wrestler.Id: {wrestler.Id}");
                 ValidateIdentity(wrestler, errors);
-                if (wrestler.PromotionId != save.Promotion.Id &&
-                    !(candidateIds.Contains(wrestler.Id) && wrestler.Roster.ActivityState == RosterActivityState.Inactive && string.IsNullOrEmpty(wrestler.PromotionId)))
-                    errors.Add($"Wrestler {wrestler.Id} references another promotion.");
+                if (string.IsNullOrEmpty(wrestler.PromotionId)
+                    ? wrestler.Roster.ActivityState != RosterActivityState.Inactive
+                    : save.FindPromotion(wrestler.PromotionId) == null)
+                    errors.Add($"Wrestler {wrestler.Id} references an unknown promotion or has no affiliation.");
                 ValidateAttributes(wrestler, errors);
+                if (!WrestlerHiddenRules.IsValid(wrestler.Hidden)) errors.Add("Wrestler hidden attributes must be between 1 and 20.");
                 ValidateRange(wrestler.Condition.Condition, 0, 100, "Condition", errors);
                 ValidateRange(wrestler.Condition.Satisfaction, 0, 100, "Satisfaction", errors);
                 if (!Enum.IsDefined(typeof(InjuryStatus), wrestler.Condition.InjuryStatus) ||
@@ -282,6 +310,20 @@ namespace PWManager.Domain.Validation
         private static void ValidateScouting(GameSave save, List<string> errors)
         {
             var wrestlerIds = new HashSet<string>((save.Wrestlers ?? new List<WrestlerState>()).Where(x => x != null).Select(x => x.Id), StringComparer.Ordinal);
+            var unknownIds = new HashSet<string>(StringComparer.Ordinal);
+            foreach (var wrestlerId in save.UndiscoveredWrestlerIds ?? new())
+            {
+                ValidateUniqueRuntimeId(wrestlerId, "UndiscoveredWrestler", unknownIds, errors);
+                var person = save.Wrestlers?.FirstOrDefault(x => x?.Id == wrestlerId);
+                if (person == null) errors.Add($"Undiscovered wrestler does not exist: {wrestlerId}");
+                else if (person.PromotionId == save.Promotion.Id ||
+                    (string.IsNullOrEmpty(person.PromotionId) ? person.Roster.ActivityState != RosterActivityState.Inactive : save.FindPromotion(person.PromotionId) == null))
+                    errors.Add($"Undiscovered wrestler must be a free agent or belong to another known promotion: {wrestlerId}");
+                if (save.ScoutCandidates?.Any(x => x?.WrestlerId == wrestlerId) == true)
+                    errors.Add($"A reported wrestler cannot be undiscovered: {wrestlerId}");
+            }
+            if (!save.WorldPopulationInitialized && unknownIds.Count > 0)
+                errors.Add("Undiscovered wrestlers require an initialized world population.");
             var assignmentIds = new HashSet<string>(StringComparer.Ordinal);
             foreach (var assignment in save.ScoutAssignments ?? new List<ScoutAssignmentState>())
             {
@@ -295,13 +337,27 @@ namespace PWManager.Domain.Validation
                 if (candidate == null) { errors.Add("Scout candidate cannot be null."); continue; }
                 if (!candidateIds.Add(candidate.WrestlerId)) errors.Add($"Duplicate scout candidate: {candidate.WrestlerId}");
                 if (!wrestlerIds.Contains(candidate.WrestlerId)) errors.Add($"Scout candidate references a missing wrestler: {candidate.WrestlerId}");
-                if (!assignmentIds.Contains(candidate.AssignmentId)) errors.Add($"Scout candidate references a missing assignment: {candidate.AssignmentId}");
+                if (!Enum.IsDefined(typeof(ScoutReportSource), candidate.Source)) errors.Add("Scout report source is invalid.");
+                if (candidate.Source == ScoutReportSource.InitialRecruitment)
+                {
+                    if (!string.IsNullOrEmpty(candidate.AssignmentId)) errors.Add("Initial recruitment information cannot reference a scout assignment.");
+                }
+                else if (!assignmentIds.Contains(candidate.AssignmentId)) errors.Add($"Scout candidate references a missing assignment: {candidate.AssignmentId}");
                 if (candidate.KnowledgeLevel < 1 || candidate.KnowledgeLevel > 4) errors.Add("Scout candidate KnowledgeLevel must be between 1 and 4.");
+                if (candidate.ExpiryDate.HasValue)
+                {
+                    var expiry = candidate.ExpiryDate.Value;
+                    try { _ = new DateTime(expiry.Year, expiry.Month, expiry.Day); }
+                    catch (ArgumentOutOfRangeException) { errors.Add("Scout report expiry date is invalid."); }
+                }
                 var estimates = candidate.ValueEstimates ?? new List<ScoutValueEstimate>();
                 if (estimates.Count > 0 && (estimates.Count != Enum.GetValues(typeof(ScoutValueType)).Length || estimates.Where(x => x != null).Select(x => x.Type).Distinct().Count() != estimates.Count))
                     errors.Add($"Scout candidate estimates must contain every value once: {candidate.WrestlerId}");
                 foreach (var estimate in estimates)
-                    if (estimate == null || estimate.Minimum < 1f || estimate.Maximum > 20f || estimate.Minimum > estimate.Maximum)
+                    if (estimate == null || float.IsNaN(estimate.Minimum) || float.IsNaN(estimate.Maximum) ||
+                        estimate.Minimum < 1f || estimate.Maximum > 20f || estimate.Minimum > estimate.Maximum ||
+                        !Enum.IsDefined(typeof(ScoutValueType), estimate.Type) ||
+                        estimate.HasEvaluation && (!Enum.IsDefined(typeof(ScoutAssessment), estimate.Assessment) || estimate.IsFullyRevealed && estimate.Minimum != estimate.Maximum))
                         errors.Add($"Scout candidate estimate range is invalid: {candidate.WrestlerId}");
             }
         }
@@ -405,7 +461,6 @@ namespace PWManager.Domain.Validation
         {
             if (wrestler.Presentation == null) { errors.Add("Wrestler.Presentation is required."); return; }
             ValidateStaticId(wrestler.Presentation.WrestlingStyleId, "style_", "WrestlingStyleId", errors);
-            foreach (var id in wrestler.Presentation.TraitIds ?? new List<string>()) ValidateStaticId(id, "trait_", "TraitId", errors);
             foreach (var id in wrestler.Presentation.SignatureMoveIds ?? new List<string>()) ValidateStaticId(id, "move_", "SignatureMoveId", errors);
             foreach (var id in wrestler.Presentation.FinisherMoveIds ?? new List<string>()) ValidateStaticId(id, "move_", "FinisherMoveId", errors);
             if ((wrestler.Presentation.SignatureMoveIds?.Count ?? 0) > 2) errors.Add("A wrestler can have at most two signature moves.");
@@ -429,9 +484,9 @@ namespace PWManager.Domain.Validation
             foreach (var value in values) ValidateRange(value, 1, 20, "Wrestler attribute", errors);
             ValidateRange(wrestler.Growth.MatchPotentialCap, 1, 20, "MatchPotentialCap", errors);
             ValidateRange(wrestler.Growth.PromoPotentialCap, 1, 20, "PromoPotentialCap", errors);
-            if (WrestlerOverallCalculator.Match(wrestler) > wrestler.Growth.MatchPotentialCap + AbilityTolerance)
+            if (WrestlerOverallCalculator.MatchTotal(wrestler.Attributes) > wrestler.Growth.MatchPotentialCap * 10f + AbilityTolerance)
                 errors.Add("Match attributes exceed the match potential cap.");
-            if (WrestlerOverallCalculator.Promo(wrestler.Attributes, KayfabeAlignment.Tweener, PromoDisposition.Balanced) > wrestler.Growth.PromoPotentialCap + AbilityTolerance)
+            if (WrestlerOverallCalculator.PromoTotal(wrestler.Attributes) > wrestler.Growth.PromoPotentialCap * 7f + AbilityTolerance)
                 errors.Add("Promo attributes exceed the promo potential cap.");
         }
 
@@ -439,12 +494,24 @@ namespace PWManager.Domain.Validation
         {
             var ids = new HashSet<string>(StringComparer.Ordinal);
             var wrestlerIds = new HashSet<string>(StringComparer.Ordinal);
-            foreach (var wrestler in save.Wrestlers ?? new List<WrestlerState>()) if (wrestler != null) wrestlerIds.Add(wrestler.Id);
+            var affiliations = new Dictionary<(ContractType Type, string PersonId), string>();
+            foreach (var wrestler in save.Wrestlers ?? new List<WrestlerState>()) if (wrestler != null)
+            {
+                wrestlerIds.Add(wrestler.Id); affiliations.TryAdd((ContractType.Wrestler, wrestler.Id), wrestler.PromotionId);
+            }
             var managerIds = new HashSet<string>(StringComparer.Ordinal);
-            foreach (var manager in save.Managers ?? new List<ManagerState>()) if (manager != null) managerIds.Add(manager.Id);
+            foreach (var manager in save.Managers ?? new List<ManagerState>()) if (manager != null)
+            {
+                managerIds.Add(manager.Id); affiliations.TryAdd((ContractType.Manager, manager.Id), manager.PromotionId);
+            }
             foreach (var contract in save.Contracts ?? new List<ContractState>())
             {
                 if (contract == null) { errors.Add("Contract cannot be null."); continue; }
+                var employerId = string.IsNullOrEmpty(contract.PromotionId) ? save.Promotion.Id : contract.PromotionId;
+                if (save.FindPromotion(employerId) == null) errors.Add($"Contract {contract.Id} references an unknown employer.");
+                affiliations.TryGetValue((contract.Type, contract.PersonId), out var affiliation);
+                if (contract.IsInForce && contract.Covers(save.CurrentDate) && !string.IsNullOrEmpty(affiliation) && affiliation != employerId)
+                    errors.Add($"Contract {contract.Id} employer does not match the person's current affiliation.");
                 if (!EntityId.IsValidRuntimeId(contract.Id)) errors.Add("Contract.Id must be a runtime GUID.");
                 else if (!ids.Add(contract.Id)) errors.Add($"Duplicate Contract.Id: {contract.Id}");
                 if (contract.Type == ContractType.Wrestler && !wrestlerIds.Contains(contract.PersonId))
@@ -453,7 +520,8 @@ namespace PWManager.Domain.Validation
                     errors.Add($"Contract {contract.Id} references a missing manager.");
                 if (contract.StartDate.CompareTo(contract.EndDate) > 0) errors.Add($"Contract {contract.Id} starts after it ends.");
                 if (contract.EndDate.Month != 5 || contract.EndDate.Day != 31) errors.Add($"Contract {contract.Id} must end on May 31.");
-                if (contract.SigningBonus < 0 || contract.MonthlySalary < 0 || contract.TerminationCost < 0)
+                if (contract.SigningBonus < 0 || contract.MonthlySalary < 0 || contract.TerminationCost < 0 ||
+                    contract.MatchAppearanceFee < 0 || contract.PromoAppearanceFee < 0)
                     errors.Add($"Contract {contract.Id} contains a negative amount.");
             }
 
@@ -483,7 +551,7 @@ namespace PWManager.Domain.Validation
             }
         }
 
-        private static bool IsActive(ContractStatus status) => status is ContractStatus.Active or ContractStatus.Expiring or ContractStatus.Overdue;
+        private static bool IsActive(ContractStatus status) => status is ContractStatus.Active or ContractStatus.Expiring or ContractStatus.Overdue or ContractStatus.Scheduled;
 
         private static void ValidateRange(float value, float min, float max, string name, List<string> errors)
         {

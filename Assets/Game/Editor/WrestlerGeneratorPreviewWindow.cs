@@ -139,7 +139,6 @@ namespace PWManager.Editor
                 Field("Match", $"{WrestlerOverallCalculator.Match(wrestler):F2} / potential {wrestler.Growth.MatchPotentialCap:F1}");
                 Field("Promo", $"{WrestlerOverallCalculator.Promo(wrestler):F2} / potential {wrestler.Growth.PromoPotentialCap:F1}");
                 Field("Style", GetStyleName(wrestler.Presentation.WrestlingStyleId));
-                Field("Traits", Names(wrestler.Presentation.TraitIds, id => content.Traits[id].DisplayName));
                 Field("Signature", Names(wrestler.Presentation.SignatureMoveIds, id => content.Moves[id].DisplayName));
                 Field("Finisher", Names(wrestler.Presentation.FinisherMoveIds, id => content.Moves[id].DisplayName));
                 Field("Expires", FormatDate(wrestler.Identity.ExpiryDate.Value));

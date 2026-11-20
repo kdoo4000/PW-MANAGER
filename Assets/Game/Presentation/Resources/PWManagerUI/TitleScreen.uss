@@ -44,6 +44,9 @@
 .wizard-main { flex-grow: 1; min-height: 0; flex-direction: row; }
 .wizard-content { flex-grow: 1; min-width: 0; padding: 28px 34px; }
 .wizard-step { flex-grow: 1; }
+.final-review-scroll { flex-grow:1; min-height:0; }
+.final-review-scroll .review-card { margin-top:0; }
+.final-review-scroll .review-value { white-space:normal; }
 .hidden { display: none; }
 .player-step { min-height: 0; }
 .player-basic-step { justify-content: space-between; }

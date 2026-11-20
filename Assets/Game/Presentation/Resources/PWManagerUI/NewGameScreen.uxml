@@ -124,9 +124,11 @@
                             <ui:VisualElement name="venue-grid" class="venue-grid"/>
                         </ui:ScrollView>
                     </ui:VisualElement>
-                    <ui:VisualElement name="wizard-step-6" class="wizard-step hidden">
-                        <ui:Label text="선택한 내용을 확인하세요. 게임 시작 시 하나의 저장 파일로 생성됩니다." class="step-copy"/>
-                        <ui:VisualElement name="final-review" class="review-card"/>
+                    <ui:VisualElement name="wizard-step-6" class="wizard-step hidden"/>
+                    <ui:VisualElement name="wizard-step-7" class="wizard-step hidden">
+                        <ui:ScrollView name="final-review-scroll" class="final-review-scroll">
+                            <ui:VisualElement name="final-review" class="review-card"/>
+                        </ui:ScrollView>
                     </ui:VisualElement>
                 </ui:VisualElement>
                 <ui:VisualElement class="cost-panel">
@@ -142,15 +144,15 @@
                         <ui:Label name="summary-roster" text="12명" class="summary-value"/>
                     </ui:VisualElement>
                     <ui:VisualElement class="summary-line">
-                        <ui:Label text="즉시 지급 · 계약금" class="summary-label"/>
+                        <ui:Label text="즉시 지급 · 계약금·첫 달 기본급" class="summary-label"/>
                         <ui:Label name="summary-signing" text="—" class="summary-value"/>
                     </ui:VisualElement>
                     <ui:VisualElement class="summary-line">
-                        <ui:Label text="월간 고정비 · 급여" class="summary-label"/>
+                        <ui:Label text="월 기본급" class="summary-label"/>
                         <ui:Label name="summary-salary" text="—" class="summary-value"/>
                     </ui:VisualElement>
                     <ui:VisualElement class="summary-line">
-                        <ui:Label text="시즌 예상 고정비" class="summary-label"/>
+                        <ui:Label text="시즌 기본급" class="summary-label"/>
                         <ui:Label name="summary-season-fixed" text="—" class="summary-value"/>
                     </ui:VisualElement>
                     <ui:VisualElement class="summary-line">

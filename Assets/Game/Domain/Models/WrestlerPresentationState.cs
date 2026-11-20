@@ -12,6 +12,7 @@ namespace PWManager.Domain.Models
         public string WrestlingStyleId;
         public string PortraitResourcePath;
         public PortraitAppearanceState Appearance;
+        // Legacy save input only; generation and gameplay no longer use these IDs.
         public List<string> TraitIds = new();
         public List<string> SignatureMoveIds = new();
         public List<string> FinisherMoveIds = new();

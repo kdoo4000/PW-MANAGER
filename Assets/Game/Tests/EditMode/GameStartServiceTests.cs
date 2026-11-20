@@ -32,7 +32,7 @@ namespace PWManager.Tests
                 PromotionName = "Test Wrestling",
                 PromotionAbbreviation = "TW",
                 InitialCash = 100000,
-                InitialPrestige = 0,
+                InitialPrestige = 1000,
                 WorldSeed = 77,
                 UtcNow = new DateTime(2026, 8, 20, 3, 0, 0, DateTimeKind.Utc),
                 WrestlerContracts = inputs,
@@ -67,7 +67,7 @@ namespace PWManager.Tests
                 x.Status == ShowStatus.Draft && x.DurationLimit == 120 &&
                 x.VenueContractId == save.VenueContracts[0].Id && x.EstimatedCost == 20000));
             Assert.That(save.Shows, Has.All.Matches<ShowState>(x => x.Name.StartsWith("TW ", StringComparison.Ordinal)));
-            Assert.That(save.Promotion.CalculateCurrentCash(save.Transactions), Is.EqualTo(92000));
+            Assert.That(save.Promotion.CalculateCurrentCash(save.Transactions), Is.EqualTo(88000));
             Assert.That(save.Wrestlers, Has.All.Property(nameof(WrestlerState.PromotionId)).EqualTo(save.Promotion.Id));
             Assert.That(save.Wrestlers, Has.All.Matches<WrestlerState>(x => x.Roster.ActivityState == RosterActivityState.Active));
             Assert.That(candidates.Take(8), Has.All.Matches<WrestlerState>(x => string.IsNullOrEmpty(x.PromotionId)));

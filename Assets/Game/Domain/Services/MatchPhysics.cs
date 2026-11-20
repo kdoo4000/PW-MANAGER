@@ -22,6 +22,7 @@ namespace PWManager.Domain.Services
         public string DominantSideId;
         public MatchOpeningStyle OpeningStyle;
         public float OpeningHostility;
+        public float InjuryAggravationMultiplier = 1;
 
         public bool Allows(MatchFinishType finish) => finish switch
         {
@@ -178,7 +179,7 @@ namespace PWManager.Domain.Services
                 Add(MatchActionType.GroundAttack); Add(MatchActionType.LimbAttack);
                 if (s.Rules.Submission && (!s.Rules.RopeBreak || b.Position != MatchPosition.Ropes) && TimeForHold()) Add(MatchActionType.Submission);
                 if (s.Rules.Pinfall && s.RefereeUnavailableUntil <= s.ElapsedSeconds && (!s.Rules.RopeBreak || b.Position != MatchPosition.Ropes) && CanRetryCover(s, a, b)) Add(MatchActionType.Pin);
-                if (a.Attributes.HighFlying >= 8 && !MatchHealth.Restricted(a, BodyRegion.Legs) && MatchTechniques.Candidates(MatchActionType.Dive, a, b).Count > 0) Add(MatchActionType.Climb);
+                if (a.Eligibility.HighFlying >= 8 && !MatchHealth.Restricted(a, BodyRegion.Legs) && MatchTechniques.Candidates(MatchActionType.Dive, a, b).Count > 0) Add(MatchActionType.Climb);
                 if (CanPrepareOffense(s, a, b))
                 {
                     if (MatchTechniques.Candidates(MatchActionType.Grapple, a, b, MatchPosture.Standing).Count > 0 ||
@@ -202,7 +203,7 @@ namespace PWManager.Domain.Services
             {
                 Add(MatchActionType.BasicStrike); Add(MatchActionType.HeavyStrike); Add(MatchActionType.Grapple); Add(MatchActionType.LimbAttack);
                 if (s.Rules.Submission && (!s.Rules.RopeBreak || b.Position != MatchPosition.Ropes) && TimeForHold()) Add(MatchActionType.StandingHold);
-                if (a.Attributes.HighFlying >= 8 && !MatchHealth.Restricted(a, BodyRegion.Legs) && b.Position != MatchPosition.TopRope &&
+                if (a.Eligibility.HighFlying >= 8 && !MatchHealth.Restricted(a, BodyRegion.Legs) && b.Position != MatchPosition.TopRope &&
                     MatchTechniques.Candidates(MatchActionType.Dive, a, b).Count > 0) Add(MatchActionType.Climb);
             }
             if (!b.IsDowned && MatchOpening.CanChain(s))
@@ -281,7 +282,7 @@ namespace PWManager.Domain.Services
         public static bool CanMove(MatchEngineState s, MatchEngineParticipant a, MatchEngineParticipant b, string id)
         {
             var technique = MatchTechniques.Find(id);
-            if (technique != null && (!technique.Enabled || !technique.AllowsStyle(a.WrestlingStyleId) || !technique.MeetsRequirement(a.Attributes))) return false;
+            if (technique != null && (!technique.Enabled || !technique.AllowsStyle(a.WrestlingStyleId) || !technique.MeetsRequirement(a.Eligibility))) return false;
             var move = technique?.Rules ?? s.FindMove?.Invoke(id);
             if (!MatchTechniques.CanExecute(move, a) || !MatchHealth.CanReceive(move, b)) return false;
             if (move == null) return true;
@@ -307,7 +308,7 @@ namespace PWManager.Domain.Services
         private static bool UsableAssignedMove(MatchEngineState s, MatchEngineParticipant a, string id)
         {
             var technique = MatchTechniques.Find(id);
-            if (technique != null && (!technique.Enabled || !technique.AllowsStyle(a.WrestlingStyleId) || !technique.MeetsRequirement(a.Attributes))) return false;
+            if (technique != null && (!technique.Enabled || !technique.AllowsStyle(a.WrestlingStyleId) || !technique.MeetsRequirement(a.Eligibility))) return false;
             var move = s.FindMove?.Invoke(id);
             return MatchTechniques.CanExecute(move, a);
         }
@@ -1016,7 +1017,7 @@ namespace PWManager.Domain.Services
                     s.Rules.Objective == MatchObjective.PinOrSubmission && HasTime(17) &&
                     s.ElapsedSeconds >= s.TargetDurationSeconds * .4 && s.TargetDurationSeconds - s.ElapsedSeconds > 150 &&
                     !s.Events.Any(e => e.Detail == "announce-table-setup") && b.Fatigue < 75 && !MatchHealth.Restricted(b, BodyRegion.Arms) &&
-                    tableMove?.Enabled == true && tableMove.MeetsRequirement(b.Attributes) &&
+                    tableMove?.Enabled == true && tableMove.MeetsRequirement(b.Eligibility) &&
                     (!s.Rules.CountOut || s.Rules.CountOutSeconds >= 30))
                 {
                     s.AnnounceTableReady = true; x.ActionType = MatchActionType.ObjectSetup; Spend(b, 2);
@@ -1025,7 +1026,7 @@ namespace PWManager.Domain.Services
                 if (!HasTime(4)) return ReturnToRing();
                 var ringside = Resolve(s, Action(MatchActionType.RingsideAttack, b, a, continuation: true), random);
                 s.Exchange = x; x.ActionType = MatchActionType.Reposition;
-                if (a.IsDowned && !b.IsDowned && b.Attributes.HighFlying >= 10 && !MatchHealth.Restricted(b, BodyRegion.Legs) && b.Fatigue < 70 &&
+                if (a.IsDowned && !b.IsDowned && b.Eligibility.HighFlying >= 10 && !MatchHealth.Restricted(b, BodyRegion.Legs) && b.Fatigue < 70 &&
                     HasTime(10) && !s.Events.Any(e => e.Detail is "outside-run" or "outside-climb") && random.NextDouble() < .25)
                     x.ActionType = MatchActionType.Climb;
                 return ringside;
@@ -1297,7 +1298,7 @@ namespace PWManager.Domain.Services
             {
                 var candidates = a.FinisherMoveIds.Concat(new[] { a.FinisherMoveId }).Concat(a.SignatureMoveIds).Concat(new[] { a.SignatureMoveId })
                     .Concat(MatchTechniques.All.Where(t => t.Enabled && t.CanUseGenerally && t.AllowsStyle(a.WrestlingStyleId) &&
-                        t.MeetsRequirement(a.Attributes)).Select(t => t.Id))
+                        t.MeetsRequirement(a.Eligibility)).Select(t => t.Id))
                     .Where(id => !string.IsNullOrEmpty(id) && id != a.ReplacedFinishMoveId).Distinct()
                     .Select(id => (id, rule: s.FindMove?.Invoke(id) ?? MatchTechniques.Find(id)?.Rules))
                     .Where(x => x.rule != null && MatchTechniques.CanExecute(x.rule, a) && MatchHealth.CanReceive(x.rule, b) &&
@@ -1362,7 +1363,7 @@ namespace PWManager.Domain.Services
             if (selected.id == null && finish == MatchFinishType.Submission)
             {
                 var general = MatchTechniques.All.Where(m => m.Enabled && m.CanUseGenerally && m.Action == MatchActionType.Submission &&
-                    MatchTechniques.IsSupported(m.Rules.Situation) && m.AllowsStyle(a.WrestlingStyleId) && m.MeetsRequirement(a.Attributes) && MatchTechniques.CanExecute(m.Rules, a))
+                    MatchTechniques.IsSupported(m.Rules.Situation) && m.AllowsStyle(a.WrestlingStyleId) && m.MeetsRequirement(a.Eligibility) && MatchTechniques.CanExecute(m.Rules, a))
                     .OrderByDescending(m => m.Rules.TargetRegion == a.TargetRegion).ThenByDescending(m => Damage(b, m.Rules.TargetRegion)).FirstOrDefault();
                 if (general == null)
                 {

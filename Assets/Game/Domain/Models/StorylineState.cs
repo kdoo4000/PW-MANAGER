@@ -3,7 +3,7 @@ using System.Collections.Generic;
 
 namespace PWManager.Domain.Models
 {
-    public enum StorylineStatus { Active, Completed }
+    public enum StorylineStatus { Active, Completed, Inactive }
     public enum StoryPartyType { Wrestler, TagTeam, Stable }
     public enum StoryCandidateStatus { Pending, Adopted, Expired }
 
@@ -24,11 +24,13 @@ namespace PWManager.Domain.Models
     [Serializable]
     public sealed class StoryEventState
     {
+        public string Id;
         public string SourceResultId;
         public StoryEventType EventType;
         public StoryIncident Incident;
         public string ActorId;
         public string TargetId;
+        public List<string> ParticipantIds = new();
         public GameDate Date;
         public float TensionChange;
         public float InterestChange;
@@ -42,6 +44,9 @@ namespace PWManager.Domain.Models
         public string PromotionId;
         public string Name;
         public string Context;
+        public bool IsAutomatic;
+        public GameDate LastEventDate;
+        public List<string> EventIds = new();
         public StorylineStatus Status;
         public StoryPartyType PartyType;
         public string FirstGroupId;
@@ -59,6 +64,7 @@ namespace PWManager.Domain.Models
         {
             var copy = (StorylineState)MemberwiseClone();
             copy.History = new List<StoryEventState>(History ?? new());
+            copy.EventIds = new List<string>(EventIds ?? new());
             return copy;
         }
     }
@@ -66,6 +72,7 @@ namespace PWManager.Domain.Models
     [Serializable]
     public sealed class StorylineResultChangeState
     {
+        public string EventId;
         public string StorylineId;
         public string SourceResultId;
         public StoryEventType EventType;

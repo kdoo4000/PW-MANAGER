@@ -9,6 +9,77 @@ namespace PWManager.Tests
 {
     public sealed class ChampionshipServiceTests
     {
+        [TestCase(ChampionshipDivision.Men, WrestlerGender.Male, WrestlerGender.Female)]
+        [TestCase(ChampionshipDivision.Women, WrestlerGender.Female, WrestlerGender.Male)]
+        public void Division_RejectsIneligibleHolderAndChallenger(ChampionshipDivision division, WrestlerGender eligible, WrestlerGender ineligible)
+        {
+            var save = Save(); save.Wrestlers[0].Identity.Gender = eligible; save.Wrestlers[1].Identity.Gender = ineligible;
+            Assert.Throws<InvalidOperationException>(() => ChampionshipService.Create(save, "Invalid", ChampionshipType.Individual, holderId: "b", division: division));
+            Assert.That(save.Championships, Is.Empty);
+            var title = ChampionshipService.Create(save, "Title", ChampionshipType.Individual, holderId: "a", division: division);
+            var before = JsonUtility.ToJson(title);
+            Assert.Throws<InvalidOperationException>(() => ChampionshipService.SetHolder(save, title, "b"));
+            Assert.That(JsonUtility.ToJson(title), Is.EqualTo(before));
+            var result = Match(save, title, false);
+            Assert.Throws<InvalidOperationException>(() => ChampionshipService.ValidateMatch(save, save.MatchPlans[0]));
+            save.Wrestlers[1].Identity.Gender = eligible;
+            ChampionshipService.ValidateMatch(save, save.MatchPlans[0]);
+            Assert.That(ChampionshipService.PrepareResults(save, new[] { result }, save.CurrentDate)[0].Division, Is.EqualTo(division));
+        }
+
+        [Test]
+        public void TagDivision_RequiresEveryMemberButOpenAllowsMixedTeams()
+        {
+            var save = Save(); save.Wrestlers[1].Identity.Gender = WrestlerGender.Female;
+            Assert.Throws<InvalidOperationException>(() => ChampionshipService.Create(save, "Men", ChampionshipType.TagTeam, holderId: "team-ab", division: ChampionshipDivision.Men));
+            var open = ChampionshipService.Create(save, "Open", ChampionshipType.TagTeam, holderId: "team-ab");
+            Match(save, open, true); ChampionshipService.ValidateMatch(save, save.MatchPlans.Last());
+            save.Wrestlers[1].Identity.Gender = WrestlerGender.Male;
+            var men = ChampionshipService.Create(save, "Men", ChampionshipType.TagTeam, holderId: "team-ab", division: ChampionshipDivision.Men);
+            Match(save, men, true); save.Wrestlers[3].Identity.Gender = WrestlerGender.Female;
+            Assert.Throws<InvalidOperationException>(() => ChampionshipService.ValidateMatch(save, save.MatchPlans.Last()));
+        }
+
+        [Test]
+        public void EditDivision_ValidatesBeforeChangingAndPreservesHistoricalReigns()
+        {
+            var save = Save(); save.Wrestlers[1].Identity.Gender = WrestlerGender.Female;
+            var title = ChampionshipService.Create(save, "Title", ChampionshipType.Individual, holderId: "a", division: ChampionshipDivision.Men);
+            var before = JsonUtility.ToJson(title);
+            Assert.Throws<InvalidOperationException>(() => ChampionshipService.SetDivisionAndHolder(save, title, ChampionshipDivision.Women, "a"));
+            Assert.Throws<InvalidOperationException>(() => ChampionshipService.SetDivisionAndHolder(save, title, (ChampionshipDivision)99, null));
+            Assert.That(JsonUtility.ToJson(title), Is.EqualTo(before));
+            ChampionshipService.SetDivisionAndHolder(save, title, ChampionshipDivision.Women, "b");
+            Assert.That(title.HolderId, Is.EqualTo("b")); Assert.That(title.Division, Is.EqualTo(ChampionshipDivision.Women));
+            Assert.That(title.Reigns[0].MemberIds, Is.EqualTo(new[] { "a" }));
+            Assert.That(title.Reigns[0].LostDate.HasValue, Is.True);
+            ChampionshipService.ValidateState(save);
+        }
+
+        [Test]
+        public void EditDivision_CanRetainAnInactiveCurrentChampionWithoutStartingANewReign()
+        {
+            var save = Save();
+            var title = ChampionshipService.Create(save, "Title", ChampionshipType.Individual, holderId: "a");
+            save.Wrestlers[0].Roster.ActivityState = RosterActivityState.Inactive;
+            ChampionshipService.SetDivisionAndHolder(save, title, ChampionshipDivision.Men, "a");
+            Assert.That(title.HolderId, Is.EqualTo("a")); Assert.That(title.Reigns, Has.Count.EqualTo(1));
+            ChampionshipService.ValidateState(save);
+        }
+
+        [Test]
+        public void Division_SerializesAndOldTitlesRemainOpen()
+        {
+            var save = Save();
+            ChampionshipService.Create(save, "Men", ChampionshipType.Individual, holderId: "a", division: ChampionshipDivision.Men);
+            var restored = JsonUtility.FromJson<GameSave>(JsonUtility.ToJson(save));
+            Assert.That(restored.Championships[0].Division, Is.EqualTo(ChampionshipDivision.Men));
+            ChampionshipService.ValidateState(restored);
+            Assert.That(JsonUtility.FromJson<ChampionshipState>("{\"Name\":\"Old Women's Championship\"}").Division, Is.EqualTo(ChampionshipDivision.Open));
+            restored.Championships[0].Division = (ChampionshipDivision)99;
+            Assert.Throws<InvalidOperationException>(() => ChampionshipService.ValidateState(restored));
+        }
+
         [Test]
         public void Create_SupportsVacantIndividualWorldAndAssignedTagTitles()
         {

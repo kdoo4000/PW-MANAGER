@@ -35,8 +35,11 @@ namespace PWManager.Domain.Models
     public sealed class WrestlerMatchPerformanceState
     {
         public string WrestlerId;
+        public string WrestlingStyleId;
+        public float BrawlingGrowthBonus, PowerGrowthBonus, HighFlyingGrowthBonus, TechnicalGrowthBonus;
         public float BaseRoutine;
         public float PerformanceVariance;
+        public float BigMatchAdjustment, AdaptationPenalty;
         public float StaminaPenalty;
         public float EffectiveRoutine;
     }

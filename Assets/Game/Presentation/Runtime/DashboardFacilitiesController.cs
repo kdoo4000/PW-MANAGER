@@ -4,6 +4,7 @@ using System.Linq;
 using PWManager.Data.Catalogs;
 using PWManager.Data.Definitions;
 using PWManager.Domain.Models;
+using PWManager.Domain.Services;
 using UnityEngine;
 using UnityEngine.UIElements;
 
@@ -19,6 +20,7 @@ namespace PWManager.Presentation
         private readonly Button staffTab;
         private readonly Button venueTab;
         private readonly StaticContentCatalog catalog;
+        private int selectedTab;
         private GameSave save;
 
         public DashboardFacilitiesController(VisualElement root)
@@ -42,16 +44,17 @@ namespace PWManager.Presentation
             Set("facilities-prestige", value?.Promotion == null ? "—" : value.Promotion.PromotionPrestige.ToString("N0"));
             RenderStaff();
             RenderVenues();
-            ShowTab(staffPanel == null || !staffPanel.ClassListContains("hidden"));
+            ShowTab(selectedTab == 0);
         }
 
         private void ShowTab(bool staff)
         {
+            selectedTab = staff ? 0 : 1;
             staffPanel?.EnableInClassList("hidden", !staff);
             venuePanel?.EnableInClassList("hidden", staff);
             staffTab?.EnableInClassList("active-tab", staff);
             venueTab?.EnableInClassList("active-tab", !staff);
-            Set("facilities-summary-label", staff ? "운영 부서" : "시설");
+            Set("facilities-summary-label", staff ? "운영 부서" : "경기장");
             var count = staff ? save?.StaffDepartments?.Count(x => x != null && x.CurrentLevel > 0) ?? 0
                 : catalog?.Venues?.Count(x => x != null && (x.UnlockCost == 0 || save?.Promotion?.UnlockedIds?.Contains(x.Id) == true ||
                     save?.VenueContracts?.Any(c => c != null && c.VenueId == x.Id && IsCurrent(c.Status)) == true)) ?? 0;
@@ -74,10 +77,10 @@ namespace PWManager.Presentation
                 var unlocked = state.CurrentLevel > 0;
                 var cost = next?.UpgradeCost ?? 0;
                 var cash = save?.Promotion?.CalculateCurrentCash(save.Transactions) ?? 0;
-                var canPurchase = next != null && (save?.Promotion?.PromotionPrestige ?? 0) >= requiredPrestige && cash >= cost;
+                var canPurchase = next != null && EligiblePrestige >= requiredPrestige && cash >= cost;
                 var status = next == null ? "최대 레벨"
-                    : (save?.Promotion?.PromotionPrestige ?? 0) >= requiredPrestige ? $"Lv.{nextLevel} 구매 가능"
-                    : $"Lv.{nextLevel} 해금 위상 {requiredPrestige:N0}";
+                    : EligiblePrestige >= requiredPrestige ? $"Lv.{nextLevel} 구매 가능"
+                    : (save?.Promotion?.PromotionPrestige ?? 0) >= requiredPrestige ? "다음 시즌 해금 예정" : $"시즌 해금 명성 {requiredPrestige:N0}";
                 AddCard(staffGrid, definition?.DisplayName ?? DepartmentName(state.DepartmentType),
                     unlocked ? $"Lv.{state.CurrentLevel}" : "미해금", current?.EffectDescription ?? "부서를 해금하면 효과가 적용됩니다.",
                     status, next == null ? "—" : $"{(unlocked ? "업그레이드" : "해금")} 비용 {DashboardText.Money(cost)}",
@@ -100,17 +103,17 @@ namespace PWManager.Presentation
                 var available = unlocked || (save?.Promotion?.PromotionPrestige ?? 0) >= venue.RequiredPrestige;
                 var cash = save?.Promotion?.CalculateCurrentCash(save.Transactions) ?? 0;
                 var status = contract != null ? "사용 가능"
-                    : unlocked ? "해금됨" : available ? "해금 가능" : $"위상 {venue.RequiredPrestige:N0} 필요";
+                    : unlocked ? "해금됨" : available ? "해금 가능" : $"단체 명성 {venue.RequiredPrestige:N0} 필요";
                 AddCard(venueGrid, venue.DisplayName, $"수용 {venue.Capacity:N0}명",
                     $"시간당 제작비 {DashboardText.Money(venue.ProductionCost)} · 기본 티켓 {DashboardText.Money(venue.BaseTicketPrice)}",
                     status, venue.UnlockCost == 0 ? "해금 비용 없음" : $"해금 비용 {DashboardText.Money(venue.UnlockCost)}",
                     unlocked ? "해금됨" : "해금", !unlocked && available && cash >= venue.UnlockCost,
                     () => UnlockVenue(venue), !available);
             }
-            if (venueGrid.childCount == 0) AddEmpty(venueGrid, "등록된 시설이 없습니다.");
+            if (venueGrid.childCount == 0) AddEmpty(venueGrid, "등록된 경기장이 없습니다.");
         }
 
-        private static void AddCard(VisualElement parent, string title, string level, string effect, string status,
+        internal static VisualElement AddCard(VisualElement parent, string title, string level, string effect, string status,
             string cost, string actionText, bool actionEnabled, Action action, bool locked)
         {
             var card = new VisualElement(); card.AddToClassList("facility-card"); card.EnableInClassList("locked", locked);
@@ -123,11 +126,12 @@ namespace PWManager.Presentation
             var costLabel = new Label(cost); costLabel.AddToClassList("facility-card-cost"); actions.Add(costLabel);
             var button = new Button(action) { text = actionText }; button.AddToClassList("facility-card-action"); button.SetEnabled(actionEnabled); actions.Add(button); card.Add(actions);
             parent.Add(card);
+            return card;
         }
 
         private void PurchaseStaff(StaffDepartmentState state, int nextLevel, long requiredPrestige, long cost)
         {
-            if (save?.Promotion == null || state == null || state.CurrentLevel >= 5 || save.Promotion.PromotionPrestige < requiredPrestige) return;
+            if (save?.Promotion == null || state == null || state.CurrentLevel >= 5 || EligiblePrestige < requiredPrestige) return;
             if (save.Promotion.CalculateCurrentCash(save.Transactions) < cost) return;
             state.CurrentLevel = nextLevel;
             state.UnlockedLevel = Math.Max(state.UnlockedLevel, nextLevel);
@@ -155,6 +159,7 @@ namespace PWManager.Presentation
                 Type = type, Amount = -cost, ReasonId = reasonId
             });
         }
+        private long EligiblePrestige => save?.Promotion == null ? 0 : PromotionProgressionRules.ActivePrestige(save);
 
         private static void AddEmpty(VisualElement parent, string text) { var label = new Label(text); label.AddToClassList("facilities-empty"); parent.Add(label); }
         private void Set(string name, string text) { var label = root.Q<Label>(name); if (label != null) label.text = text; }

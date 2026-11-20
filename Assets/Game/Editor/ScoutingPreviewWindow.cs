@@ -77,7 +77,7 @@ namespace PWManager.Editor
             EditorGUILayout.LabelField("Candidates", save.ScoutCandidates.Count.ToString());
 
             scroll = EditorGUILayout.BeginScrollView(scroll);
-            foreach (var candidateState in save.ScoutCandidates)
+            foreach (var candidateState in save.ScoutCandidates.Where(x => !x.IsExpired(save.CurrentDate)))
             {
                 var wrestler = save.Wrestlers.First(x => x.Id == candidateState.WrestlerId);
                 using (new EditorGUILayout.VerticalScope(EditorStyles.helpBox))
@@ -87,7 +87,7 @@ namespace PWManager.Editor
                     EditorGUILayout.LabelField("Match Style", catalog.WrestlingStyles.FirstOrDefault(x => x?.Id == wrestler.Presentation.WrestlingStyleId)?.DisplayName ?? wrestler.Presentation.WrestlingStyleId);
                     EditorGUILayout.LabelField("Ability", $"Match {Report(candidateState, ScoutValueType.MatchOverall, WrestlerOverallCalculator.Match(wrestler))} · Promo {Report(candidateState, ScoutValueType.PromoOverall, WrestlerOverallCalculator.Promo(wrestler))}");
                     EditorGUILayout.LabelField("Potential", $"Match {Report(candidateState, ScoutValueType.MatchPotential, wrestler.Growth.MatchPotentialCap)} · Promo {Report(candidateState, ScoutValueType.PromoPotential, wrestler.Growth.PromoPotentialCap)}");
-                    EditorGUILayout.LabelField("Knowledge / Expires", $"Lv.{candidateState.KnowledgeLevel} · {Format(wrestler.Identity.ExpiryDate.Value)}");
+                    EditorGUILayout.LabelField("Knowledge / Expires", $"Lv.{candidateState.KnowledgeLevel} · {(candidateState.ExpiryDate.HasValue ? Format(candidateState.ExpiryDate.Value) : "-")}");
                     var expanded = EditorGUILayout.Foldout(expandedCandidates.Contains(wrestler.Id), "All Attributes", true);
                     if (expanded) expandedCandidates.Add(wrestler.Id); else expandedCandidates.Remove(wrestler.Id);
                     if (expanded) DrawAttributes(wrestler.Attributes, candidateState);
@@ -131,9 +131,8 @@ namespace PWManager.Editor
 
         private void ExpireCandidates()
         {
-            save.CurrentDate = save.Wrestlers.Where(x => x.Identity.ExpiryDate.HasValue)
-                .Select(x => x.Identity.ExpiryDate.Value).OrderBy(x => x).Last().AddDays(1);
-            service.RemoveExpiredCandidates(save);
+            save.CurrentDate = save.ScoutCandidates.Where(x => x.ExpiryDate.HasValue)
+                .Select(x => x.ExpiryDate.Value).OrderBy(x => x).Last().AddDays(1);
         }
 
         private bool HasActiveAssignment() => save?.ScoutAssignments?.Any(x => x?.Status == ScoutAssignmentStatus.InProgress) == true;
@@ -185,9 +184,7 @@ namespace PWManager.Editor
         {
             var estimate = candidate.ValueEstimates.FirstOrDefault(x => x?.Type == type);
             if (estimate == null) return $"Actual {Rating(actual)} · Report —";
-            var report = Math.Abs(estimate.Maximum - estimate.Minimum) < .01f
-                ? Rating(estimate.Minimum)
-                : $"{estimate.Minimum:F1}~{estimate.Maximum:F1} ({WrestlerOverallCalculator.Grade(estimate.Minimum)}~{WrestlerOverallCalculator.Grade(estimate.Maximum)})";
+            var report = ScoutAssessmentRules.Display(estimate);
             return $"Actual {Rating(actual)} · Report {report}";
         }
 

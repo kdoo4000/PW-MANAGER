@@ -48,6 +48,9 @@ namespace PWManager.Domain.Services
                 throw new InvalidOperationException("Show timeline must contain unique events.");
 
             var matchResults = new List<MatchResultState>();
+            var availableWrestlers = WrestlerBehaviorService.AvailableForShow(save, show.Date);
+            var expectedRoles = availableWrestlers.ToDictionary(id => id,
+                id => WrestlerBehaviorService.ExpectedRoleAt(save, save.Wrestlers.Single(w => w.Id == id), show.Date), StringComparer.Ordinal);
             var promoResults = new List<PromoResultState>();
             var timelineResultIds = new List<string>();
             var storySimulation = save.CopyForStorySimulation();
@@ -71,6 +74,7 @@ namespace PWManager.Domain.Services
                         return wrestler == null ? "선수" : string.IsNullOrWhiteSpace(wrestler.Identity.RingName) ? wrestler.Identity.LegalName : wrestler.Identity.RingName;
                     }, save);
                     matchResults.Add(result);
+                    storySimulation.MatchResults.Add(result);
                     foreach (var change in result.WrestlerConditionChanges)
                     {
                         var wrestler = storySimulation.Wrestlers.Single(w => w.Id == change.WrestlerId);
@@ -88,6 +92,7 @@ namespace PWManager.Domain.Services
                         ShowEventId = showEvent.Id, PromoPlanId = promoPlan.Id, CancellationReason = "실제 부상으로 프로모 취소", ResultSeed = eventSeed } :
                         promoEvaluator.Evaluate(storySimulation, CreatePromoInput(storySimulation, showEvent, eventSeed));
                     promoResults.Add(result);
+                    storySimulation.PromoResults.Add(result);
                     timelineResultIds.Add(result.Id);
                     if (!cancelled)
                     {
@@ -111,6 +116,8 @@ namespace PWManager.Domain.Services
                     pendingStories.GroupChanges.Add(groupChange);
                 }
                 pendingStories.StorylineChanges.AddRange(eventStories.StorylineChanges);
+                pendingStories.CreatedStorylines.AddRange(eventStories.CreatedStorylines);
+                pendingStories.StoryEvents.AddRange(eventStories.StoryEvents);
                 pendingStories.RelationshipChanges.AddRange(eventStories.RelationshipChanges);
                 pendingStories.StoryCandidates.AddRange(eventStories.StoryCandidates);
             }
@@ -120,12 +127,19 @@ namespace PWManager.Domain.Services
                 Id = createId(), ShowId = show.Id, ShowVersion = show.ShowVersion,
                 TimelineResultIds = timelineResultIds,
                 StorylineChanges = pendingStories.StorylineChanges,
+                CreatedStorylines = pendingStories.CreatedStorylines,
+                StoryEvents = pendingStories.StoryEvents,
                 RelationshipChanges = pendingStories.RelationshipChanges,
                 StoryCandidates = pendingStories.StoryCandidates,
                 GroupChanges = pendingStories.GroupChanges,
                 MatchResultIds = matchResults.Select(x => x.Id).ToList(),
                 PromoResultIds = promoResults.Select(x => x.Id).ToList(),
                 ShowEvaluation = CreateShowEvaluation(save, eventIds, matchResults, promoResults),
+                HasFameSnapshot = true,
+                HasAvailabilitySnapshot = true,
+                AvailableWrestlerIds = availableWrestlers,
+                FameReach = Math.Max(ticketSalesCount, save.Promotion.Audience?.IsInitialized == true ? checked(
+                    save.Promotion.Audience.Mark.Followers + save.Promotion.Audience.Casual.Followers + save.Promotion.Audience.Hardcore.Followers) : 0),
                 FinancialSettlement = new FinancialSettlementState
                 {
                     Attendance = ticketSalesCount,
@@ -135,11 +149,13 @@ namespace PWManager.Domain.Services
                     NetIncome = ticketRevenue - show.EstimatedCost
                 }
             };
+            WrestlerBehaviorService.CaptureCardPlacements(save, showResult, matchResults, expectedRoles);
             FanAudienceService.Evaluate(save, show, showResult, matchResults, promoResults);
+            PromotionPrestigeRules.Capture(showResult, show.ShowType, venueCapacity);
             StorylineService.Validate(save, showResult);
             foreach (var change in showResult.StorylineChanges)
             {
-                var story = save.Storylines.Single(x => x.Id == change.StorylineId);
+                var story = storySimulation.Storylines.Single(x => x.Id == change.StorylineId);
                 showResult.StoryChanges.Add(new ResultChangeState { TargetId = story.Id, ValueKey = "긴장도",
                     Amount = change.TensionChange, Reason = story.Name });
                 showResult.StoryChanges.Add(new ResultChangeState { TargetId = story.Id, ValueKey = "관심도",
@@ -147,6 +163,7 @@ namespace PWManager.Domain.Services
                 showResult.StoryChanges.Add(new ResultChangeState { TargetId = story.Id, ValueKey = "피로도",
                     Amount = change.FatigueChange, Reason = story.Name });
             }
+            showResult.StoryChanges.AddRange(StorylineService.UnprogressedInterestChanges(save, showResult));
             save.MatchResults.AddRange(matchResults);
             save.PromoResults.AddRange(promoResults);
             save.ShowResults.Add(showResult);
@@ -197,7 +214,7 @@ namespace PWManager.Domain.Services
             }).ToList();
             var isProductionOnly = promo.Presentation == PromoPresentation.VideoPackage ||
                 promo.Purpose == PromoPurpose.SponsorAdvertisement;
-            var story = (save.Storylines ?? new()).FirstOrDefault(x => x.Id == promo.StorylineId && x.Status == StorylineStatus.Active);
+            var story = StorylineHistory.FindActive(save, promo.ParticipantIds.Concat(promo.TargetIds ?? new()), promo.StorylineId);
             return new PromoEvaluationInput
             {
                 ShowEventId = showEvent.Id,

@@ -68,6 +68,8 @@ namespace PWManager.Domain.Services
                 ShowVersion = show.ShowVersion,
                 ShowEventId = showEvent.Id,
                 PromoPlanId = promo.Id,
+                ParticipantUsage = promo.ParticipantIds.Select(id => save.Wrestlers.Single(x => x.Id == id)).Select(w =>
+                    new PromoParticipantUsageState { WrestlerId = w.Id, Alignment = w.Roster.Alignment, Disposition = w.Presentation.PromoDisposition }).ToList(),
                 PromoScore = score,
                 EvaluationReasons = new List<EvaluationReasonState>
                 {

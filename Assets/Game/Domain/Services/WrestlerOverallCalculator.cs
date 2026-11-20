@@ -4,6 +4,11 @@ namespace PWManager.Domain.Services
 {
     public static class WrestlerOverallCalculator
     {
+        public static float MatchGrowthRoom(WrestlerState wrestler) => wrestler?.Attributes == null || wrestler.Growth == null ? 0f :
+            System.Math.Max(0f, wrestler.Growth.MatchPotentialCap - MatchTotal(wrestler.Attributes) / 10f);
+        public static float PromoGrowthRoom(WrestlerState wrestler) => wrestler?.Attributes == null || wrestler.Growth == null ? 0f :
+            System.Math.Max(0f, wrestler.Growth.PromoPotentialCap - PromoTotal(wrestler.Attributes) / 7f);
+
         public static float MatchTotal(WrestlerAttributesState a) => a.RingPsychology + a.RingImprovisation
             + a.Technical + a.Brawling + a.Power + a.HighFlying + a.SpotWork + a.SpecialtyMatches + a.Selling + a.Stamina;
 

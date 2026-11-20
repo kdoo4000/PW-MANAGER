@@ -60,6 +60,8 @@ namespace PWManager.Tests
         public void Evaluate_VideoPackageWithoutSpeaker_UsesProductionPerformance()
         {
             var save = CreateSave();
+            save.Wrestlers[0].Roster.Alignment = KayfabeAlignment.Heel;
+            save.Wrestlers[0].Presentation.PromoDisposition = PromoDisposition.Comic;
             save.PromoPlans[0].Presentation = PromoPresentation.VideoPackage;
             var input = Input();
             input.ProductionPerformance = 65f;
@@ -67,6 +69,9 @@ namespace PWManager.Tests
             var result = new PromoEvaluator(() => "11111111111111111111111111111111").Evaluate(save, input);
 
             Assert.That(result.PromoScore, Is.EqualTo(65f));
+            save.Wrestlers[0].Roster.Alignment = KayfabeAlignment.Face;
+            Assert.That(result.ParticipantUsage[0].Alignment, Is.EqualTo(KayfabeAlignment.Heel));
+            Assert.That(result.ParticipantUsage[0].Disposition, Is.EqualTo(PromoDisposition.Comic));
         }
 
         [Test]

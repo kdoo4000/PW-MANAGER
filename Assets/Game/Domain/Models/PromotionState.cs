@@ -16,6 +16,12 @@ namespace PWManager.Domain.Models
         public List<string> AppliedPrestigeReasonIds = new();
         public string SeasonPolicyId;
         public PromotionAudienceState Audience;
+        public PromotionQuarterState QuarterlyGrowth;
+
+        public PromotionState CopyForFanSimulation()
+        {
+            var copy = (PromotionState)MemberwiseClone(); copy.Audience = Audience?.IsInitialized == true ? Audience.Copy() : null; return copy;
+        }
 
         public string GetDisplayAbbreviation() => string.IsNullOrWhiteSpace(Abbreviation)
             ? CreateAbbreviation(Name)
@@ -51,6 +57,11 @@ namespace PWManager.Domain.Models
     [Serializable]
     public sealed class PromotionAudienceState
     {
+        public PromotionAudienceState Copy()
+        {
+            var copy = (PromotionAudienceState)MemberwiseClone();
+            copy.Mark = Mark.Copy(); copy.Casual = Casual.Copy(); copy.Hardcore = Hardcore.Copy(); return copy;
+        }
         public bool IsInitialized;
         public AudienceGroupState Mark = new();
         public AudienceGroupState Casual = new();
@@ -63,9 +74,11 @@ namespace PWManager.Domain.Models
     [Serializable]
     public sealed class AudienceGroupState
     {
+        public AudienceGroupState Copy() => (AudienceGroupState)MemberwiseClone();
         public long Followers;
         public float Satisfaction = 50f;
         public float WeeklyExposure;
         public double FollowerRemainder;
+        public double PendingAcquisition;
     }
 }

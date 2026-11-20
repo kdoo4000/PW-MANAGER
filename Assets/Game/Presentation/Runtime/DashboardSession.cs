@@ -12,13 +12,13 @@ namespace PWManager.Presentation
     {
         public static GameSave ActiveSave { get; private set; }
         public static bool IsTransient { get; private set; }
-        public static bool IsShowRunning => ActiveSave?.Shows?.Any(x => x != null &&
-            x.Status is ShowStatus.InProgress or ShowStatus.ResultReview or ShowStatus.ResultsReviewed) == true;
+        public static bool IsShowRunning => ActiveSave?.HasRunningShow == true;
         public static event Action<GameSave> SaveChanged;
 
         public static void SetActiveSave(GameSave save, bool transient = false)
         {
             PortraitRenderer.ClearCache();
+            BeltPartTextures.Clear();
             IsTransient = transient;
             ActiveSave = save;
             SaveChanged?.Invoke(save);

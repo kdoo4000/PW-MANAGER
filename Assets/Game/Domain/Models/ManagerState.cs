@@ -24,11 +24,13 @@ namespace PWManager.Domain.Models
     public sealed class ManagerState
     {
         public string Id;
+        public string Name;
         public string StaticDataId;
         public string PromotionId;
         public ManagerAttributesState Attributes = new();
         public float PromoPotentialCap;
         public KayfabeAlignment Alignment;
         public RosterActivityState ActivityState;
+        public float Satisfaction = 50f;
     }
 }

@@ -20,6 +20,9 @@ namespace PWManager.Presentation
         private UIDocument document;
         private DashboardRosterController rosterController;
         private DashboardFacilitiesController facilitiesController;
+        private DashboardScoutingController scoutingController;
+        private DashboardTrainingController trainingController;
+        private DashboardFinanceView financeView;
         private GameSave boundSave;
         private ShowPlanningController showPlanningController;
         private readonly List<NavigationEntry> navigationHistory = new();
@@ -75,6 +78,9 @@ namespace PWManager.Presentation
             document.rootVisualElement.RegisterCallback<NavigationSubmitEvent>(BlockShowInteraction, TrickleDown.TrickleDown);
             rosterController = new DashboardRosterController(document.rootVisualElement);
             facilitiesController = new DashboardFacilitiesController(document.rootVisualElement);
+            scoutingController = new DashboardScoutingController(document.rootVisualElement);
+            trainingController = new DashboardTrainingController(document.rootVisualElement);
+            financeView = new DashboardFinanceView(document.rootVisualElement.Q("dashboard-workspace"));
             BindClick("advance-time", AdvanceDay);
             SetupSaveLoadControls();
             DashboardSession.SaveChanged += Bind;
@@ -230,6 +236,16 @@ namespace PWManager.Presentation
             instance.RecordNavigation(new NavigationEntry(DashboardPage.WrestlerProfile, wrestlerId));
         }
         public static void ShowRosterShell() { if (instance == null) return; if (instance.navigationIndex > 0) instance.NavigateBack(); else instance.ShowPage(true); }
+        public static bool OpenChampionshipProfile(string titleId)
+        {
+            if (instance == null || instance.document == null || DashboardSession.IsShowRunning || instance.boundSave?.Championships.Any(t => t.Id == titleId) != true) return false;
+            WrestlerProfileController.CloseOpenProfile(false); instance.ShowChampionshipPage(titleId: titleId); return true;
+        }
+        public static bool OpenChampionshipGallery()
+        {
+            if (instance == null || instance.document == null || DashboardSession.IsShowRunning) return false;
+            WrestlerProfileController.CloseOpenProfile(false); instance.ShowChampionshipPage(); return true;
+        }
         public static int HomeBadgeCount
         {
             get
@@ -249,15 +265,18 @@ namespace PWManager.Presentation
             boundSave = save;
             if (save?.Promotion == null) { ShowEmpty(); return; }
             new InboxService().EnsureForCurrentDate(save);
-            var wrestlers = save.Wrestlers?.Where(x => x != null).ToList() ?? new List<WrestlerState>();
+            var wrestlers = save.Wrestlers?.Where(x => x != null && x.PromotionId == save.Promotion.Id).ToList() ?? new List<WrestlerState>();
             var active = wrestlers.Where(x => x.Roster?.ActivityState == RosterActivityState.Active).ToList();
             var transactions = save.Transactions?.Where(x => x != null && !x.IsVoided).ToList() ?? new List<TransactionRecord>();
             var cash = save.Promotion.CalculateCurrentCash(transactions);
             var seasonStart = save.SeasonPolicy?.StartDate ?? save.CurrentDate;
 
             Set("current-date", DashboardText.Date(save.CurrentDate)); Set("top-cash", DashboardText.Money(cash)); Set("cash-value", Compact(cash));
-            Set("cash-detail", $"시즌 순변동 {SignedMoney(transactions.Where(x => x.Date.CompareTo(seasonStart) >= 0).Sum(x => x.Amount))}");
+            var unpaidSalary = SalaryPaymentService.Outstanding(save);
+            Set("cash-detail", unpaidSalary > 0 ? $"미지급 급여 ${unpaidSalary:N0}" :
+                $"시즌 순변동 {SignedMoney(transactions.Where(x => x.Date.CompareTo(seasonStart) >= 0).Sum(x => x.Amount))}");
             Set("prestige-value", save.Promotion.PromotionPrestige.ToString("N0")); Set("promotion-name", save.Promotion.Name); Set("promotion-abbreviation", save.Promotion.GetDisplayAbbreviation());
+            PromotionQuarterView.Bind(document.rootVisualElement, save);
             Set("roster-value", active.Count.ToString()); Set("roster-detail", $"전체 {wrestlers.Count}명");
             var injuries = active.Count(x => x.Condition?.InjuryStatus != InjuryStatus.None);
             var conditionRisks = active.Count(x => x.Condition == null || x.Condition.Condition < 40f || x.Condition.Satisfaction < 30f);
@@ -272,15 +291,19 @@ namespace PWManager.Presentation
             BindNextShow(save, schedule, show);
             var tasks = BuildTasks(save, schedule, show, active);
             BindTasks(tasks); inboxController.Bind(save); BindFanReaction(); BindStories(save); BindResult(save); BindAdvanceButton(save);
-            Badge("home-badge", tasks.Count); Badge("message-badge", inboxController.UnreadCount); Badge("show-badge", save.Shows?.Count(x => x != null && x.Status != ShowStatus.Completed) ?? 0); Badge("report-badge", save.ShowResults?.Count ?? 0);
+            Badge("home-badge", tasks.Count); Badge("message-badge", inboxController.UnreadCount); Badge("show-badge", save.Shows?.Count(x => x != null && x.Status != ShowStatus.Completed && !save.IsCancelledShow(x)) ?? 0); Badge("report-badge", save.ShowResults?.Count ?? 0);
             var notifications = document.rootVisualElement.Q<Button>("notifications"); if (notifications != null) notifications.text = $"알림  {tasks.Count}";
             rosterController.Render(boundSave);
             scheduleController.Render(boundSave);
             facilitiesController.Render(boundSave);
+            scoutingController.Render(boundSave);
+            trainingController.Render(boundSave);
+            financeView.Render(boundSave);
+            ChampionshipManagementView.Refresh(document.rootVisualElement.Q("dashboard-workspace"));
             showPlanningController.Bind(boundSave, showTestMode);
             foreach (var button in document.rootVisualElement.Query<Button>().ToList().Where(x => x.name.StartsWith("nav-", StringComparison.Ordinal) || x.name == "notifications"))
                 button.SetEnabled(!DashboardSession.IsShowRunning);
-            foreach (var name in new[] { "message-content", "roster-content", "show-schedule-content", "show-planning-content", "facilities-content" })
+            foreach (var name in new[] { "message-content", "roster-content", "show-schedule-content", "show-planning-content", "facilities-content", "scouting-content", "training-content", "finance-content" })
                 document.rootVisualElement.Q(name)?.SetEnabled(!DashboardSession.IsShowRunning);
             UpdateNavigationButtons();
         }
@@ -417,21 +440,69 @@ namespace PWManager.Presentation
             if (facilities != null) facilities.style.display = DisplayStyle.Flex;
             foreach (var name in new[] { "nav-home", "nav-message", "nav-roster", "nav-show", "nav-staff" })
                 document.rootVisualElement.Q<Button>(name)?.EnableInClassList("active", name == "nav-staff");
-            Set("dashboard-page-title", "시설·스태프");
+            Set("dashboard-page-title", "스태프·경기장");
             facilitiesController.Render(boundSave);
             if (recordNavigation) RecordNavigation(new NavigationEntry(DashboardPage.Facilities));
         }
 
+        public static void ShowScoutingShell() => instance?.ShowScoutingPage();
+
+        private void ShowScoutingPage(bool recordNavigation = true)
+        {
+            HideStoryPage();
+            foreach (var name in new[] { "overview-content", "message-content", "roster-content", "wrestler-profile-content", "show-schedule-content", "show-planning-content", "facilities-content" })
+                document.rootVisualElement.Q(name).style.display = DisplayStyle.None;
+            document.rootVisualElement.Q("scouting-content").style.display = DisplayStyle.Flex;
+            foreach (var name in new[] { "nav-home", "nav-message", "nav-roster", "nav-show", "nav-staff", "nav-scout" })
+                document.rootVisualElement.Q<Button>(name)?.EnableInClassList("active", name == "nav-scout");
+            Set("dashboard-page-title", "스카우팅");
+            scoutingController.Render(boundSave);
+            if (recordNavigation) RecordNavigation(new NavigationEntry(DashboardPage.Scouting));
+        }
+
+        private void ShowTrainingPage(bool recordNavigation = true)
+        {
+            HideStoryPage();
+            foreach (var name in new[] { "overview-content", "message-content", "roster-content", "wrestler-profile-content", "show-schedule-content", "show-planning-content", "facilities-content", "scouting-content" })
+                document.rootVisualElement.Q(name).style.display = DisplayStyle.None;
+            document.rootVisualElement.Q("training-content").style.display = DisplayStyle.Flex;
+            foreach (var name in new[] { "nav-home", "nav-message", "nav-roster", "nav-show", "nav-staff", "nav-scout", "nav-training" })
+                document.rootVisualElement.Q<Button>(name)?.EnableInClassList("active", name == "nav-training");
+            Set("dashboard-page-title", "훈련"); trainingController.Render(boundSave);
+            if (recordNavigation) RecordNavigation(new NavigationEntry(DashboardPage.Training));
+        }
+
         private void HideStoryPage()
         {
+            financeView.Root.style.display = DisplayStyle.None;
+            document.rootVisualElement.Q<Button>("nav-finance")?.EnableInClassList("active", false);
+            document.rootVisualElement.Q("training-content").style.display = DisplayStyle.None;
+            document.rootVisualElement.Q<Button>("nav-training")?.EnableInClassList("active", false);
+            document.rootVisualElement.Q("scouting-content").style.display = DisplayStyle.None;
+            document.rootVisualElement.Q<Button>("nav-scout")?.EnableInClassList("active", false);
             document.rootVisualElement.Q("dashboard-workspace")?.Q("story-management")?.RemoveFromHierarchy();
+            document.rootVisualElement.Q("dashboard-workspace")?.Q("storyline-map")?.RemoveFromHierarchy();
+            document.rootVisualElement.Q("dashboard-workspace")?.Q("locker-room")?.RemoveFromHierarchy();
+            document.rootVisualElement.Q<Button>("nav-locker")?.EnableInClassList("active", false);
             document.rootVisualElement.Q("dashboard-workspace")?.Q("championship-management")?.RemoveFromHierarchy();
+            document.rootVisualElement.Q("dashboard-workspace")?.Q("championship-profile")?.RemoveFromHierarchy();
             document.rootVisualElement.Q<Button>("nav-title")?.EnableInClassList("active", false);
             document.rootVisualElement.Q<Button>("nav-story")?.EnableInClassList("active", false);
             document.rootVisualElement.Q<Button>("nav-teams")?.EnableInClassList("active", false);
         }
 
-        private void ShowStoryPage(bool groups, bool recordNavigation = true)
+        private void ShowFinancePage(bool recordNavigation = true)
+        {
+            HideStoryPage();
+            foreach (var name in new[] { "overview-content", "message-content", "roster-content", "wrestler-profile-content", "show-schedule-content", "show-planning-content", "facilities-content" })
+                document.rootVisualElement.Q(name).style.display = DisplayStyle.None;
+            foreach (var button in document.rootVisualElement.Query<Button>(className: "nav").ToList())
+                button.EnableInClassList("active", button.name == "nav-finance");
+            Set("dashboard-page-title", "재정"); financeView.Open(boundSave);
+            if (recordNavigation) RecordNavigation(new NavigationEntry(DashboardPage.Finance));
+        }
+
+        private void ShowStoryPage(bool groups, bool recordNavigation = true, bool management = false, bool locker = false)
         {
             HideStoryPage();
             foreach (var name in new[] { "overview-content", "message-content", "roster-content", "wrestler-profile-content", "show-schedule-content", "show-planning-content", "facilities-content" })
@@ -443,12 +514,19 @@ namespace PWManager.Presentation
                 document.rootVisualElement.Q<Button>(name)?.EnableInClassList("active", name == (groups ? "nav-teams" : "nav-story"));
             Set("dashboard-page-title", groups ? "로스터 / 태그팀·스테이블" : "쇼 / 스토리라인");
             var workspace = document.rootVisualElement.Q<VisualElement>("dashboard-workspace");
-            if (groups) StoryManagementView.OpenGroups(workspace);
-            else StoryManagementView.Open(workspace);
-            if (recordNavigation) RecordNavigation(new NavigationEntry(groups ? DashboardPage.Teams : DashboardPage.Story));
+            if (locker) { Set("dashboard-page-title", "로스터 / 라커룸"); LockerRoomView.Open(workspace); }
+            else if (groups) StoryManagementView.OpenGroups(workspace);
+            else if (management) StoryManagementView.Open(workspace, showMap: () => ShowStoryPage(false, management: false));
+            else StorylineMapView.Open(workspace, () => ShowStoryPage(false, management: true));
+            if (locker)
+            {
+                document.rootVisualElement.Q<Button>("nav-story")?.EnableInClassList("active", false);
+                document.rootVisualElement.Q<Button>("nav-locker")?.EnableInClassList("active", true);
+            }
+            if (recordNavigation) RecordNavigation(new NavigationEntry(locker ? DashboardPage.LockerRoom : groups ? DashboardPage.Teams : management ? DashboardPage.StoryManagement : DashboardPage.Story));
         }
 
-        private void ShowChampionshipPage(bool recordNavigation = true)
+        private void ShowChampionshipPage(bool recordNavigation = true, string titleId = null)
         {
             HideStoryPage();
             foreach (var name in new[] { "overview-content", "message-content", "roster-content", "wrestler-profile-content", "show-schedule-content", "show-planning-content", "facilities-content" })
@@ -458,9 +536,14 @@ namespace PWManager.Presentation
             }
             foreach (var name in new[] { "nav-home", "nav-message", "nav-roster", "nav-show", "nav-staff", "nav-story", "nav-teams", "nav-title" })
                 document.rootVisualElement.Q<Button>(name)?.EnableInClassList("active", name == "nav-title");
-            Set("dashboard-page-title", "챔피언십");
-            ChampionshipManagementView.Open(document.rootVisualElement.Q<VisualElement>("dashboard-workspace"));
-            if (recordNavigation) RecordNavigation(new NavigationEntry(DashboardPage.Championships));
+            var workspace = document.rootVisualElement.Q<VisualElement>("dashboard-workspace");
+            if (titleId == null) { Set("dashboard-page-title", "챔피언십"); ChampionshipManagementView.Open(workspace); }
+            else
+            {
+                Set("dashboard-page-title", boundSave.Championships.First(t => t.Id == titleId).Name);
+                ChampionshipManagementView.OpenProfile(workspace, titleId);
+            }
+            if (recordNavigation) RecordNavigation(new NavigationEntry(titleId == null ? DashboardPage.Championships : DashboardPage.ChampionshipProfile, titleId));
         }
 
         private void RecordNavigation(NavigationEntry entry)
@@ -521,9 +604,15 @@ namespace PWManager.Presentation
                     case DashboardPage.ShowSchedule: ShowSchedulePage(false); break;
                     case DashboardPage.ShowPlanning: ShowPlanningPage(entry.ContextId, false); break;
                     case DashboardPage.Facilities: ShowFacilitiesPage(false); break;
-                    case DashboardPage.Story: ShowStoryPage(false, false); break;
+                    case DashboardPage.Scouting: ShowScoutingPage(false); break;
+                    case DashboardPage.Training: ShowTrainingPage(false); break;
+                    case DashboardPage.Finance: ShowFinancePage(false); break;
+                    case DashboardPage.Story: ShowStoryPage(false, false, false); break;
+                    case DashboardPage.StoryManagement: ShowStoryPage(false, false, true); break;
                     case DashboardPage.Teams: ShowStoryPage(true, false); break;
+                    case DashboardPage.LockerRoom: ShowStoryPage(false, false, locker: true); break;
                     case DashboardPage.Championships: ShowChampionshipPage(false); break;
+                    case DashboardPage.ChampionshipProfile: ShowChampionshipPage(false, entry.ContextId); break;
                     case DashboardPage.WrestlerProfile:
                         {
                             var wrestler = boundSave?.Wrestlers?.FirstOrDefault(x => x?.Id == entry.ContextId);
@@ -573,9 +662,12 @@ namespace PWManager.Presentation
         private static List<TaskItem> BuildTasks(GameSave save, ScheduleState schedule, ShowState show, List<WrestlerState> wrestlers)
         {
             var items = new List<TaskItem>();
+            if (SeasonTransitionService.CanConfigure(save)) items.Add(new TaskItem("필수", "시즌 결산", "다음 시즌 설정"));
+            var unpaidSalary = SalaryPaymentService.Outstanding(save);
+            if (unpaidSalary > 0) items.Add(new TaskItem("긴급", "급여 연체", $"${unpaidSalary:N0} · 만족도 감소 중"));
             if (schedule != null && show == null) items.Add(new TaskItem("긴급", "다음 쇼 카드가 생성되지 않았습니다", "쇼 기획"));
             else if (show != null && string.IsNullOrEmpty(show.MainEventId)) items.Add(new TaskItem("긴급", "메인 이벤트가 지정되지 않았습니다", "쇼 기획"));
-            var contract = save.Contracts?.Where(x => x != null && (x.Status == ContractStatus.Active || x.Status == ContractStatus.Expiring))
+            var contract = save.OwnContracts?.Where(x => x != null && x.IsInForce)
                 .Select(x => new { Value = x, Days = save.CurrentDate.DaysUntil(x.EndDate) }).Where(x => x.Days >= 0 && x.Days <= 30).OrderBy(x => x.Days).FirstOrDefault();
             if (contract != null) { var wrestler = wrestlers.FirstOrDefault(x => x.Id == contract.Value.PersonId); items.Add(new TaskItem("높음", "계약 만료 임박", $"{contract.Days}일 남음", wrestler)); }
             var injured = wrestlers.FirstOrDefault(x => x.Condition?.InjuryStatus != InjuryStatus.None);
@@ -609,6 +701,7 @@ namespace PWManager.Presentation
                 _ => "편성을 확정하세요"
             };
             button.SetEnabled(save != null);
+            if (!showTestMode && SeasonTransitionService.CanConfigure(save)) button.text = "시즌 결산  ›";
             if (showTestMode) button.SetEnabled(show?.Status is ShowStatus.Confirmed or ShowStatus.InProgress or ShowStatus.ResultReview or ShowStatus.ResultsReviewed or ShowStatus.Completed);
         }
 
@@ -618,6 +711,11 @@ namespace PWManager.Presentation
             if (simulationPlayer != null)
             {
                 if (simulationPlayer.ViewingProfile) NavigateBack();
+                return;
+            }
+            if (!showTestMode && SeasonTransitionService.CanConfigure(boundSave))
+            {
+                SeasonTransitionView.Open(document.rootVisualElement);
                 return;
             }
             advancingShow = true;
@@ -658,6 +756,12 @@ namespace PWManager.Presentation
                             var result = boundSave.ShowResults.Single(x => x.ShowId == show.Id && x.ShowVersion == show.ShowVersion);
                             if (showTestMode) { OpenShowSimulation(result); return; }
                             new ShowResultApplicationService().Apply(boundSave, result.Id);
+                            DashboardSession.PersistActive();
+                            if (SeasonTransitionService.CanConfigure(boundSave))
+                            {
+                                SeasonTransitionView.Open(document.rootVisualElement);
+                                return;
+                            }
                             AdvanceOneDay();
                             break;
                         default:
@@ -694,8 +798,13 @@ namespace PWManager.Presentation
 
         private void AdvanceOneDay()
         {
-            var result = new TimeFlowService().AdvanceTo(boundSave, boundSave.CurrentDate.AddDays(1));
-            if (result.State == TimeFlowState.Blocked) throw new InvalidOperationException(result.BlockingReason);
+            var before = JsonUtility.ToJson(boundSave);
+            try
+            {
+                var result = new TimeFlowService(processScouting: DashboardScoutingController.ProcessDay).AdvanceTo(boundSave, boundSave.CurrentDate.AddDays(1));
+                if (result.State == TimeFlowState.Blocked) throw new InvalidOperationException(result.BlockingReason);
+            }
+            catch { JsonUtility.FromJsonOverwrite(before, boundSave); throw; }
         }
 
         private static ShowState TodaysShow(GameSave save)
@@ -753,16 +862,30 @@ namespace PWManager.Presentation
         private void BindResult(GameSave save)
         {
             var result = save.ShowResults?.LastOrDefault(x => x != null);
+            BindPrestigeBonus(document.rootVisualElement, save, result);
             if (result == null) { Set("result-name", "결과 데이터 없음"); Set("result-finance", "완료된 쇼 결과가 생성되면 표시됩니다"); SetResultEmpty(); return; }
             var show = save.Shows?.FirstOrDefault(x => x?.Id == result.ShowId);
             var matches = (save.MatchResults ?? new List<MatchResultState>()).Where(x => x != null && result.MatchResultIds.Contains(x.Id)).ToList();
-            Set("result-name", show?.Name ?? "완료된 쇼"); Set("result-finance", $"수익 {Compact(result.FinancialSettlement.Revenue)} · 비용 {Compact(result.FinancialSettlement.Cost)} · 순손익 {SignedMoney(result.FinancialSettlement.NetIncome)}");
+            var goods = (save.Merchandise?.Sales ?? new()).Where(x => x.Key == $"merch-show:{result.ShowId}:{result.ShowVersion}").ToList();
+            var appearanceCost = save.SalaryPayments.Where(x => x.ShowId == show?.Id).Sum(x => x.Amount);
+            Set("result-name", show?.Name ?? "완료된 쇼"); Set("result-finance", $"수익 {Compact(result.FinancialSettlement.Revenue + goods.Sum(x => x.Gross))} · 비용 {Compact(result.FinancialSettlement.Cost + appearanceCost + goods.Sum(x => x.Production + x.Selling + x.Royalty))} · 순손익 {SignedMoney(result.FinancialSettlement.NetIncome - appearanceCost + goods.Sum(x => x.Net))}");
             Set("show-score", Stars(result.ShowEvaluation.CriticReview)); Set("match-score", matches.Count == 0 ? "—" : Stars(matches.OrderByDescending(x => x.CriticReview?.FinalScore ?? 0f).First().CriticReview));
             Set("result-mania", result.FanSatisfaction?.IsCalculated == true ? $"{result.FanSatisfaction.Mania:0}" : "—");
             Set("result-light", result.FanSatisfaction?.IsCalculated == true ? $"{result.FanSatisfaction.Light:0}" : "—");
             Set("result-family", result.FanSatisfaction?.IsCalculated == true ? $"{result.FanSatisfaction.Family:0}" : "—");
             var change = result.WrestlerChanges?.Concat(result.StoryChanges ?? new List<ResultChangeState>()).FirstOrDefault(); Set("result-change", change == null ? "기록된 변화 없음" : $"{change.ValueKey} {Signed(change.Amount)} · {change.Reason}");
             BindShowSimulation(save, result);
+        }
+
+        private static void BindPrestigeBonus(VisualElement root, GameSave save, ShowResultState result)
+        {
+            var label = root.Q<Label>("result-prestige-bonus"); if (label == null) return;
+            var show = save.Shows.FirstOrDefault(x => x.Id == result?.ShowId);
+            var visible = result?.HasPrestigeSnapshot == true && result.PpvPrestigeBonus > 0 && show != null && !save.IsCancelledShow(show);
+            label.style.display = visible ? DisplayStyle.Flex : DisplayStyle.None;
+            if (!visible) { label.text = string.Empty; return; }
+            var paid = save.Promotion.AppliedPrestigeReasonIds.Contains(PromotionPrestigeRules.PpvReason(result.ShowId));
+            label.text = $"PPV 성공도 {result.PpvSuccessScore:0.#} · 단체 명성 +{result.PpvPrestigeBonus} · {(paid ? "분기 정산 완료" : "분기 정산 예정")}";
         }
 
         private void BindShowSimulation(GameSave save, ShowResultState result)
@@ -836,7 +959,7 @@ namespace PWManager.Presentation
         private void Set(string id, string value) { var label = document.rootVisualElement.Q<Label>(id); WrestlerNameText.Set(label, value, boundSave?.Wrestlers); }
         private void ApplyIcons()
         {
-            foreach (var name in new[] { "home", "message", "roster", "teams", "locker", "scout", "show", "story", "title", "tournament", "schedule", "staff", "company", "finance", "report", "world", "history", "settings" })
+            foreach (var name in new[] { "home", "message", "roster", "teams", "locker", "scout", "training", "show", "story", "title", "tournament", "schedule", "staff", "company", "finance", "report", "world", "history", "settings" })
             {
                 var icon = document.rootVisualElement.Q<VisualElement>($"icon-{name}");
                 if (icon == null) continue;
@@ -861,9 +984,13 @@ namespace PWManager.Presentation
             if (button.name == "nav-roster") { WrestlerProfileController.CloseOpenProfile(false); ShowPage(true); evt.StopPropagation(); return; }
             if (button.name == "nav-show") { WrestlerProfileController.CloseOpenProfile(false); ShowSchedulePage(); evt.StopPropagation(); return; }
             if (button.name == "nav-staff") { WrestlerProfileController.CloseOpenProfile(false); ShowFacilitiesPage(); evt.StopPropagation(); return; }
+            if (button.name == "nav-scout") { WrestlerProfileController.CloseOpenProfile(false); ShowScoutingPage(); evt.StopPropagation(); return; }
+            if (button.name == "nav-training") { WrestlerProfileController.CloseOpenProfile(false); ShowTrainingPage(); evt.StopPropagation(); return; }
             if (button.name == "nav-story") { WrestlerProfileController.CloseOpenProfile(false); ShowStoryPage(false); evt.StopPropagation(); return; }
+            if (button.name == "nav-locker") { WrestlerProfileController.CloseOpenProfile(false); ShowStoryPage(false, locker: true); evt.StopPropagation(); return; }
             if (button.name == "nav-teams") { WrestlerProfileController.CloseOpenProfile(false); ShowStoryPage(true); evt.StopPropagation(); return; }
             if (button.name == "nav-title") { WrestlerProfileController.CloseOpenProfile(false); ShowChampionshipPage(); evt.StopPropagation(); return; }
+            if (button.name == "nav-finance") { WrestlerProfileController.CloseOpenProfile(false); ShowFinancePage(); evt.StopPropagation(); return; }
             Debug.Log($"Dashboard action selected: {button.name}");
         }
         private void BlockShowInteraction(EventBase evt)
@@ -872,13 +999,13 @@ namespace PWManager.Presentation
             var target = evt.target as VisualElement;
             var button = target as Button ?? target?.GetFirstAncestorOfType<Button>();
             if (button == null) return;
-            if (button.name is "advance-time" or "show-simulation" or "dashboard-back" or "wrestler-profile-back" or "wp-open-overview" or "wp-open-relationships") return;
+            if (button.name is "advance-time" or "show-simulation" or "dashboard-back" or "wrestler-profile-back" or "wp-open-overview" or "wp-open-relationships" or "wp-open-growth" or "wp-open-career" or "wp-open-report" or "season-close" or "prestige-open-quarter") return;
             if (button.ClassListContains("wrestler-link") || button.ClassListContains("wrestler-portrait-link") || button.ClassListContains("wrestler-portrait-name-link")) return;
             for (var parent = button.parent; parent != null; parent = parent.parent)
-                if (parent.name == "simulation-screen") return;
+                if (parent.name is "simulation-screen" or "growth-history-overlay" or "career-history-overlay" or "wrestler-report-overlay" or "quarter-prestige-overlay" || parent.name == "season-transition-overlay" && SeasonTransitionService.CanConfigure(DashboardSession.ActiveSave)) return;
             evt.StopImmediatePropagation();
         }
-        private enum DashboardPage { Home, Messages, Roster, WrestlerProfile, ShowSchedule, ShowPlanning, Facilities, Story, Teams, Championships }
+        private enum DashboardPage { Home, Messages, Roster, WrestlerProfile, ShowSchedule, ShowPlanning, Facilities, Story, Teams, Championships, Scouting, Training, StoryManagement, ChampionshipProfile, Finance, LockerRoom }
         private sealed class NavigationEntry
         {
             public readonly DashboardPage Page;

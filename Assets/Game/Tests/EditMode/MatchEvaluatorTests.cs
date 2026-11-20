@@ -10,6 +10,20 @@ namespace PWManager.Tests
     public sealed class MatchEvaluatorTests
     {
         [Test]
+        public void GrowthSnapshot_UsesConfiguredStyleBonusAndSurvivesStyleChange()
+        {
+            var save = CreateSave("matchtype_001", 14, 12);
+            var content = new PWManager.Data.Loading.StaticContentRegistry(UnityEngine.Resources.Load<PWManager.Data.Catalogs.StaticContentCatalog>("PWManagerRuntime/GameStaticContentCatalog"));
+            foreach (var w in save.Wrestlers) w.Presentation.WrestlingStyleId = "style_001";
+            var result = new MatchEvaluator(new Rules(), content).EvaluateTechnical(save, "event", 0, 41);
+            save.Wrestlers[0].Presentation.WrestlingStyleId = "style_004";
+            var restored = UnityEngine.JsonUtility.FromJson<MatchResultState>(UnityEngine.JsonUtility.ToJson(result));
+            Assert.That(restored.WrestlerPerformances[0].WrestlingStyleId, Is.EqualTo("style_001"));
+            Assert.That(restored.WrestlerPerformances[0].BrawlingGrowthBonus, Is.EqualTo(content.Styles["style_001"].BrawlingGrowthBonus));
+            Assert.That(restored.WrestlerPerformances[0].BrawlingGrowthBonus, Is.Positive);
+        }
+
+        [Test]
         public void EvaluateTechnical_UsesConfirmedFormulaAndPreservesBookingResult()
         {
             var save = CreateSave("matchtype_001", 20f, 20f);
@@ -221,19 +235,20 @@ namespace PWManager.Tests
             Assert.That(result.EngineState.IsFinished, Is.True);
         }
 
-        [TestCase(null, .5f)]
-        [TestCase("trait_012", .25f)]
-        [TestCase("trait_013", 1f)]
-        public void EvaluateTechnical_PerWrestlerVariance_UsesTraitRange(string traitId, float expectedRange)
+        [TestCase(10, .5f)]
+        [TestCase(20, .25f)]
+        [TestCase(1, 1f)]
+        public void EvaluateTechnical_PerWrestlerVariance_UsesHiddenConsistency(int consistency, float expectedRange)
         {
             var save = CreateSave("matchtype_001", 10f, 10f);
-            if (traitId != null) save.Wrestlers[0].Presentation.TraitIds.Add(traitId);
+            save.Wrestlers[0].Hidden = new WrestlerHiddenState { Consistency = consistency, InjuryProneness = 20 };
             save.ShowEvents[0].PlannedDuration = 20;
             var evaluator = new MatchEvaluator(new Rules(), new Rules());
 
             var result = evaluator.EvaluateTechnical(save, "event", 0f, 123);
 
             Assert.That(Math.Abs(result.WrestlerPerformances[0].PerformanceVariance), Is.LessThanOrEqualTo(expectedRange));
+            Assert.That(result.EngineState.Participants.Single(x => x.Id == save.Wrestlers[0].Id).InjuryProneness, Is.EqualTo(20));
             Assert.That(result.ActualMatchDuration, Is.EqualTo((int)Math.Ceiling(result.EngineState.ElapsedSeconds / 60d)));
             Assert.That(result.TechnicalEvaluation.RandomVariance, Is.Zero);
         }

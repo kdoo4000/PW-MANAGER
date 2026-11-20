@@ -160,6 +160,14 @@ namespace PWManager.Domain.Services
             if (used != show.DurationLimit)
                 Error(issues, "show.duration-total", $"Planned duration {used} must equal limit {show.DurationLimit}.", show.Id);
             AddAppearanceWarnings(save, show, events.Values, issues);
+            foreach (var showEvent in events.Values.Where(x => x.EventType == ShowEventType.Match))
+            {
+                var plan = save.MatchPlans.FirstOrDefault(x => x.Id == showEvent.DetailId);
+                if (plan == null) continue;
+                foreach (var id in MatchParticipants(plan).Where(id => WrestlerCareerService.HasMomentumRisk(save, show, plan, id)))
+                    issues.Add(new ShowValidationIssue { Severity = ShowValidationSeverity.Warning, Code = "momentum.collapse-risk", EntityId = id,
+                        Message = "이번 기회에서 성과를 내지 못하면 팬들의 기대가 무너질 수 있습니다." });
+            }
             return issues;
         }
 
@@ -303,15 +311,19 @@ namespace PWManager.Domain.Services
                 Error(issues, "story.participants", "A linked event must include both storyline wrestlers.", entityId);
         }
 
+        public static bool IsOnRosterForShow(GameSave save, WrestlerState wrestler, GameDate date) => wrestler?.Roster != null &&
+            (wrestler.Roster.ActivityState == RosterActivityState.Active ||
+                wrestler.Roster.ActivityState is RosterActivityState.Inactive or RosterActivityState.Released &&
+                save.OwnContracts.Any(x => x.PersonId == wrestler.Id && x.Type == ContractType.Wrestler && x.Status == ContractStatus.Scheduled && x.Covers(date)));
+
         private static void ValidateParticipant(GameSave save, ShowState show, string participantId, bool match, List<ShowValidationIssue> issues, string entityId)
         {
             var wrestler = save.Wrestlers.SingleOrDefault(x => x?.Id == participantId);
             if (wrestler == null) { Error(issues, "participant.missing", "Participant wrestler was not found.", entityId); return; }
-            var contracted = save.Contracts.Any(x => x != null && x.PersonId == participantId &&
-                (x.Status is ContractStatus.Active or ContractStatus.Expiring) &&
-                x.StartDate.CompareTo(show.Date) <= 0 && x.EndDate.CompareTo(show.Date) >= 0);
+            var contracted = save.OwnContracts.Any(x => x != null && x.PersonId == participantId &&
+                x.Covers(show.Date));
             if (!contracted) Error(issues, "participant.contract", "Participant does not have an active contract on the show date.", entityId);
-            if (wrestler.Roster.ActivityState != RosterActivityState.Active)
+            if (!IsOnRosterForShow(save, wrestler, show.Date))
                 Error(issues, "participant.roster", "Participant is not on the active roster.", entityId);
             if (wrestler.Condition.Availability == WrestlerAvailability.Unavailable || match && wrestler.Condition.Availability == WrestlerAvailability.MatchUnavailable)
                 Error(issues, "participant.availability", "Participant is unavailable for this event.", entityId);

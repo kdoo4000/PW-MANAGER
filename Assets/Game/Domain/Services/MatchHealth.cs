@@ -66,6 +66,9 @@ namespace PWManager.Domain.Services
             if (!e.PhysicalExecutionFailed && !contactFault && !risky) return;
             var victim = e.PhysicalExecutionFailed && aerial ? a : contactFault || risky && !e.PhysicalExecutionFailed ? b : a;
             var probability = (e.PhysicalExecutionFailed || contactFault ? .01 : .0001) * (1 + victim.Fatigue / 100);
+            probability *= WrestlerHiddenRules.InjuryRiskMultiplier(victim.InjuryProneness);
+            if (victim == b) probability *= WrestlerHiddenRules.OpponentProtectionMultiplier(a.Collegiality);
+            if (victim.RealInjury != InjuryStatus.None) probability *= state.Rules.InjuryAggravationMultiplier;
             if (random.NextDouble() >= probability) return;
             var roll = random.NextDouble();
             var severity = roll < .8 ? InjuryStatus.Minor : roll < .98 ? InjuryStatus.Moderate : InjuryStatus.Severe;
@@ -172,15 +175,24 @@ namespace PWManager.Domain.Services
                         StartDate = date, ReturnDate = new OptionalGameDate(until), Absent = change.Absent, SourceResultId = result.Id };
                     continue;
                 }
-                var health = wrestler.Condition;
-                if (!health.InjuryControlsAvailability)
-                { health.AvailabilityBeforeInjury = health.Availability; health.InjuryControlsAvailability = true; }
-                if (change.Severity > health.InjuryStatus) { health.InjuryStatus = change.Severity; health.InjuryRegion = change.Region; }
-                if (!health.RecoveryDate.HasValue || health.RecoveryDate.Value.CompareTo(until) < 0) health.RecoveryDate = new OptionalGameDate(until);
-                var availability = health.InjuryStatus switch { InjuryStatus.Minor => WrestlerAvailability.Limited,
-                    InjuryStatus.Moderate => WrestlerAvailability.MatchUnavailable, _ => WrestlerAvailability.Unavailable };
-                health.Availability = (WrestlerAvailability)Math.Max((int)health.Availability, (int)availability);
+                var recovery = Math.Max(1, (int)Math.Ceiling(change.RecoveryDays * StaffTeamEffects.For(save, StaffDepartmentType.Medical).Recovery));
+                ApplyActualInjury(wrestler, change.Severity, change.Region, date, recovery);
             }
+        }
+
+        public static void ApplyActualInjury(WrestlerState wrestler, InjuryStatus severity, BodyRegion region, GameDate date, int recoveryDays)
+        {
+            if (wrestler == null || !Enum.IsDefined(typeof(InjuryStatus), severity) || severity == InjuryStatus.None ||
+                !Enum.IsDefined(typeof(BodyRegion), region) || recoveryDays < 1 || recoveryDays > 365)
+                throw new InvalidOperationException("실제 부상 상태가 올바르지 않습니다.");
+            var until = date.AddDays(recoveryDays); var health = wrestler.Condition;
+            if (!health.InjuryControlsAvailability)
+            { health.AvailabilityBeforeInjury = health.Availability; health.InjuryControlsAvailability = true; }
+            if (severity > health.InjuryStatus) { health.InjuryStatus = severity; health.InjuryRegion = region; }
+            if (!health.RecoveryDate.HasValue || health.RecoveryDate.Value.CompareTo(until) < 0) health.RecoveryDate = new OptionalGameDate(until);
+            var availability = health.InjuryStatus switch { InjuryStatus.Minor => WrestlerAvailability.Limited,
+                InjuryStatus.Moderate => WrestlerAvailability.MatchUnavailable, _ => WrestlerAvailability.Unavailable };
+            health.Availability = (WrestlerAvailability)Math.Max((int)health.Availability, (int)availability);
         }
 
         public static void Recover(WrestlerState wrestler, GameDate date)

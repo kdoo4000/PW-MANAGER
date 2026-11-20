@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -43,9 +43,13 @@ namespace PWManager.Domain.Services
             var incident = StorylineService.PromoIncident(plan);
             if (incident != StoryIncident.None && !string.IsNullOrEmpty(plan.IncidentTargetId))
                 AddBeat(context, "relationship", $"행동 선수 ID: {plan.IncidentActorId ?? plan.ParticipantIds.FirstOrDefault()}; 대상 ID: {plan.IncidentTargetId}; 확정 사건: {incident}");
-            var story = save.Storylines?.FirstOrDefault(x => x.Id == plan.StorylineId);
-            if (story != null && !string.IsNullOrWhiteSpace(story.Context))
-                context.RecentEvents.Add(new ResultChangeState { ValueKey = "스토리 맥락", Reason = story.Context });
+            var story = StorylineHistory.FindActive(save, plan.ParticipantIds.Concat(plan.TargetIds ?? new()), plan.StorylineId);
+            var involved = plan.ParticipantIds.Concat(plan.TargetIds ?? new()).Distinct().ToList();
+            if (involved.Count == 2)
+                foreach (var beat in StorylineHistory.ForPairBefore(save, involved[0], involved[1], result.Id).TakeLast(5))
+                    context.RecentEvents.Add(new ResultChangeState { ValueKey = "관계 이력", Reason = StorylineHistory.Describe(save, beat) });
+            if (story != null && StorylineHistory.ForStory(save, story).Count > 0)
+                context.RecentEvents.Add(new ResultChangeState { ValueKey = "대립의 시작", Reason = StorylineHistory.Origin(save, story) });
             return context;
         }
 

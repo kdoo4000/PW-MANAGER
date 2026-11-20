@@ -30,7 +30,6 @@ namespace PWManager.Presentation
         private readonly List<string> editorFinishPerformers = new();
         private readonly List<string> editorFinishLosers = new();
         private MatchSpotEditor matchSpotEditor;
-        private List<StorylineState> editorStories = new();
         private List<string> editorStoryParticipants = new();
         private ShowEditorMode showEditorMode;
         private ShowEditSection showEditSection;
@@ -79,6 +78,7 @@ namespace PWManager.Presentation
             sort.choices = new List<string> { "이름", "경기력", "프로모", "모멘텀", "컨디션", "만족도" };
             sort.SetValueWithoutNotify(sort.choices[0]);
             sort.RegisterValueChangedCallback(_ => RenderShowEditorRoster(NextPlanningShow()));
+            root.Q<DropdownField>("show-editor-primary").RegisterValueChangedCallback(_ => RefreshSponsorVisibility());
             BindClick("show-editor-roster-sort-direction", () =>
             {
                 editorRosterAscending = !editorRosterAscending;
@@ -87,6 +87,7 @@ namespace PWManager.Presentation
             });
             root.Q<DropdownField>("show-editor-finish-type").RegisterValueChangedCallback(_ => RefreshFinishParticipants());
             root.Q<DropdownField>("show-editor-winning-side").RegisterValueChangedCallback(_ => RefreshFinishParticipants());
+            root.Q<DropdownField>("show-editor-loser").RegisterValueChangedCallback(_ => RenderEditorMomentumRisk());
         }
 
         private void RenderShowPlanning()
@@ -123,7 +124,7 @@ namespace PWManager.Presentation
 
             Set("show-plan-name", string.IsNullOrWhiteSpace(show.Name) ? DashboardText.ShowName(show.ShowType) : show.Name);
             Set("show-plan-meta", $"{DashboardText.Date(show.Date)} · {DashboardText.ShowType(show.ShowType)} · {VenueName(show)}" + (showTestMode ? string.Empty : $" · 제한 시간 {show.DurationLimit}분"));
-            Set("show-plan-status", DashboardText.ShowStatus(show.Status)); Set("show-plan-cost", DashboardText.Money(show.EstimatedCost));
+            Set("show-plan-status", DashboardText.ShowStatus(show.Status)); Set("show-plan-cost", DashboardText.Money(show.EstimatedCost + SalaryPaymentService.EstimateAppearanceFees(save, show)));
             Set("show-event-count", $"{ordered.Count}개 세그먼트");
 
             for (var index = 0; index < ordered.Count; index++)
@@ -323,8 +324,39 @@ namespace PWManager.Presentation
             ConfigureShowEditorSection();
         }
 
+        private void ConfigureSponsorField()
+        {
+            root.Q("show-editor-sponsor")?.RemoveFromHierarchy();
+            var fields = root.Q(className: "show-editor-fields");
+            if (fields == null || showEditorMode != ShowEditorMode.Promo) return;
+            var show = NextPlanningShow();
+            var offers = (save.SponsorSeasons ?? new()).Where(x => x.SelectionConfirmed && show.Date.CompareTo(x.StartDate) >= 0 && show.Date.CompareTo(x.EndDate) <= 0)
+                .SelectMany(x => x.Offers).Where(x => x.Selected).ToList();
+            if (offers.Count == 0) return;
+            var showEvent = save.ShowEvents.FirstOrDefault(x => x.Id == editingShowEventId);
+            var current = save.PromoPlans.FirstOrDefault(x => x.Id == showEvent?.DetailId)?.SponsorRequirementId;
+            var field = new DropdownField("스폰서", offers.Select(x => x.CompanyName).ToList(), Math.Max(0, offers.FindIndex(x => x.Id == current)))
+                { name = "show-editor-sponsor", userData = offers };
+            field.AddToClassList("show-editor-field"); fields.Add(field);
+            RefreshSponsorVisibility();
+        }
+
+        private void RefreshSponsorVisibility()
+        {
+            var field = root.Q("show-editor-sponsor");
+            if (field != null) field.style.display = showEditorMode == ShowEditorMode.Promo && root.Q<DropdownField>("show-editor-primary").index == (int)PromoPurpose.SponsorAdvertisement ? DisplayStyle.Flex : DisplayStyle.None;
+        }
+
+        private string SelectedSponsorRequirement()
+        {
+            var field = root.Q<DropdownField>("show-editor-sponsor");
+            if (field?.userData is List<SponsorOfferState> offers && field.index >= 0 && field.index < offers.Count) return offers[field.index].Id;
+            return "sponsor_requirement_runtime";
+        }
+
         private void ConfigureShowEditorSection()
         {
+            ConfigureSponsorField();
             var fields = root.Q<VisualElement>(className: "show-editor-fields");
             var rosterHeading = root.Q<VisualElement>(className: "show-editor-roster-heading");
             var rosterScroll = root.Q<ScrollView>(className: "show-editor-roster-scroll");
@@ -528,6 +560,25 @@ namespace PWManager.Presentation
             winner.SetEnabled(!draw && editorFinishSides.Count > 1);
             root.Q("show-editor-finish-performer").SetEnabled(!draw && editorFinishPerformers.Count > 0);
             root.Q("show-editor-loser").SetEnabled(!draw && editorFinishLosers.Count > 0);
+            RenderEditorMomentumRisk();
+        }
+
+        private void RenderEditorMomentumRisk()
+        {
+            var show = NextPlanningShow();
+            var detailId = save?.ShowEvents.FirstOrDefault(x => x.Id == editingShowEventId)?.DetailId;
+            var source = save?.MatchPlans.FirstOrDefault(x => x.Id == detailId);
+            MatchPlanState preview = null;
+            var finish = root.Q<DropdownField>("show-editor-finish-type").index;
+            if (source != null && finish >= 0 && finish < editorFinishTypes.Count)
+            {
+                var side = root.Q<DropdownField>("show-editor-winning-side").index - 1;
+                var loser = root.Q<DropdownField>("show-editor-loser").index;
+                preview = new MatchPlanState { Id = source.Id, ChampionshipId = source.ChampionshipId, Sides = editorFinishSides,
+                    FinishType = editorFinishTypes[finish], WinningSideId = side >= 0 && side < editorFinishSides.Count ? editorFinishSides[side].Id : null,
+                    LoserTargetId = loser >= 0 && loser < editorFinishLosers.Count ? editorFinishLosers[loser] : null };
+            }
+            WrestlerCareerView.RenderRisks(root.Q("show-editor-momentum-risks"), save, show, preview);
         }
 
         private void SaveProduction(MatchPlanState match)
@@ -572,8 +623,8 @@ namespace PWManager.Presentation
             var sortIndex = root.Q<DropdownField>("show-editor-roster-sort").index;
             var sortKey = new[] { "name", "match", "promo", "momentum", "condition", "satisfaction" }[Math.Max(0, sortIndex)];
             var wrestlers = (save.Wrestlers ?? new List<WrestlerState>()).Where(x => x != null &&
-                x.Roster?.ActivityState == RosterActivityState.Active && save.Contracts.Any(c => c != null && c.PersonId == x.Id &&
-                (c.Status == ContractStatus.Active || c.Status == ContractStatus.Expiring) && c.StartDate.CompareTo(show.Date) <= 0 && c.EndDate.CompareTo(show.Date) >= 0));
+                ShowPlanningService.IsOnRosterForShow(save, x, show.Date) && save.OwnContracts.Any(c => c != null && c.PersonId == x.Id &&
+                c.Covers(show.Date)));
             var ordered = (editorRosterAscending ? wrestlers.OrderBy(SortSelector(sortKey)) : wrestlers.OrderByDescending(SortSelector(sortKey))).ThenBy(WrestlerNameText.DisplayName);
             foreach (var wrestler in ordered)
             {
@@ -839,7 +890,7 @@ namespace PWManager.Presentation
                     var plan = new PromoPlanState
                     {
                         Purpose = purpose, Presentation = (PromoPresentation)Math.Max(0, secondary.index),
-                        ParticipantIds = editorParticipantIds.ToList(), SponsorRequirementId = purpose == PromoPurpose.SponsorAdvertisement ? "sponsor_requirement_runtime" : null
+                        ParticipantIds = editorParticipantIds.ToList(), SponsorRequirementId = purpose == PromoPurpose.SponsorAdvertisement ? SelectedSponsorRequirement() : null
                     };
                     if (string.IsNullOrEmpty(editingShowEventId))
                     {
@@ -955,7 +1006,7 @@ namespace PWManager.Presentation
                     }
                     promo.Purpose = purpose;
                     promo.Presentation = (PromoPresentation)Math.Max(0, secondary.index);
-                    promo.SponsorRequirementId = promo.Purpose == PromoPurpose.SponsorAdvertisement ? "sponsor_requirement_runtime" : null;
+                    promo.SponsorRequirementId = promo.Purpose == PromoPurpose.SponsorAdvertisement ? SelectedSponsorRequirement() : null;
                     showPlanningService.SetEventDuration(save, show.Id, showEvent.Id, duration);
                 }
                 else if (showEditSection == ShowEditSection.Participants)
@@ -991,38 +1042,15 @@ namespace PWManager.Presentation
             var promo = showEvent.EventType == ShowEventType.Promo ? save.PromoPlans.First(x => x.Id == showEvent.DetailId) : null;
             editorStoryParticipants = (match != null ? match.Sides.SelectMany(x => x.MemberIds) :
                 promo.ParticipantIds.Concat(promo.TargetIds ?? new())).Distinct().ToList();
-            editorStories = (save.Storylines ?? new()).Where(x => x.Status == StorylineStatus.Active &&
-                StorylineService.IncludesBothParties(save, x, editorStoryParticipants)).ToList();
-            var linkedId = match?.StorylineId ?? promo?.StorylineId;
-            var linked = editorStories.FirstOrDefault(x => x.Id == linkedId);
             var panel = new VisualElement { name = "story-controls" };
             panel.style.flexShrink = 0;
             if (match != null)
             {
                 var titles = (save.Championships ?? new()).Where(x => x.PromotionId == save.Promotion.Id).ToList();
-                var titleChoices = new List<string> { "일반 경기" }; titleChoices.AddRange(titles.Select(x => x.Name));
+                var titleChoices = new List<string> { "일반 경기" }; titleChoices.AddRange(titles.Select(x => $"{x.Name} · {ChampionshipProfileView.DivisionText(x.Division)}"));
                 panel.Add(new DropdownField("챔피언십", titleChoices, titles.FindIndex(x => x.Id == match.ChampionshipId) + 1)
                     { name = "match-championship", userData = titles });
             }
-            var choices = new List<string> { "연결 없음", "새 스토리" };
-            choices.AddRange(editorStories.Select((x, index) => $"{index + 1}. {x.Name}"));
-            var selection = new DropdownField("스토리", choices, linked == null ? 0 : editorStories.IndexOf(linked) + 2) { name = "story-selection" };
-            var name = new TextField("스토리 이름") { name = "story-name", value = linked?.Name ?? "" };
-            var context = new TextField("스토리 맥락") { name = "story-context", value = linked?.Context ?? "", multiline = true };
-            var action = new DropdownField("전개", new List<string> { "진행", "종료" },
-                (match?.StoryAction ?? promo.StoryAction) == StoryAction.End ? 1 : 0) { name = "story-action" };
-            panel.Add(selection); panel.Add(name); panel.Add(context); panel.Add(action);
-            void Refresh()
-            {
-                name.style.display = selection.index == 1 ? DisplayStyle.Flex : DisplayStyle.None;
-                context.SetEnabled(selection.index > 0); action.SetEnabled(selection.index > 0);
-            }
-            selection.RegisterValueChangedCallback(_ =>
-            {
-                context.value = selection.index >= 2 ? editorStories[selection.index - 2].Context ?? "" : "";
-                Refresh();
-            });
-            Refresh();
             if (promo != null)
             {
                 if (promo.Purpose == PromoPurpose.TeamFormation)
@@ -1068,19 +1096,19 @@ namespace PWManager.Presentation
 
         private (string Id, StoryAction Action) ReadStoryControls()
         {
-            var index = root.Q<DropdownField>("story-selection").index;
-            if (index <= 0) return (null, StoryAction.None);
-            StorylineState story;
-            if (index == 1)
+            // Preserve legacy links while new cards resolve their stories from executed history.
+            var showEvent = save.ShowEvents.FirstOrDefault(x => x.Id == editingShowEventId);
+            if (showEvent?.EventType == ShowEventType.Match)
             {
-                if (editorStoryParticipants.Count != 2)
-                    throw new InvalidOperationException("새 스토리는 두 선수가 출연하는 경기 또는 프로모에서 시작하세요.");
-                story = new StorylineService().Create(save, root.Q<TextField>("story-name").value,
-                    editorStoryParticipants[0], editorStoryParticipants[1]);
+                var plan = save.MatchPlans.First(x => x.Id == showEvent.DetailId);
+                return (plan.StorylineId, plan.StoryAction);
             }
-            else story = editorStories[index - 2];
-            story.Context = root.Q<TextField>("story-context").value;
-            return (story.Id, root.Q<DropdownField>("story-action").index == 1 ? StoryAction.End : StoryAction.Progress);
+            if (showEvent?.EventType == ShowEventType.Promo)
+            {
+                var plan = save.PromoPlans.First(x => x.Id == showEvent.DetailId);
+                return (plan.StorylineId, plan.StoryAction);
+            }
+            return (null, StoryAction.None);
         }
 
         private void SaveSpots(MatchPlanState plan)
@@ -1254,6 +1282,7 @@ namespace PWManager.Presentation
             Set("show-detail-spots-summary", ShowSpotSummary(showEvent));
             if (isPromo) RenderPromoCast(host, showEvent, editable);
             else RenderMatchup(host, showEvent, editable);
+            WrestlerCareerView.RenderRisks(root.Q("show-momentum-risks"), save, show, isPromo ? null : save.MatchPlans.FirstOrDefault(x => x.Id == showEvent.DetailId));
             if (host.childCount == 0) { var empty = new Label("배정된 선수가 없습니다"); empty.AddToClassList("show-panel-caption"); host.Add(empty); }
             var index = ordered.IndexOf(showEvent);
             var position = show.MainEventId == showEvent.Id ? "메인" : show.OpeningEventId == showEvent.Id ? "오프닝" : $"{index + 1}번째 세그먼트";
@@ -1532,7 +1561,7 @@ namespace PWManager.Presentation
             "condition" => x => x.Condition?.Condition ?? 100f, "satisfaction" => x => x.Condition?.Satisfaction ?? 0,
             "salary" => x => Salary(x), _ => x => WrestlerNameText.DisplayName(x)
         };
-        private long Salary(WrestlerState wrestler) => save?.Contracts?.FirstOrDefault(x => x != null && x.PersonId == wrestler.Id && (x.Status == ContractStatus.Active || x.Status == ContractStatus.Expiring))?.MonthlySalary ?? 0;
+        private long Salary(WrestlerState wrestler) => save?.OwnContracts?.FirstOrDefault(x => x != null && x.PersonId == wrestler.Id && x.IsInForce)?.MonthlySalary ?? 0;
         private int Age(WrestlerState wrestler) => wrestler.Identity.BirthDate.AgeOn(save?.CurrentDate ?? default);
         private static string StyleText(string id) => id switch { "style_001" => "브롤러", "style_002" => "파워하우스", "style_003" => "테크니션", "style_004" => "하이플라이어", "style_005" => "루차 리브레", "style_006" => "자이언트", _ => "올라운더" };
         private static string GradeClass(string grade) => grade switch { "SS" => "grade-ss", "S+" => "grade-sp", "S" => "grade-s", "A+" => "grade-ap", "A" => "grade-a", "B+" => "grade-bp", "B" => "grade-b", "C+" => "grade-cp", "C" => "grade-c", "D+" => "grade-dp", "D" => "grade-d", "E+" => "grade-ep", "E" => "grade-e", "F+" => "grade-fp", "F" => "grade-f", "G+" => "grade-gp", _ => "grade-g" };

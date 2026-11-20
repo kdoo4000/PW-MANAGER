@@ -98,17 +98,21 @@ namespace PWManager.Presentation
                 var points = new[] { new Vector2(leftTop, 0f), new Vector2(width, 0f), new Vector2(rightBottom, height), new Vector2(0f, height) };
                 var photoLeft = 0f;
                 var photoWidth = width;
+                var photoTop = 0f; var photoHeight = height;
                 if (portraits.Count > 1)
                 {
-                    var aspect = (float)portrait.width / portrait.height;
-                    photoWidth = Mathf.Max(height * aspect, width / portraits.Count * 1.2f);
-                    photoLeft = width * (index + .5f) / portraits.Count - photoWidth * .5f;
-                    points[0].x = Mathf.Clamp(photoLeft, leftTop, width);
-                    points[1].x = Mathf.Clamp(photoLeft + photoWidth, leftTop, width);
-                    points[2].x = Mathf.Clamp(photoLeft + photoWidth, 0f, rightBottom);
-                    points[3].x = Mathf.Clamp(photoLeft, 0f, rightBottom);
-                    var v = height * aspect / photoWidth;
-                    uv = new Rect(0f, 1f - v, 1f, v);
+                    var placement = GroupPortraitView.MemberBounds(width, height, index, portraits.Count);
+                    photoWidth = placement.width;
+                    photoLeft = placement.x;
+                    photoTop = placement.y; photoHeight = placement.height;
+                    var top = Mathf.Max(0, photoTop); var bottom = Mathf.Min(height, photoTop + photoHeight);
+                    var topLeft = isFirst ? 0 : inset * (1 - top / height); var topRight = isLast ? width : width - inset * top / height;
+                    var bottomLeft = isFirst ? 0 : inset * (1 - bottom / height); var bottomRight = isLast ? width : width - inset * bottom / height;
+                    points[0] = new Vector2(Mathf.Clamp(photoLeft, topLeft, topRight), top);
+                    points[1] = new Vector2(Mathf.Clamp(photoLeft + photoWidth, topLeft, topRight), top);
+                    points[2] = new Vector2(Mathf.Clamp(photoLeft + photoWidth, bottomLeft, bottomRight), bottom);
+                    points[3] = new Vector2(Mathf.Clamp(photoLeft, bottomLeft, bottomRight), bottom);
+                    uv = new Rect(0, 0, 1, 1);
                 }
                 var mesh = context.Allocate(4, 6, portrait);
                 foreach (var point in points)
@@ -116,7 +120,7 @@ namespace PWManager.Presentation
                     {
                         position = new Vector3(point.x, point.y, Vertex.nearZ),
                         tint = Color.white,
-                        uv = new Vector2(uv.x + (point.x - photoLeft) / photoWidth * uv.width, uv.yMax - point.y / height * uv.height)
+                        uv = new Vector2(uv.x + (point.x - photoLeft) / photoWidth * uv.width, uv.yMax - (point.y - photoTop) / photoHeight * uv.height)
                     });
                 mesh.SetNextIndex(0); mesh.SetNextIndex(1); mesh.SetNextIndex(2);
                 mesh.SetNextIndex(2); mesh.SetNextIndex(3); mesh.SetNextIndex(0);

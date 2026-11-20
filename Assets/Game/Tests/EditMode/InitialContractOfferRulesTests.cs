@@ -17,9 +17,10 @@ namespace PWManager.Tests
 
             Assert.That(rookieOffer.MonthlySalary, Is.GreaterThan(0));
             Assert.That(veteranOffer.MonthlySalary, Is.GreaterThan(rookieOffer.MonthlySalary));
-            Assert.That(rookieOffer.SigningBonus, Is.EqualTo(rookieOffer.MonthlySalary * 2));
-            Assert.That(veteranOffer.SigningBonus, Is.EqualTo(veteranOffer.MonthlySalary * 3));
-            Assert.That(veteranOffer.TerminationCost, Is.EqualTo(veteranOffer.MonthlySalary * 4));
+            Assert.That(rookieOffer.SigningBonus, Is.EqualTo((rookieOffer.MonthlySalary + rookieOffer.MatchAppearanceFee) * 2));
+            Assert.That(veteranOffer.SigningBonus, Is.EqualTo((veteranOffer.MonthlySalary + veteranOffer.MatchAppearanceFee) * 3));
+            Assert.That(rookieOffer.MatchAppearanceFee, Is.GreaterThan(rookieOffer.PromoAppearanceFee));
+            Assert.That(veteranOffer.TerminationCost, Is.Zero);
         }
 
         private static WrestlerState Wrestler(float match, float promo, int careerYears, WrestlerBackground background)

@@ -1,0 +1,19 @@
+.belt-preview { min-width:0; min-height:0; overflow:hidden; }
+.belt-letter { padding:0; margin:0; color:#f4daa0; -unity-font-definition:url("project://database/Assets/Game/Presentation/Resources/PWManagerUI/Fonts/SEBANGGothic-Bold.ttf"); }
+.belt-letter-ornate { -unity-text-outline-color:#302214; -unity-text-outline-width:.5px; text-shadow:1px 1px 0 #302214; }
+.belt-letter-engraved { -unity-text-outline-width:0; text-shadow:0 1px 0 #ffe7af; }
+.belt-letter-embossed { -unity-text-outline-color:#302214; -unity-text-outline-width:.35px; text-shadow:1px 2px 0 #302214; }
+.belt-live-preview { height:260px; flex-shrink:0; margin-bottom:18px; background-color:#17181c; border-width:1px; border-color:#343238; }
+.belt-choice-grid { flex-direction:row; flex-wrap:wrap; margin-bottom:18px; }
+.belt-choice { flex-grow:1; flex-basis:150px; min-width:100px; max-width:220px; padding:10px; margin:0 10px 10px 0; border-width:1px; border-color:#49454a; border-radius:2px; background-color:#1a1b1f; color:#d9d6cf; }
+.belt-choice:hover { background-color:#292a30; border-color:#918c84; }
+.belt-choice:focus { border-color:#d9b45b; }
+.belt-choice-selected { border-color:#d9b45b; background-color:#302a1e; color:#f4daa0; }
+.belt-choice > Label { white-space:normal; -unity-text-align:middle-center; }
+.belt-template-image { height:96px; width:100%; margin-bottom:8px; }
+.belt-emblem-choice { flex-basis:100px; min-height:88px; max-width:170px; justify-content:center; }
+.belt-emblem-image { height:64px; width:100%; margin-bottom:8px; }
+.belt-color-choice { flex-direction:row; align-items:center; flex-basis:120px; }
+.belt-swatch { width:24px; height:24px; margin-right:10px; border-width:1px; border-color:#918c84; }
+.belt-customizer .ops-form { padding:0 2px; }
+.ops-narrow .belt-live-preview { height:190px; }

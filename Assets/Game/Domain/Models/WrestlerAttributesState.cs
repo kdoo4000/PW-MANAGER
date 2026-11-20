@@ -5,6 +5,7 @@ namespace PWManager.Domain.Models
     [Serializable]
     public sealed class WrestlerAttributesState
     {
+        public WrestlerAttributesState Copy() => (WrestlerAttributesState)MemberwiseClone();
         public float RingPsychology;
         public float RingImprovisation;
         public float Technical;
@@ -28,6 +29,7 @@ namespace PWManager.Domain.Models
     [Serializable]
     public sealed class AttributeProgressState
     {
+        public AttributeProgressState Copy() => (AttributeProgressState)MemberwiseClone();
         public float RingPsychology;
         public float RingImprovisation;
         public float Technical;

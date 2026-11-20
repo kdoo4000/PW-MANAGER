@@ -24,6 +24,7 @@ namespace PWManager.Domain.Services
                 throw new InvalidOperationException("Only a reviewed show result can be applied.");
             if (schedule.Status != ScheduleStatus.Confirmed)
                 throw new InvalidOperationException("Only a confirmed schedule can be completed.");
+            SalaryPaymentService.ValidateState(save);
 
             var wrestlers = (save.Wrestlers ?? new List<WrestlerState>()).Where(x => x != null)
                 .ToDictionary(x => x.Id, StringComparer.Ordinal);
@@ -33,6 +34,7 @@ namespace PWManager.Domain.Services
             FanAudienceService.ValidateResult(save, context.ShowResult);
             FanAudienceService.ValidateAudience(save);
             StorylineService.Validate(save, context.ShowResult);
+            var unprogressedInterest = StorylineService.UnprogressedInterestChanges(save, context.ShowResult);
             var championships = ChampionshipService.PrepareResults(save,
                 context.MatchResults.OrderBy(m => context.Show.TimelineEventIds.IndexOf(m.ShowEventId)), context.Show.Date);
             var groupSimulation = save.CopyForStorySimulation();
@@ -53,6 +55,27 @@ namespace PWManager.Domain.Services
             if (context.ShowResult.FanSatisfaction?.IsCalculated == true &&
                 context.ShowResult.FanResponseChanges.Any(x => !appearanceIds.Contains(x.WrestlerId)))
                 throw new InvalidOperationException("Fan changes must belong to show participants.");
+            MerchandiseService.ValidateState(save);
+            var merchandise = new MerchandiseService(createId).PrepareShow(context);
+            transactions.AddRange(merchandise.Transactions);
+            if (transactions.Select(x => x.Id).Distinct(StringComparer.Ordinal).Count() != transactions.Count)
+                throw new InvalidOperationException("쇼 정산 거래 ID가 중복됩니다.");
+            var salarySettlement = new SalaryPaymentService(createId).PrepareSettlement(save, context.Show.Date, transactions, context);
+            var career = new WrestlerCareerService(createId).PrepareShow(context, championships);
+            var growth = new WrestlerGrowthService(createId).PrepareShow(context, career.MomentumForGrowth);
+            var behavior = new WrestlerBehaviorService(createId).PrepareShow(save, context.ShowResult, appearanceIds);
+            var preparedIds = new HashSet<string>(salarySettlement.RecordIds, StringComparer.Ordinal);
+            var newIds = career.NewRecordIds.Concat(growth.NewRecordIds).Concat(behavior.NewRecordIds).ToList();
+            WrestlerGrowthService.ValidateNewIds(save, newIds);
+            foreach (var id in newIds)
+                if (!preparedIds.Add(id)) throw new InvalidOperationException("경험 기록과 정산 기록 ID가 중복됩니다.");
+            var noticeSource = $"show-result-applied:{context.Show.Id}:{context.Show.ShowVersion}";
+            var noticeId = save.InboxMessages.Any(x => x.SourceEventId == noticeSource) ? null : createId();
+            if (noticeId != null)
+            {
+                WrestlerGrowthService.ValidateNewIds(save, newIds.Concat(new[] { noticeId }));
+                if (!preparedIds.Add(noticeId)) throw new InvalidOperationException("결과 알림과 정산 기록 ID가 중복됩니다.");
+            }
 
             // Everything above is validation and preparation. Mutation starts only after the full result is valid.
             foreach (var pair in conditionDeltas)
@@ -70,12 +93,20 @@ namespace PWManager.Domain.Services
                 {
                     var wrestler = wrestlers[wrestlerId];
                     wrestler.Roster.LastMatchDate = new OptionalGameDate(context.Show.Date);
-                    wrestler.Status.OfficialMatchCount++;
                 }
             }
-            save.Transactions.AddRange(transactions);
-            FanAudienceService.Apply(save, context.Show, context.ShowResult);
+            salarySettlement.Apply(save);
+            merchandise.Apply(save);
+            career.Apply();
+            growth.Apply();
             StorylineService.Apply(save, context.ShowResult, context.Show.Date);
+            foreach (var change in unprogressedInterest)
+            {
+                var story = save.Storylines.Single(x => x.Id == change.TargetId);
+                story.Interest = Math.Max(0f, story.Interest + change.Amount);
+                if (!context.ShowResult.StoryChanges.Any(x => x.TargetId == change.TargetId && x.ValueKey == change.ValueKey))
+                    context.ShowResult.StoryChanges.Add(change);
+            }
             save.TagTeams = groupSimulation.TagTeams;
             save.Championships = championships;
             save.Stables = groupSimulation.Stables;
@@ -108,8 +139,10 @@ namespace PWManager.Domain.Services
             }
             context.Show.Status = ShowStatus.Completed;
             schedule.Status = ScheduleStatus.Completed;
+            behavior.Apply();
             save.ProcessedIds.Add(context.ApplicationKey);
-            var inbox = new InboxService(createId);
+            new SponsorMissionService(createId).ProcessShow(save, context.ShowResult);
+            var inbox = new InboxService(() => noticeId);
             inbox.ResolveBySource(save, $"show-result-review:{context.Show.Id}:{context.Show.ShowVersion}");
             inbox.Publish(save, $"show-result-applied:{context.Show.Id}:{context.Show.ShowVersion}",
                 InboxMessageType.Navigation, InboxPriority.Important, "분석팀", $"{context.Show.Name} 결과가 반영되었습니다",

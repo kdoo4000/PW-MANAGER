@@ -4,6 +4,7 @@ using System.Collections.Generic;
 namespace PWManager.Domain.Models
 {
     public enum ChampionshipType { Individual, TagTeam }
+    public enum ChampionshipDivision { Open, Men, Women }
 
     [Serializable]
     public sealed class ChampionshipMatchState
@@ -45,7 +46,10 @@ namespace PWManager.Domain.Models
         public string PromotionId;
         public string Name;
         public ChampionshipType Type;
+        public ChampionshipDivision Division;
         public bool IsWorldChampionship;
+        public BeltDesignState BeltDesign;
+        public OptionalGameDate CreatedDate;
         public string HolderId;
         public List<ChampionshipReignState> Reigns = new();
         public bool HasPrestige;

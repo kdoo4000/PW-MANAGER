@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace PWManager.Domain.Models
 {
@@ -24,5 +25,13 @@ namespace PWManager.Domain.Models
         public string RegularShowName;
         public int RegularShowDurationMinutes = 120;
         public List<PpvTitlePolicyState> PpvShowTitles = new();
+
+        public SeasonPolicyState Copy()
+        {
+            var copy = (SeasonPolicyState)MemberwiseClone();
+            copy.PpvShowTitles = (PpvShowTitles ?? new()).Select(x => new PpvTitlePolicyState
+                { Month = x.Month, Title = x.Title, DurationMinutes = x.DurationMinutes }).ToList();
+            return copy;
+        }
     }
 }

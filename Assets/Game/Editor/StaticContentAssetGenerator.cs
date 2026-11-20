@@ -226,8 +226,8 @@ namespace PWManager.Editor
 
         private static List<ScoutTeamLevelDefinition> CreateScoutLevels() => new()
         {
-            ScoutLevel(1, 0, 0, "후보 6명 · 종합 능력 추정", 6, 1, 0f, 2f), ScoutLevel(2, 300, 10_000, "후보 8명 · 성장 2단계 추정", 8, 2, 0f, 1.5f),
-            ScoutLevel(3, 2_500, 50_000, "후보 10명 · 등급 정확도 60%", 10, 3, .60f, 1f), ScoutLevel(4, 5_500, 250_000, "후보 12명 · 등급 정확도 85%", 12, 4, .85f, .5f),
+            ScoutLevel(1, 0, 0, "후보 6명 · 능력 5단계 추정", 6, 1, 0f, 2f), ScoutLevel(2, 300, 10_000, "후보 8명 · 세부 능력 3개 등급 공개", 8, 2, 0f, 1.5f),
+            ScoutLevel(3, 2_500, 50_000, "후보 10명 · 세부 능력 7개 등급 공개", 10, 3, .60f, 1f), ScoutLevel(4, 5_500, 250_000, "후보 12명 · 세부 능력 12개 등급 공개", 12, 4, .85f, .5f),
             ScoutLevel(5, 20_000, 1_000_000, "후보 15명 · 모든 정보 정확히 공개", 15, 4, 1f, 0)
         };
 

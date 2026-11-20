@@ -93,8 +93,10 @@ namespace PWManager.Tests
                 wrestler.FanReaction.Upgrade();
                 wrestler.FanReaction.Mark = new FanResponseState { Preference = 50f, Interest = 90f };
                 typeof(PWManager.Presentation.WrestlerProfileController).GetMethod("Bind", flags).Invoke(controller, new object[] { wrestler });
-                Assert.That(UnityEngine.UIElements.UQueryExtensions.Q<UnityEngine.UIElements.Label>(root, "wp-family").text,
-                    Is.EqualTo("선호 50 · 관심 90"));
+                Assert.That(root.Q<UnityEngine.UIElements.VisualElement>("wp-family-preference").Q<UnityEngine.UIElements.ProgressBar>().value,
+                    Is.EqualTo(50));
+                Assert.That(root.Q<UnityEngine.UIElements.VisualElement>("wp-family-interest").Q<UnityEngine.UIElements.ProgressBar>().value,
+                    Is.EqualTo(90));
                 Assert.That(UnityEngine.UIElements.UQueryExtensions.Q<UnityEngine.UIElements.Label>(root, "wp-fan-total"), Is.Null);
                 var matchAbilities = root.Q<UnityEngine.UIElements.VisualElement>("wp-match-abilities");
                 var promoAbilities = root.Q<UnityEngine.UIElements.VisualElement>("wp-promo-abilities");
@@ -124,7 +126,7 @@ namespace PWManager.Tests
         }
 
         [Test]
-        public void PotentialCaps_UseWeightedOverallInsteadOfRawAttributeTotals()
+        public void PotentialCaps_UseRawAttributeTotalsIndependentOfWeightedOverall()
         {
             var save = CreateValidSave();
             var wrestler = save.Wrestlers[0];
@@ -137,7 +139,8 @@ namespace PWManager.Tests
 
             Assert.That(WrestlerOverallCalculator.MatchTotal(wrestler.Attributes), Is.GreaterThan(105f));
             Assert.That(WrestlerOverallCalculator.PromoTotal(wrestler.Attributes), Is.GreaterThan(77f));
-            Assert.That(errors, Has.None.Contains("potential cap"));
+            Assert.That(errors, Has.Some.Contains("match potential cap"));
+            Assert.That(errors, Has.Some.Contains("promo potential cap"));
         }
 
         [Test]

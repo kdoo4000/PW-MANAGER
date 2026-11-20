@@ -18,6 +18,18 @@ namespace PWManager.Presentation
 
         public static Texture Get(WrestlerState wrestler)
         {
+            var raw = GetWithoutChampionships(wrestler);
+            return raw == null || DashboardSession.ActiveSave == null ? raw : ChampionPortraitRenderer.Get(wrestler, raw, DashboardSession.ActiveSave);
+        }
+
+        public static Texture GetForChampionship(WrestlerState wrestler, string titleId)
+        {
+            var raw = GetWithoutChampionships(wrestler);
+            return raw == null || DashboardSession.ActiveSave == null ? raw : ChampionPortraitRenderer.Get(wrestler, raw, DashboardSession.ActiveSave, titleId);
+        }
+
+        public static Texture GetWithoutChampionships(WrestlerState wrestler)
+        {
             if (wrestler == null) return null;
             if (wrestler.Presentation?.Appearance == null && !string.IsNullOrEmpty(wrestler.Presentation?.PortraitResourcePath))
                 return Resources.Load<Texture2D>(wrestler.Presentation.PortraitResourcePath);
@@ -139,6 +151,7 @@ namespace PWManager.Presentation
 
         public static void Prune(GameSave save)
         {
+            ChampionPortraitRenderer.Prune(save);
             var ids = new HashSet<string>((save?.Wrestlers ?? new List<WrestlerState>()).Where(x => x != null).Select(x => x.Id));
             foreach (var key in Portraits.Keys.Where(x => !ids.Contains(x)).ToList())
             {
@@ -150,6 +163,7 @@ namespace PWManager.Presentation
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         public static void ClearCache()
         {
+            ChampionPortraitRenderer.Clear();
             foreach (var cached in Portraits.Values) DestroyOwned(cached.Texture);
             Portraits.Clear(); Parts.Clear();
             DestroyOwned(composite);

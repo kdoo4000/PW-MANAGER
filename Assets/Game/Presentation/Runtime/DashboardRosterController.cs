@@ -69,12 +69,21 @@ namespace PWManager.Presentation
             var rows = root.Q<VisualElement>("roster-rows");
             if (rows == null) return;
             rows.Clear();
-            var all = save?.Wrestlers?.Where(x => x?.Identity != null).ToList() ?? new List<WrestlerState>();
-            var managers = save?.Managers?.Count(x => x != null && x.ActivityState != RosterActivityState.Released) ?? 0;
+            var all = save?.Wrestlers?.Where(x => x?.Identity != null && x.PromotionId == save.Promotion.Id && x.Roster.ActivityState != RosterActivityState.Released).ToList() ?? new List<WrestlerState>();
+            var managers = save?.Managers?.Count(x => x != null && x.PromotionId == save.Promotion.Id && x.ActivityState != RosterActivityState.Released) ?? 0;
             Set("roster-summary", $"총 {all.Count + managers}명 · 선수 {all.Count} · 전문 매니저 {managers}");
             if (rosterMode == RosterMode.Managers)
             {
-                var empty = new Label(managers == 0 ? "등록된 전문 매니저가 없습니다" : $"전문 매니저 {managers}명 · 상세 명단 데이터 준비 중"); empty.AddToClassList("roster-empty"); rows.Add(empty); return;
+                if (managers == 0) { var empty = new Label("등록된 전문 매니저가 없습니다"); empty.AddToClassList("roster-empty"); rows.Add(empty); }
+                foreach (var manager in (save?.Managers ?? new()).Where(x => x != null && x.PromotionId == save.Promotion.Id && x.ActivityState != RosterActivityState.Released))
+                {
+                    var row = new VisualElement(); row.AddToClassList("roster-row"); rows.Add(row);
+                    AddCell(row, manager.Name ?? "전문 매니저", "roster-col-name");
+                    var contract = save.OwnContracts.FirstOrDefault(x => x.PersonId == manager.Id && x.Type == ContractType.Manager && x.IsInForce);
+                    row.Add(new Label(contract == null ? "계약 없음" : $"월 기본급 ${contract.MonthlySalary:N0} · {contract.EndDate.Year}.{contract.EndDate.Month:D2}.{contract.EndDate.Day:D2}까지"));
+                    row.Add(new Button(() => ContractNegotiationView.Open(root, manager.Id, ContractType.Manager, RenderRoster)) { text = "계약 협상" });
+                }
+                return;
             }
             IEnumerable<WrestlerState> filtered = all;
             if (!string.IsNullOrWhiteSpace(rosterSearch))
@@ -84,7 +93,7 @@ namespace PWManager.Presentation
             }
             var result = SortRoster(filtered).ToList();
             if (result.Count == 0) { var empty = new Label("표시할 선수가 없습니다"); empty.AddToClassList("roster-empty"); rows.Add(empty); return; }
-            var contracts = save?.Contracts ?? new List<ContractState>();
+            var contracts = save?.OwnContracts ?? new List<ContractState>();
             var teams = save?.TagTeams ?? new List<TagTeamState>();
             for (var i = 0; i < result.Count; i++)
             {
@@ -104,7 +113,7 @@ namespace PWManager.Presentation
                 AddMeterCell(row, wrestler.Condition?.Condition ?? 100f, "roster-col-condition", MeterKind.Condition);
                 AddMeterCell(row, wrestler.Condition?.Satisfaction ?? 0f, "roster-col-satisfaction", MeterKind.Satisfaction);
                 AddCell(row, TeamText(wrestler, teams), "roster-col-team", "roster-cell-muted");
-                var contract = contracts.FirstOrDefault(x => x != null && x.PersonId == wrestler.Id && (x.Status == ContractStatus.Active || x.Status == ContractStatus.Expiring));
+                var contract = contracts.FirstOrDefault(x => x != null && x.PersonId == wrestler.Id && x.IsInForce);
                 AddCell(row, contract == null ? "—" : DashboardText.Money(contract.MonthlySalary), "roster-col-salary");
                 rows.Add(row);
             }
@@ -130,7 +139,7 @@ namespace PWManager.Presentation
             "team" => x => x.Roster?.ActiveTagTeamId ?? x.Roster?.ActiveStableId ?? string.Empty, "salary" => x => Salary(x), _ => x => WrestlerNameText.DisplayName(x)
         };
 
-        private long Salary(WrestlerState wrestler) => save?.Contracts?.FirstOrDefault(x => x != null && x.PersonId == wrestler.Id && (x.Status == ContractStatus.Active || x.Status == ContractStatus.Expiring))?.MonthlySalary ?? 0;
+        private long Salary(WrestlerState wrestler) => save?.OwnContracts?.FirstOrDefault(x => x != null && x.PersonId == wrestler.Id && x.IsInForce)?.MonthlySalary ?? 0;
         private int Age(WrestlerState wrestler) => wrestler.Identity.BirthDate.AgeOn(save?.CurrentDate ?? default);
         private static void AddCell(VisualElement row, string text, string columnClass, string extraClass = null) { var cell = new Label(text ?? "—"); cell.AddToClassList("roster-cell"); cell.AddToClassList(columnClass); if (!string.IsNullOrEmpty(extraClass)) cell.AddToClassList(extraClass); row.Add(cell); }
         private static void AddGradeCell(VisualElement row, float value, string columnClass) { var grade = WrestlerOverallCalculator.Grade(value); var cell = new Label(grade); cell.AddToClassList("roster-cell"); cell.AddToClassList(columnClass); cell.AddToClassList("roster-grade"); cell.AddToClassList(GradeClass(grade)); row.Add(cell); }

@@ -1,0 +1,28 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements">
+    <Style src="Dashboard.uss"/>
+    <Style src="DashboardFacilities.uss"/>
+    <Style src="WrestlerProfile.uss"/>
+    <Style src="OperationsScreens.uss"/>
+    <ui:VisualElement name="training-content" class="ops-content hidden">
+        <ui:VisualElement class="ops-tabs">
+            <ui:Button name="training-tab-plans" text="훈련 계획" class="ops-tab ops-active"/>
+            <ui:Button name="training-tab-history" text="훈련 기록" class="ops-tab"/>
+            <ui:Button name="training-tab-resources" text="트레이너·시설" class="ops-tab"/>
+        </ui:VisualElement>
+        <ui:VisualElement class="ops-summary"><ui:Label name="training-assignment-count"/><ui:Label name="training-efficiency"/><ui:Label name="training-next-date"/></ui:VisualElement>
+        <ui:Label name="training-status" class="ops-status" style="display:none;"/>
+        <ui:VisualElement name="training-panel" class="ops-page-panel">
+            <ui:VisualElement name="training-plans-panel" class="ops-page-panel">
+                <ui:VisualElement class="ops-body">
+                    <ui:VisualElement class="ops-list-pane">
+                        <ui:VisualElement class="ops-table-heading"><ui:Label text="선수" class="ops-cell ops-name-cell"/><ui:Label text="체력" class="ops-cell ops-gauge-cell"/><ui:Label text="훈련" class="ops-cell"/></ui:VisualElement>
+                        <ui:ScrollView name="training-roster" mode="Vertical" class="ops-scroll"/>
+                    </ui:VisualElement>
+                    <ui:ScrollView name="training-detail" mode="Vertical" class="ops-scroll ops-detail-pane"/>
+                </ui:VisualElement>
+            </ui:VisualElement>
+            <ui:ScrollView name="training-history-panel" mode="Vertical" class="ops-scroll" style="display:none;"/>
+            <ui:ScrollView name="training-resources-panel" mode="Vertical" class="ops-scroll" style="display:none;"><ui:VisualElement name="training-upgrade-grid" class="ops-upgrade-grid"/></ui:ScrollView>
+        </ui:VisualElement>
+    </ui:VisualElement>
+</ui:UXML>

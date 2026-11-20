@@ -11,18 +11,23 @@ namespace PWManager.Data.Generation
 {
     public sealed class WrestlerGenerator
     {
+        private const int WorldPopulationSeedSalt = 0x574F524C;
         private enum MatchProfile { RingGeneral, Execution, Selling, Stamina, Specialty }
 
         private readonly StaticContentRegistry content;
         private readonly WrestlerGenerationConfig config;
         private readonly Random random;
+        private readonly int seed;
         private readonly Func<string> createId;
+
+        public int CandidateRetentionDays => checked(config.CandidateRetentionWeeks * 7);
 
         public WrestlerGenerator(StaticContentRegistry content, int seed, Func<string> createId = null)
         {
             this.content = content ?? throw new ArgumentNullException(nameof(content));
             config = content.Catalog.WrestlerGeneration ?? throw new ArgumentException("Wrestler generation config is required.", nameof(content));
             random = new Random(seed);
+            this.seed = seed;
             this.createId = createId ?? EntityId.CreateRuntimeId;
         }
 
@@ -33,6 +38,40 @@ namespace PWManager.Data.Generation
             result.AddRange(GenerateGuaranteedGroup(WrestlerGender.Female, config.InitialFemaleCandidateCount, createdDate));
             EnsureUniqueLegalNames(result);
             return result;
+        }
+
+        public void InitializeWorld(GameSave save)
+        {
+            if (save == null) throw new ArgumentNullException(nameof(save));
+            if (save.WorldPopulationInitialized) return;
+            var population = GenerateWorldPopulation(save);
+            save.Wrestlers.AddRange(population);
+            save.UndiscoveredWrestlerIds ??= new();
+            save.UndiscoveredWrestlerIds.AddRange(population.Select(x => x.Id));
+            save.WorldPopulationInitialized = true;
+        }
+
+        internal IReadOnlyList<WrestlerState> GenerateWorldPopulation(GameSave save)
+        {
+            if (config.WorldMaleCount < 0 || config.WorldFemaleCount < 0)
+                throw new InvalidOperationException("World population counts cannot be negative.");
+            var worldGenerator = new WrestlerGenerator(content, unchecked(save.WorldSeed ^ WorldPopulationSeedSalt), createId);
+            var population = new List<WrestlerState>(checked(config.WorldMaleCount + config.WorldFemaleCount));
+            var ids = save.Wrestlers.Select(x => x.Id).Concat(save.ScoutAssignments.Select(x => x.Id)).ToHashSet(StringComparer.Ordinal);
+            foreach (var gender in new[] { WrestlerGender.Male, WrestlerGender.Female })
+            {
+                var count = gender == WrestlerGender.Male ? config.WorldMaleCount : config.WorldFemaleCount;
+                for (var i = 0; i < count; i++)
+                {
+                    var wrestler = worldGenerator.GenerateCandidate(gender, save.CurrentDate);
+                    if (!EntityId.IsValidRuntimeId(wrestler.Id) || !ids.Add(wrestler.Id))
+                        throw new InvalidOperationException("월드 선수 ID가 중복되거나 올바르지 않습니다.");
+                    wrestler.Identity.ExpiryDate = default;
+                    population.Add(wrestler);
+                }
+            }
+            worldGenerator.EnsureUniqueLegalNames(population);
+            return population;
         }
 
         public WrestlerState GenerateCandidate(WrestlerGender gender, GameDate createdDate)
@@ -57,6 +96,8 @@ namespace PWManager.Data.Generation
             var styleId = DetermineStyle(gender, height, attributes, matchArchetype);
             AdjustMatchAttributes(attributes, styleId, matchOverall);
             AdjustPromoAttributes(attributes, promoOverall);
+            matchPotential = Math.Max(matchPotential, WrestlerOverallCalculator.MatchTotal(attributes) / 10f);
+            promoPotential = Math.Max(promoPotential, WrestlerOverallCalculator.PromoTotal(attributes) / 7f);
             var legalName = GenerateLegalName(gender);
             var wrestler = new WrestlerState
             {
@@ -69,6 +110,7 @@ namespace PWManager.Data.Generation
                     HeightCm = height, WeightKg = weight, BodyType = bodyType, CareerYears = careerYears
                 },
                 Attributes = attributes,
+                Fame = WrestlerFameRules.Create(WrestlerFameRules.InitialForCareer(careerYears)),
                 Growth = new WrestlerGrowthState { MatchPotentialCap = matchPotential, PromoPotentialCap = promoPotential },
                 Condition = new WrestlerConditionState { Condition = 100, Satisfaction = 50, Availability = WrestlerAvailability.Available },
                 Roster = new WrestlerRosterState { ActivityState = RosterActivityState.Inactive },
@@ -82,7 +124,8 @@ namespace PWManager.Data.Generation
             };
             wrestler.Status.IsRookie = background == WrestlerBackground.Rookie;
             wrestler.Status.DebutDate = careerYears == 0 ? createdDate : AddYears(createdDate, -careerYears);
-            GenerateTraits(wrestler);
+            wrestler.Hidden = WrestlerHiddenRules.Create(seed, wrestler.Id);
+            WrestlerAdaptationService.InitializeCandidate(wrestler, createdDate);
             GenerateMoves(wrestler);
             GenerateAppearance(wrestler);
             return wrestler;
@@ -415,18 +458,6 @@ namespace PWManager.Data.Generation
                 if (tied.Contains(preferred)) return new[] { "style_001", "style_002", "style_003", "style_004" }[preferred];
             }
             return new[] { "style_001", "style_002", "style_003", "style_004" }[tied[random.Next(tied.Count)]];
-        }
-
-        private void GenerateTraits(WrestlerState wrestler)
-        {
-            var count = Pick(new[] { 25d, 45, 25, 5 }, new[] { 0, 1, 2, 3 });
-            var candidates = content.Traits.Values.ToList();
-            while (wrestler.Presentation.TraitIds.Count < count && candidates.Count > 0)
-            {
-                var selected = candidates[random.Next(candidates.Count)];
-                wrestler.Presentation.TraitIds.Add(selected.Id);
-                candidates.RemoveAll(x => x.Id == selected.Id || selected.ConflictingTraitIds.Contains(x.Id) || x.ConflictingTraitIds.Contains(selected.Id));
-            }
         }
 
         private void GenerateMoves(WrestlerState wrestler)

@@ -1,5 +1,8 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
+using PWManager.Domain.Models;
+using PWManager.Domain.Services;
 using PWManager.Data.Catalogs;
 using PWManager.Data.Definitions;
 using PWManager.Data.Validation;
@@ -37,6 +40,16 @@ namespace PWManager.Data.Loading
             CommentaryTeamLevels = Index(catalog.CommentaryTeamLevels);
             MatchTypes = Index(catalog.MatchTypes);
             MatchGimmicks = Index(catalog.MatchGimmicks);
+            StaffTeamEffects.Configure((type, level) =>
+            {
+                if (type == StaffDepartmentType.Medical && MedicalTeamLevels.Values.FirstOrDefault(x => x.Level == level) is { } medical)
+                    return new StaffTeamModifiers(recovery: medical.RecoveryDurationMultiplier, aggravation: medical.InjuryAggravationMultiplier);
+                if (type == StaffDepartmentType.Promotion && PromotionTeamLevels.Values.FirstOrDefault(x => x.Level == level) is { } promotion)
+                    return new StaffTeamModifiers(ticketDemand: promotion.TicketDemandMultiplier, newFans: promotion.PositiveFanGainMultiplier);
+                if (type == StaffDepartmentType.Commentary && CommentaryTeamLevels.Values.FirstOrDefault(x => x.Level == level) is { } commentary)
+                    return new StaffTeamModifiers(liveReaction: commentary.LiveAudienceReactionMultiplier, broadcastReaction: commentary.BroadcastAudienceReactionMultiplier);
+                return StaffTeamEffects.Default(type, level);
+            });
         }
 
         public bool TryGetParticipantRange(string matchTypeId, out int minimum, out int maximum)
@@ -101,7 +114,8 @@ namespace PWManager.Data.Loading
             {
                 weights = new PWManager.Domain.Services.WrestlingStyleWeights(
                     definition.BrawlingWeight, definition.PowerWeight,
-                    definition.HighFlyingWeight, definition.TechnicalWeight);
+                    definition.HighFlyingWeight, definition.TechnicalWeight,
+                    definition.BrawlingGrowthBonus, definition.PowerGrowthBonus, definition.HighFlyingGrowthBonus, definition.TechnicalGrowthBonus);
                 return true;
             }
             weights = default;

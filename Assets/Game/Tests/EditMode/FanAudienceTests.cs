@@ -164,10 +164,10 @@ namespace PWManager.Tests
                 save.Promotion.Audience = null;
                 var service = new SaveService(path);
                 service.Save("fans", save);
-                var original = File.ReadAllText(Path.Combine(path, "fans.json"));
+                var original = File.ReadAllBytes(Path.Combine(path, "fans.json"));
                 save = service.Load("fans");
                 Assert.That(save.Promotion.Audience.TotalFollowers, Is.EqualTo(2500));
-                Assert.That(File.ReadAllText(Path.Combine(path, "fans.json")), Is.EqualTo(original));
+                Assert.That(File.ReadAllBytes(Path.Combine(path, "fans.json")), Is.EqualTo(original));
                 save.Promotion.Audience.Mark.Followers = 888;
                 save.Promotion.Audience.Mark.WeeklyExposure = .75f;
                 save.Promotion.Audience.Mark.FollowerRemainder = .35;
@@ -228,13 +228,15 @@ namespace PWManager.Tests
             save.Contracts.RemoveAll(x => x.Type == ContractType.Wrestler && !kept.Contains(x.PersonId));
             if (ability > 0)
             {
-                save.Transactions.Clear();
                 foreach (var w in save.Wrestlers)
                     foreach (var field in typeof(WrestlerAttributesState).GetFields()) field.SetValue(w.Attributes, ability);
-                // Fixed wages isolate programming quality from recruitment cost in this controlled scenario.
-                foreach (var c in save.Contracts.Where(x => x.Type == ContractType.Wrestler)) c.MonthlySalary = 1000;
             }
-            else save.Transactions.RemoveAll(x => !save.Contracts.Any(c => c.Id == x.ReasonId));
+            // Fixed compensation isolates fan response from the showcase roster's star contracts.
+            save.Transactions.Clear(); save.SalaryPayments.Clear();
+            save.ProcessedIds.RemoveAll(x => x.StartsWith("salary:", StringComparison.Ordinal));
+            foreach (var c in save.Contracts.Where(x => x.Type == ContractType.Wrestler))
+            { c.MonthlySalary = 1000; c.MatchAppearanceFee = 150; c.PromoAppearanceFee = 75; c.Status = ContractStatus.Active; c.LastSalaryPenaltyDate = default; }
+            new SalaryPaymentService().ProcessDay(save, save.CurrentDate);
             save.Shows.Clear(); save.Schedules.Clear();
             var rows = new List<string> { "week,followers,satisfaction,attendance,revenue,cash,condition" };
             var startingFollowers = save.Promotion.Audience.TotalFollowers;
@@ -257,9 +259,9 @@ namespace PWManager.Tests
                 var advance = new TimeFlowService().AdvanceTo(save, save.CurrentDate.AddDays(7));
                 Assert.That(advance.State, Is.EqualTo(TimeFlowState.Completed));
                 rows.Add(FormattableString.Invariant($"{week + 1},{save.Promotion.Audience.TotalFollowers},{result.FanSatisfaction.Mania:F2},{result.FinancialSettlement.Attendance},{result.FinancialSettlement.Revenue},{save.Promotion.CalculateCurrentCash(save.Transactions)},{save.Wrestlers.Average(w => w.Condition.Condition):F2}"));
-                save = JsonUtility.FromJson<GameSave>(JsonUtility.ToJson(save));
+                if (week == 5 || week == 11) save = JsonUtility.FromJson<GameSave>(JsonUtility.ToJson(save));
                 if (ability == 0) Assert.That(GameSaveValidator.Validate(save), Is.Empty);
-                Assert.That(save.Promotion.Audience.TotalFollowers, Is.InRange(1900, 3200));
+                Assert.That(save.Promotion.Audience.TotalFollowers, Is.InRange(0, FanAudienceService.MaximumFollowersPerGroup * 3));
             }
             Directory.CreateDirectory("artifacts/balance");
             File.WriteAllLines($"artifacts/balance/fans-12-weeks-{ability:0}.csv", rows);

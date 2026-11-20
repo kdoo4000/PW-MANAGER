@@ -28,17 +28,24 @@ namespace PWManager.Data.Generation
         {
             if (save == null) throw new ArgumentNullException(nameof(save));
             if (conditions == null) throw new ArgumentNullException(nameof(conditions));
+            if (save.Promotion == null || conditions.HasGender && !Enum.IsDefined(typeof(WrestlerGender), conditions.Gender) ||
+                conditions.HasBackground && !Enum.IsDefined(typeof(WrestlerBackground), conditions.Background))
+                throw new InvalidOperationException("단체와 탐색 조건을 확인하세요.");
             save.ScoutAssignments ??= new List<ScoutAssignmentState>();
             if (save.ScoutAssignments.Any(x => x?.Status == ScoutAssignmentStatus.InProgress))
-                throw new InvalidOperationException("Only one scouting assignment can be active.");
-            if (ScoutLevel(save) == 0) throw new InvalidOperationException("An active scout team is required.");
+                throw new InvalidOperationException("진행 중인 탐색이 있습니다.");
+            if (ScoutLevel(save) == 0) throw new InvalidOperationException("스카우트팀을 먼저 해금하세요.");
 
             var assignment = new ScoutAssignmentState
             {
-                Id = createId(), SearchConditions = conditions,
-                StartDate = save.CurrentDate, CompleteDate = save.CurrentDate.AddDays(28),
+                Id = createId(), SearchConditions = new ScoutSearchConditions { HasGender = conditions.HasGender, Gender = conditions.Gender,
+                    HasBackground = conditions.HasBackground, Background = conditions.Background },
+                StartDate = save.CurrentDate, CompleteDate = save.CurrentDate.AddDays(ScoutAssignmentState.DurationDays),
                 Status = ScoutAssignmentStatus.InProgress
             };
+            if (!EntityId.IsValidRuntimeId(assignment.Id) || save.ScoutAssignments.Any(x => x.Id == assignment.Id))
+                throw new InvalidOperationException("스카우트 배정 ID가 중복되거나 올바르지 않습니다.");
+            generator.InitializeWorld(save);
             save.ScoutAssignments.Add(assignment);
             return assignment;
         }
@@ -49,63 +56,76 @@ namespace PWManager.Data.Generation
             save.ScoutAssignments ??= new List<ScoutAssignmentState>();
             save.ScoutCandidates ??= new List<ScoutCandidateState>();
             save.Wrestlers ??= new List<WrestlerState>();
+            var due = save.ScoutAssignments.Where(x => x?.Status == ScoutAssignmentStatus.InProgress &&
+                x.CompleteDate.CompareTo(save.CurrentDate) <= 0).ToList();
+            if (due.Count == 0) return Array.Empty<ScoutCandidateState>();
+            var newPeople = save.WorldPopulationInitialized ? Array.Empty<WrestlerState>() : generator.GenerateWorldPopulation(save);
+            var population = save.Wrestlers.Concat(newPeople).ToList();
             var created = new List<ScoutCandidateState>();
-            foreach (var assignment in save.ScoutAssignments.Where(x => x?.Status == ScoutAssignmentStatus.InProgress && x.CompleteDate.CompareTo(save.CurrentDate) <= 0))
+            var completed = new List<ScoutAssignmentState>();
+            var selectedIds = new HashSet<string>(StringComparer.Ordinal);
+            foreach (var assignment in due)
             {
                 var definition = Level(ScoutLevel(save));
+                var prestige = save.Promotion == null ? 0 : PromotionProgressionRules.ActivePrestige(save);
+                var range = AbilityRange(prestige);
+                var reportedIds = save.ScoutCandidates.Where(x => x != null && !x.IsExpired(save.CurrentDate))
+                    .Select(x => x.WrestlerId).ToHashSet(StringComparer.Ordinal);
+                var available = population.Where(x => x != null && string.IsNullOrEmpty(x.PromotionId) &&
+                        x.Roster.ActivityState == RosterActivityState.Inactive && !reportedIds.Contains(x.Id))
+                    .Where(x => !assignment.SearchConditions.HasGender || x.Identity.Gender == assignment.SearchConditions.Gender)
+                    .Where(x => !assignment.SearchConditions.HasBackground || x.Identity.Background == assignment.SearchConditions.Background)
+                    .Where(x => Math.Max(WrestlerOverallCalculator.Match(x), WrestlerOverallCalculator.Promo(x)) >= range.Minimum &&
+                        Math.Max(WrestlerOverallCalculator.Match(x), WrestlerOverallCalculator.Promo(x)) <= range.Maximum)
+                    .OrderBy(x => x.Id, StringComparer.Ordinal).ToList();
                 for (var i = 0; i < definition.CandidateCount; i++)
                 {
-                    var wrestler = Generate(assignment.SearchConditions, save.CurrentDate, save.Promotion?.PromotionPrestige ?? 0);
-                    save.Wrestlers.Add(wrestler);
+                    var wrestler = available.FirstOrDefault(x => !selectedIds.Contains(x.Id));
+                    if (wrestler == null) break;
+                    selectedIds.Add(wrestler.Id);
+                    var previous = save.ScoutCandidates.SingleOrDefault(x => x?.WrestlerId == wrestler.Id);
+                    var evaluation = previous != null && previous.KnowledgeLevel > definition.KnowledgeLevel
+                        ? levels.Values.Where(x => x.KnowledgeLevel >= previous.KnowledgeLevel)
+                            .OrderBy(x => x.KnowledgeLevel).ThenBy(x => x.Level).First()
+                        : definition;
                     var candidate = new ScoutCandidateState
                     {
                         WrestlerId = wrestler.Id, AssignmentId = assignment.Id,
-                        KnowledgeLevel = definition.KnowledgeLevel,
-                        ValueEstimates = CreateEstimates(wrestler, definition)
+                        KnowledgeLevel = evaluation.KnowledgeLevel,
+                        ExpiryDate = new OptionalGameDate(save.CurrentDate.AddDays(generator.CandidateRetentionDays)),
+                        ValueEstimates = CreateEstimates(wrestler, evaluation, previous?.ValueEstimates)
                     };
-                    save.ScoutCandidates.Add(candidate);
                     created.Add(candidate);
                 }
-                assignment.Status = ScoutAssignmentStatus.Completed;
+                completed.Add(assignment);
             }
+            save.Wrestlers.AddRange(newPeople);
+            save.UndiscoveredWrestlerIds ??= new();
+            save.UndiscoveredWrestlerIds.AddRange(newPeople.Select(x => x.Id));
+            save.WorldPopulationInitialized = true;
+            foreach (var candidate in created)
+            {
+                save.Wrestlers.Single(x => x.Id == candidate.WrestlerId).Identity.ExpiryDate = default;
+                save.UndiscoveredWrestlerIds.Remove(candidate.WrestlerId);
+                save.ScoutCandidates.RemoveAll(x => x?.WrestlerId == candidate.WrestlerId);
+                save.ScoutCandidates.Add(candidate);
+            }
+            foreach (var assignment in completed) assignment.Status = ScoutAssignmentStatus.Completed;
             return created;
         }
 
-        public int RemoveExpiredCandidates(GameSave save)
+        public void ProcessDay(GameSave save)
         {
-            if (save == null) throw new ArgumentNullException(nameof(save));
-            save.ScoutCandidates ??= new List<ScoutCandidateState>();
-            save.Wrestlers ??= new List<WrestlerState>();
-            var knownCandidateIds = save.ScoutCandidates.Where(x => x != null).Select(x => x.WrestlerId).ToHashSet(StringComparer.Ordinal);
-            var expiredIds = save.Wrestlers.Where(x => knownCandidateIds.Contains(x?.Id) && x.Roster?.ActivityState == RosterActivityState.Inactive &&
-                    x.Identity.ExpiryDate.HasValue && x.Identity.ExpiryDate.Value.CompareTo(save.CurrentDate) < 0)
-                .Select(x => x.Id).ToHashSet(StringComparer.Ordinal);
-            save.ScoutCandidates.RemoveAll(x => x == null || expiredIds.Contains(x.WrestlerId));
-            return save.Wrestlers.RemoveAll(x => x != null && expiredIds.Contains(x.Id));
+            var dueIds = save.ScoutAssignments.Where(x => x.Status == ScoutAssignmentStatus.InProgress && x.CompleteDate.CompareTo(save.CurrentDate) <= 0).Select(x => x.Id).ToHashSet();
+            CompleteDue(save);
+            foreach (var assignment in save.ScoutAssignments.Where(x => dueIds.Contains(x.Id)))
+            {
+                var count = save.ScoutCandidates.Count(x => x.AssignmentId == assignment.Id);
+                new InboxService(createId).Publish(save, $"scouting-report:{assignment.Id}", InboxMessageType.Navigation, InboxPriority.Important,
+                    "스카우트팀", "스카우트 보고서가 도착했습니다", count == 0 ? "조건에 맞는 새로운 영입 후보를 찾지 못했습니다." : $"새 영입 후보 {count}명을 확인할 수 있습니다.", InboxTargetType.Promotion, save.Promotion.Id);
+            }
         }
 
-        private WrestlerState Generate(ScoutSearchConditions conditions, GameDate date, long prestige)
-        {
-            var range = AbilityRange(prestige);
-            var target = Math.Max(8f, Math.Min(20f, Normal((range.Minimum + range.Maximum) * .5f, 1.5f)));
-            WrestlerState closest = null;
-            var closestDistance = float.MaxValue;
-            var sampled = 0;
-            for (var attempt = 0; attempt < 200 && sampled < 40; attempt++)
-            {
-                var gender = conditions.HasGender ? conditions.Gender : random.Next(2) == 0 ? WrestlerGender.Male : WrestlerGender.Female;
-                var candidate = generator.GenerateCandidate(gender, date);
-                if (conditions.HasBackground && candidate.Identity.Background != conditions.Background) continue;
-                var ability = Math.Max(WrestlerOverallCalculator.Match(candidate), WrestlerOverallCalculator.Promo(candidate));
-                if (ability < 8f) continue;
-                sampled++;
-                var distance = Math.Abs(ability - target);
-                if (distance < closestDistance) { closest = candidate; closestDistance = distance; }
-                if (distance < .05f) break;
-            }
-            if (closest != null) return closest;
-            throw new InvalidOperationException("Could not generate a candidate matching the search conditions.");
-        }
 
         public static (float Minimum, float Maximum) AbilityRange(long prestige) => prestige switch
         {
@@ -124,52 +144,23 @@ namespace PWManager.Data.Generation
         private ScoutTeamLevelDefinition Level(int level) => levels.TryGetValue(level, out var definition)
             ? definition : throw new InvalidOperationException($"Scout level definition is missing: {level}");
 
-        private List<ScoutValueEstimate> CreateEstimates(WrestlerState wrestler, ScoutTeamLevelDefinition definition)
+        private List<ScoutValueEstimate> CreateEstimates(WrestlerState wrestler, ScoutTeamLevelDefinition definition,
+            IEnumerable<ScoutValueEstimate> previous = null)
         {
-            var a = wrestler.Attributes;
-            return new List<ScoutValueEstimate>
+            var known = (previous ?? Array.Empty<ScoutValueEstimate>()).Where(x => x != null &&
+                    (x.IsFullyRevealed || !x.HasEvaluation && x.Minimum == x.Maximum))
+                .Select(x => x.Type).ToHashSet();
+            var detailed = Enumerable.Range(0, ScoutAssessmentRules.DetailedStatCount).Select(x => (ScoutValueType)x).ToArray();
+            for (var i = detailed.Length - 1; i > 0; i--)
             {
-                Estimate(ScoutValueType.RingPsychology, a.RingPsychology, definition), Estimate(ScoutValueType.RingImprovisation, a.RingImprovisation, definition),
-                Estimate(ScoutValueType.Technical, a.Technical, definition, StyleErrorReduction(wrestler.Presentation.WrestlingStyleId, "테크니컬")),
-                Estimate(ScoutValueType.Brawling, a.Brawling, definition, StyleErrorReduction(wrestler.Presentation.WrestlingStyleId, "브롤링")),
-                Estimate(ScoutValueType.Power, a.Power, definition, StyleErrorReduction(wrestler.Presentation.WrestlingStyleId, "파워")),
-                Estimate(ScoutValueType.HighFlying, a.HighFlying, definition, StyleErrorReduction(wrestler.Presentation.WrestlingStyleId, "하이플라잉")),
-                Estimate(ScoutValueType.SpotWork, a.SpotWork, definition), Estimate(ScoutValueType.SpecialtyMatches, a.SpecialtyMatches, definition),
-                Estimate(ScoutValueType.Selling, a.Selling, definition), Estimate(ScoutValueType.Stamina, a.Stamina, definition), Estimate(ScoutValueType.Charisma, a.Charisma, definition),
-                Estimate(ScoutValueType.MicWork, a.MicWork, definition), Estimate(ScoutValueType.Improvisation, a.Improvisation, definition), Estimate(ScoutValueType.Acting, a.Acting, definition),
-                Estimate(ScoutValueType.FaceWork, a.FaceWork, definition), Estimate(ScoutValueType.HeelWork, a.HeelWork, definition), Estimate(ScoutValueType.Comedy, a.Comedy, definition),
-                Estimate(ScoutValueType.MatchOverall, WrestlerOverallCalculator.Match(wrestler), definition), Estimate(ScoutValueType.PromoOverall, WrestlerOverallCalculator.Promo(wrestler), definition),
-                Estimate(ScoutValueType.MatchPotential, wrestler.Growth.MatchPotentialCap, definition), Estimate(ScoutValueType.PromoPotential, wrestler.Growth.PromoPotentialCap, definition)
-            };
+                var selected = random.Next(i + 1);
+                (detailed[i], detailed[selected]) = (detailed[selected], detailed[i]);
+            }
+            var revealed = detailed.Take(ScoutAssessmentRules.RevealedStatCount(definition.Level)).ToHashSet();
+            ScoutValueEstimate Estimate(ScoutValueType type, float actual) => ScoutAssessmentRules.Evaluate(type, actual, definition.Level,
+                known.Contains(type) || ((int)type < ScoutAssessmentRules.DetailedStatCount ? revealed.Contains(type) : random.NextDouble() < definition.ExactValueChance), random);
+            return ScoutAssessmentRules.ActualValues(wrestler).Select(x => Estimate(x.Type, x.Value)).ToList();
         }
 
-        private ScoutValueEstimate Estimate(ScoutValueType type, float actual, ScoutTeamLevelDefinition definition, float errorReduction = 0f)
-        {
-            actual = RoundTenth(actual);
-            var configuredError = Math.Max(0f, definition.ValueErrorRange - errorReduction);
-            var error = random.NextDouble() < definition.ExactValueChance ? 0f : configuredError;
-            var center = actual + (float)(random.NextDouble() * 2d - 1d) * error;
-            return new ScoutValueEstimate
-            {
-                Type = type,
-                Minimum = RoundTenth(Math.Max(1f, center - error)),
-                Maximum = RoundTenth(Math.Min(20f, center + error))
-            };
-        }
-
-        private static float RoundTenth(float value) => (float)Math.Round(value, 1, MidpointRounding.AwayFromZero);
-
-        private float Normal(float mean, float standardDeviation)
-        {
-            var u1 = 1d - random.NextDouble();
-            var u2 = 1d - random.NextDouble();
-            return mean + standardDeviation * (float)(Math.Sqrt(-2d * Math.Log(u1)) * Math.Cos(2d * Math.PI * u2));
-        }
-
-        private static float StyleErrorReduction(string styleId, string ability)
-        {
-            var priorities = WrestlerOverallCalculator.MatchStylePriorities(styleId);
-            return priorities.Primary.Contains(ability) ? 1f : priorities.Secondary.Contains(ability) ? .5f : 0f;
-        }
     }
 }

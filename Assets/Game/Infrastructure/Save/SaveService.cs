@@ -1,12 +1,14 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.IO.Compression;
 using System.Linq;
+using System.Security.Cryptography;
+using System.Text;
 using System.Text.RegularExpressions;
 using PWManager.Domain.Models;
 using PWManager.Domain.Services;
 using PWManager.Domain.Validation;
-using UnityEngine;
 
 namespace PWManager.Infrastructure.Save
 {
@@ -18,6 +20,7 @@ namespace PWManager.Infrastructure.Save
 
         private readonly string saveDirectory;
         private readonly Dictionary<int, ISaveMigration> migrationsByVersion = new();
+        private static readonly byte[] CompressedSignature = Encoding.ASCII.GetBytes("PWMZ1");
 
         public SaveService(string saveDirectory, IEnumerable<ISaveMigration> migrations = null)
         {
@@ -25,7 +28,7 @@ namespace PWManager.Infrastructure.Save
                 throw new ArgumentException("Save directory is required.", nameof(saveDirectory));
 
             this.saveDirectory = Path.GetFullPath(saveDirectory);
-            migrations ??= new[] { new SaveVersion0To1Migration() };
+            migrations ??= new ISaveMigration[] { new SaveVersion0To1Migration(), new SaveVersion1To2Migration(), new SaveVersion2To3Migration(), new SaveVersion3To4Migration(), new SaveVersion4To5Migration(), new SaveVersion5To6Migration(), new SaveVersion6To7Migration(), new SaveVersion7To8Migration(), new SaveVersion8To9Migration(), new SaveVersion9To10Migration(), new SaveVersion10To11Migration(), new SaveVersion11To12Migration(), new SaveVersion12To13Migration(), new SaveVersion13To14Migration(), new SaveVersion14To15Migration(), new SaveVersion15To16Migration(), new SaveVersion16To17Migration(), new SaveVersion17To18Migration(), new SaveVersion18To19Migration(), new SaveVersion19To20Migration(), new SaveVersion20To21Migration(), new SaveVersion21To22Migration(), new SaveVersion22To23Migration(), new SaveVersion23To24Migration(), new SaveVersion24To25Migration(), new SaveVersion25To26Migration(), new SaveVersion26To27Migration(), new SaveVersion27To28Migration(), new SaveVersion28To29Migration(), new SaveVersion29To30Migration() };
             foreach (var migration in migrations)
             {
                 if (migration == null) throw new ArgumentException("Migration cannot be null.", nameof(migrations));
@@ -44,6 +47,10 @@ namespace PWManager.Infrastructure.Save
                 throw new InvalidDataException($"Save version must be {GameSave.CurrentSaveVersion}.");
 
             save.SystemNames = SystemNames.CreateDefaults();
+            WrestlerHiddenRules.InitializeSave(save);
+            WrestlerAdaptationService.InitializeSave(save);
+            foreach (var contract in save.Contracts ?? new())
+                if (contract != null && string.IsNullOrEmpty(contract.PromotionId)) contract.PromotionId = save.Promotion?.Id;
             StorylineService.UpgradeRelationships(save);
             ChampionshipService.Upgrade(save);
             NormalizePlayerBirthDate(save);
@@ -54,12 +61,10 @@ namespace PWManager.Infrastructure.Save
 
             Directory.CreateDirectory(saveDirectory);
             var paths = GetPaths(slotName);
-            var json = JsonUtility.ToJson(save, true);
-
             try
             {
-                WriteDurably(paths.Temp, json);
-                ValidateSerializedFile(paths.Temp);
+                var expectedHash = WriteDurably(paths.Temp, save);
+                ValidateSerializedFile(paths.Temp, expectedHash);
 
                 if (File.Exists(paths.Save)) File.Replace(paths.Temp, paths.Save, paths.Backup);
                 else File.Move(paths.Temp, paths.Save);
@@ -111,16 +116,22 @@ namespace PWManager.Infrastructure.Save
             GameSave save;
             try
             {
-                save = JsonUtility.FromJson<GameSave>(File.ReadAllText(path));
+                save = ReadPayload(path, payload =>
+                {
+                    using var text = new StreamReader(payload, new UTF8Encoding(false, true), true, 65536, true);
+                    return SaveJson.Read(text);
+                });
             }
             catch (Exception exception)
             {
-                throw new InvalidDataException("Save file is not valid JSON.", exception);
+                throw new InvalidDataException("저장 파일이 손상되었거나 지원하지 않는 형식입니다.", exception);
             }
 
             if (save == null) throw new InvalidDataException("Save file is empty.");
             NormalizeOptionalState(save);
             MigrateToCurrentVersion(save);
+            WrestlerHiddenRules.InitializeSave(save);
+            WrestlerAdaptationService.InitializeSave(save);
 
             var errors = GameSaveValidator.Validate(save);
             if (errors.Count > 0) throw new InvalidDataException(string.Join(Environment.NewLine, errors));
@@ -149,8 +160,19 @@ namespace PWManager.Infrastructure.Save
             if (save.Promotion != null && string.IsNullOrWhiteSpace(save.Promotion.Abbreviation))
                 save.Promotion.Abbreviation = PromotionState.CreateAbbreviation(save.Promotion.Name);
             save.Shows ??= new List<ShowState>();
+            save.UndiscoveredWrestlerIds ??= new();
+            save.OtherPromotions ??= new();
+            save.WrestlerBehaviors ??= new();
+            save.LockerRoomRelationships ??= new();
+            save.LockerRoomEvents ??= new();
             save.TagTeams ??= new List<TagTeamState>();
             save.Championships ??= new List<ChampionshipState>();
+            save.SalaryPayments ??= new List<SalaryPaymentState>();
+            save.ContractNegotiations ??= new List<ContractNegotiationState>();
+            save.ContractTerminations ??= new List<ContractTerminationState>();
+            save.SeasonResults ??= new List<SeasonResultState>();
+            save.SponsorSeasons ??= new List<SponsorSeasonState>();
+            save.ExperienceRecords ??= new(); save.GrowthQuarterResults ??= new(); save.CareerEvents ??= new();
             ChampionshipService.Upgrade(save);
             save.Stables ??= new List<StableState>();
             save.StoryRelationships ??= new List<StoryRelationshipState>();
@@ -222,20 +244,75 @@ namespace PWManager.Infrastructure.Save
             }
         }
 
-        private void ValidateSerializedFile(string path)
+        private static void ValidateSerializedFile(string path, byte[] expectedHash)
         {
-            var restored = JsonUtility.FromJson<GameSave>(File.ReadAllText(path));
-            if (restored == null || restored.SaveVersion != GameSave.CurrentSaveVersion)
-                throw new InvalidDataException("Serialized save failed basic validation.");
+            // The source state was validated before writing. Verify every restored byte without allocating a second game.
+            ReadPayload(path, payload =>
+            {
+                using var sha = SHA256.Create();
+                if (!expectedHash.SequenceEqual(sha.ComputeHash(payload)))
+                    throw new InvalidDataException("Serialized save differs from the written state.");
+                return true;
+            });
         }
 
-        private static void WriteDurably(string path, string content)
+        private static byte[] WriteDurably(string path, GameSave save)
         {
-            using var stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.None);
-            using var writer = new StreamWriter(stream);
-            writer.Write(content);
+            using var stream = new FileStream(path, FileMode.Create, FileAccess.ReadWrite, FileShare.None);
+            using var writer = new BinaryWriter(stream, Encoding.UTF8, true);
+            writer.Write(CompressedSignature);
+            writer.Write(0);
+            writer.Write(new byte[32]);
+            writer.Flush();
+            long length;
+            using var contentHash = SHA256.Create();
+            using (var gzip = new GZipStream(stream, CompressionLevel.Optimal, true))
+            {
+                using var counted = new SavePayloadStream(gzip, int.MaxValue);
+                using var hashed = new CryptoStream(counted, contentHash, CryptoStreamMode.Write, true);
+                using var text = new StreamWriter(hashed, new UTF8Encoding(false), 65536, true);
+                SaveJson.Write(text, save);
+                text.Flush();
+                hashed.FlushFinalBlock();
+                length = counted.BytesProcessed;
+            }
+            stream.Position = CompressedSignature.Length + sizeof(int) + 32;
+            using var sha = SHA256.Create();
+            var payloadHash = sha.ComputeHash(stream);
+            stream.Position = CompressedSignature.Length;
+            writer.Write(checked((int)length));
+            writer.Write(payloadHash);
             writer.Flush();
             stream.Flush(true);
+            return contentHash.Hash;
+        }
+
+        private static T ReadPayload<T>(string path, Func<Stream, T> read)
+        {
+            using var stream = File.OpenRead(path);
+            using var reader = new BinaryReader(stream, Encoding.UTF8, true);
+            var signature = reader.ReadBytes(CompressedSignature.Length);
+            if (!signature.SequenceEqual(CompressedSignature))
+            {
+                if (signature.Take(4).SequenceEqual(CompressedSignature.Take(4)))
+                    throw new InvalidDataException("Unsupported compressed save format.");
+                stream.Position = 0;
+                return read(stream);
+            }
+
+            var length = reader.ReadInt32();
+            if (length <= 0) throw new InvalidDataException("Invalid save length.");
+            var expectedHash = reader.ReadBytes(32);
+            var payloadStart = stream.Position;
+            using var sha = SHA256.Create();
+            if (!expectedHash.SequenceEqual(sha.ComputeHash(stream)))
+                throw new InvalidDataException("Compressed save checksum mismatch.");
+            stream.Position = payloadStart;
+            using var gzip = new GZipStream(stream, CompressionMode.Decompress);
+            using var counted = new SavePayloadStream(gzip, length, true);
+            var result = read(counted);
+            if (counted.ReadByte() != -1) throw new InvalidDataException("Unread compressed save content.");
+            return result;
         }
 
         private (string Save, string Temp, string Backup) GetPaths(string slotName)

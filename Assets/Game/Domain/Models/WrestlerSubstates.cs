@@ -5,6 +5,15 @@ using PWManager.Domain.Services;
 namespace PWManager.Domain.Models
 {
     [Serializable]
+    public sealed class WrestlerFameState
+    {
+        public long Value;
+        public double Remainder;
+        public int HighestMilestone;
+        public WrestlerFameState Copy() => (WrestlerFameState)MemberwiseClone();
+    }
+
+    [Serializable]
     public sealed class WrestlerConditionState
     {
         public float Condition = 100f;
@@ -41,11 +50,24 @@ namespace PWManager.Domain.Models
         public List<string> ExperienceLogIds = new();
         public List<string> AttributeHistoryIds = new();
         public AgingState AgingState;
+        public WrestlerGrowthState Copy()
+        {
+            var copy = (WrestlerGrowthState)MemberwiseClone();
+            copy.GrowthProgress = GrowthProgress?.Copy() ?? new();
+            copy.ExperienceLogIds = new(ExperienceLogIds ?? new());
+            copy.AttributeHistoryIds = new(AttributeHistoryIds ?? new());
+            return copy;
+        }
     }
 
     [Serializable]
     public sealed class WrestlerStatusState
     {
+        public WrestlerStatusState Copy()
+        {
+            var copy = (WrestlerStatusState)MemberwiseClone();
+            copy.StatusChangeRecordIds = new(StatusChangeRecordIds ?? new()); return copy;
+        }
         public int StatusValue;
         public bool IsRookie;
         public GameDate DebutDate;
@@ -57,6 +79,7 @@ namespace PWManager.Domain.Models
     [Serializable]
     public sealed class WrestlerMomentumState
     {
+        public WrestlerMomentumState Copy() => (WrestlerMomentumState)MemberwiseClone();
         public float Momentum;
         public float MomentumFailure;
         public OptionalGameDate LastMomentumActivityDate;

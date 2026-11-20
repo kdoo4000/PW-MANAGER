@@ -1,0 +1,21 @@
+.scouting-content { flex-grow:1; min-height:0; padding:22px 28px; -unity-font-definition:url("project://database/Assets/Game/Presentation/Resources/PWManagerUI/Fonts/SEBANGGothic-Regular.ttf"); color:#d9d6cf; }
+.scouting-search { flex-shrink:0; padding-bottom:18px; border-bottom-width:1px; border-bottom-color:#343238; }
+.scouting-team { font-size:18px; color:#f4f0e7; -unity-font-definition:url("project://database/Assets/Game/Presentation/Resources/PWManagerUI/Fonts/SEBANGGothic-Bold.ttf"); }
+.scouting-filters { flex-direction:row; flex-wrap:wrap; align-items:flex-end; margin-top:12px; }
+.scouting-filters .unity-base-field { flex-grow:1; flex-basis:240px; min-width:180px; margin:0 12px 8px 0; flex-direction:column; }
+.scouting-filters .unity-base-field__label { margin-bottom:5px; color:#d9d6cf; }
+.scouting-filters .unity-base-field__input { min-height:36px; background-color:#141518; color:#f4f0e7; border-width:1px; border-color:#918c84; }
+.scouting-action { min-width:112px; min-height:38px; margin:0 0 8px; padding:6px 12px; color:#f4f0e7; background-color:#29251e; border-width:1px; border-color:#918c84; }
+.scouting-action:hover { background-color:#403521; }
+.scouting-action:focus { border-color:#d9b45b; }
+.scouting-action:disabled { color:#918c84; border-color:#343238; }
+.scouting-status { margin-top:8px; white-space:normal; color:#d9b45b; }
+.scouting-results-heading { flex-direction:row; justify-content:space-between; align-items:center; margin:18px 0 12px; flex-shrink:0; }
+.scouting-results { flex-grow:1; min-height:0; }
+.scouting-results .unity-scroll-view__horizontal-scroller { display:none; }
+.scouting-candidate { padding:16px 0; border-bottom-width:1px; border-bottom-color:#343238; flex-shrink:0; }
+.scouting-candidate-heading { flex-direction:row; flex-wrap:wrap; align-items:center; justify-content:space-between; }
+.scouting-candidate .wrestler-link { color:#f4f0e7; font-size:18px; -unity-font-definition:url("project://database/Assets/Game/Presentation/Resources/PWManagerUI/Fonts/SEBANGGothic-Bold.ttf"); }
+.scouting-candidate Label { white-space:normal; margin-bottom:7px; }
+.scouting-candidate-detail { color:#b9b5ae; }
+.scouting-empty { flex-grow:1; min-height:120px; justify-content:center; white-space:normal; color:#b9b5ae; }

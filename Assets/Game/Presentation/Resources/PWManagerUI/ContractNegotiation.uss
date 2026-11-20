@@ -1,0 +1,18 @@
+.contract-overlay { position:absolute; left:0; right:0; top:0; bottom:0; background-color:rgba(0,0,0,0.78); align-items:center; justify-content:center; color:#d9d6cf; -unity-font-definition:url("project://database/Assets/Game/Presentation/Resources/PWManagerUI/Fonts/SEBANGGothic-Regular.ttf"); }
+.contract-dialog { width:86%; max-width:640px; max-height:90%; padding:24px; background-color:#141518; border-width:1px; border-color:#343238; }
+.wrestler-report-dialog { width:92%; max-width:1100px; height:90%; }
+.wrestler-report-dialog .contract-body { flex-grow:1; min-height:0; }
+.wrestler-report-dialog Foldout { margin-top:12px; margin-bottom:8px; flex-shrink:0; }
+.wrestler-report-dialog Foldout > Toggle { min-height:36px; white-space:normal; color:#f4f0e7; }
+.contract-heading { color:#f4f0e7; font-size:22px; margin-bottom:16px; -unity-font-definition:url("project://database/Assets/Game/Presentation/Resources/PWManagerUI/Fonts/SEBANGGothic-Bold.ttf"); }
+.contract-body { flex-shrink:1; margin-top:12px; }
+.contract-body .unity-base-field { margin-top:14px; min-height:36px; }
+.contract-body .unity-base-field__label { min-width:130px; color:#d9d6cf; }
+.contract-body .unity-base-field__input { background-color:#090a0c; color:#f4f0e7; border-width:1px; border-color:#918c84; padding:6px; }
+#contract-chance { margin-top:16px; color:#d9b45b; }
+.contract-status { margin-top:16px; white-space:normal; color:#f4f0e7; }
+.contract-section-title { margin-top:24px; font-size:16px; color:#f4f0e7; -unity-font-definition:url("project://database/Assets/Game/Presentation/Resources/PWManagerUI/Fonts/SEBANGGothic-Bold.ttf"); }
+.contract-actions { flex-direction:row; justify-content:flex-end; margin-top:20px; }
+.contract-actions Button { min-width:110px; min-height:36px; margin-left:8px; background-color:#1a1b1f; color:#f4f0e7; border-width:1px; border-color:#918c84; }
+.contract-actions Button:focus, .contract-body .unity-base-field:focus { border-color:#d9b45b; }
+.contract-actions Button:disabled { color:#918c84; border-color:#343238; }

@@ -9,17 +9,39 @@ namespace PWManager.Presentation
 {
     public static class StoryManagementView
     {
-        public static void OpenGroups(VisualElement host) => Open(host, null, true);
+        public static void OpenGroups(VisualElement host) => WrestlerGroupsView.Open(host);
 
-        public static void Open(VisualElement host, string wrestlerId = null, bool groupsOnly = false, string storyId = null)
+        internal static VisualElement Tabs(bool management, Action showMap, Action showManagement)
         {
+            var tabs = new VisualElement { name = "story-tabs" };
+            tabs.AddToClassList("ops-tabs");
+            tabs.styleSheets.Add(Resources.Load<StyleSheet>("PWManagerUI/StorylineTabs"));
+            foreach (var (text, key, active, action) in new[] {
+                ("관계도", "map", !management, showMap), ("목록", "management", management, showManagement) })
+            {
+                var tab = new Button(() => action?.Invoke()) { text = text, name = "story-tab-" + key };
+                tab.AddToClassList("ops-tab"); tab.EnableInClassList("ops-active", active);
+                tab.SetEnabled(active || action != null); tabs.Add(tab);
+            }
+            return tabs;
+        }
+
+        public static void Open(VisualElement host, string wrestlerId = null, bool groupsOnly = false, string storyId = null, Action showMap = null)
+        {
+            if (groupsOnly) { WrestlerGroupsView.Open(host); return; }
             host.Q("story-management")?.RemoveFromHierarchy();
             var save = DashboardSession.ActiveSave;
             if (save == null) return;
             var selectedStory = !groupsOnly && wrestlerId == null
-                ? save.Storylines.FirstOrDefault(x => x.Id == storyId) : null;
+                ? save.Storylines.FirstOrDefault(x => x.Id == storyId)
+                    ?? save.Storylines.Where(x => x.Status == StorylineStatus.Active)
+                        .OrderByDescending(x => StorylineHistory.ForStory(save, x).LastOrDefault()?.Date ?? x.StartedDate).FirstOrDefault()
+                    ?? save.Storylines.FirstOrDefault() : null;
             var root = new VisualElement { name = "story-management" };
             root.AddToClassList("story-management");
+            root.EnableInClassList("story-browser", wrestlerId == null);
+            root.RegisterCallback<GeometryChangedEvent>(evt => root.EnableInClassList("story-browser-narrow", evt.newRect.width < 900));
+            if (showMap != null) root.AddToClassList("story-tabbed");
             if (wrestlerId != null) root.AddToClassList("story-profile");
             root.styleSheets.Add(Resources.Load<StyleSheet>("PWManagerUI/StoryManagement"));
             host.Add(root);
@@ -28,13 +50,12 @@ namespace PWManager.Presentation
             title.AddToClassList("story-title"); header.Add(title);
             if (!groupsOnly && wrestlerId == null)
             {
+                if (showMap != null)
+                {
+                    root.Add(Tabs(true, showMap, () => { }));
+                }
                 var count = new Label($"진행 중 {save.Storylines.Count(x => x.Status == StorylineStatus.Active)}");
                 count.AddToClassList("story-count"); header.Add(count);
-                if (selectedStory != null)
-                {
-                    var back = new Button(() => Open(host)) { text = "대립 목록" };
-                    back.AddToClassList("story-close"); header.Add(back);
-                }
             }
             if (wrestlerId != null)
             {
@@ -49,13 +70,12 @@ namespace PWManager.Presentation
                 close.AddToClassList("story-close"); header.Add(close);
             }
             var body = new VisualElement(); body.AddToClassList("story-body"); root.Add(body);
-            var main = new ScrollView(); main.AddToClassList("story-main"); body.Add(main);
-            var side = new ScrollView(); side.AddToClassList("story-side");
-            if (wrestlerId == null && selectedStory == null) body.Add(side);
+            var main = new ScrollView { name = "story-list" }; main.AddToClassList("story-main"); body.Add(main);
+            var side = new ScrollView { name = "story-detail" }; side.AddToClassList("story-side");
+            if (wrestlerId == null) body.Add(side);
             else main.AddToClassList("story-main-full");
             var storyList = new VisualElement();
-            var creationList = new VisualElement();
-            var candidateList = new VisualElement();
+            var listRows = new VisualElement();
             var groupList = new VisualElement();
             var stableList = new VisualElement();
             var relationList = new VisualElement();
@@ -73,31 +93,12 @@ namespace PWManager.Presentation
             }
             else
             {
-                var storyHeading = new Label(selectedStory == null ? "진행 중인 스토리" : "대립 전개"); storyHeading.AddToClassList("story-section-heading"); main.Add(storyHeading);
-                main.Add(storyList);
-                if (selectedStory == null)
-                {
-                    var candidateHeading = new Label("스토리 후보"); candidateHeading.AddToClassList("story-section-heading"); side.Add(candidateHeading);
-                    side.Add(candidateList);
-                    var creation = new Foldout { text = "새 스토리 만들기", value = false };
-                    creation.AddToClassList("story-creation"); side.Add(creation);
-                    creation.Add(creationList);
-                    side.Add(groupList);
-                }
+                var storyHeading = new Label("스토리라인 목록"); storyHeading.AddToClassList("story-section-heading"); main.Add(storyHeading);
+                main.Add(listRows); side.Add(storyList);
+
             }
+
             var error = new Label { name = "story-error" }; error.AddToClassList("story-error"); root.Add(error);
-            void Change(Action action)
-            {
-                var before = JsonUtility.ToJson(save);
-                try { action(); DashboardSession.PersistActive(); Open(host, wrestlerId, groupsOnly, storyId); }
-                catch (Exception exception)
-                {
-                    JsonUtility.FromJsonOverwrite(before, save);
-                    Open(host, wrestlerId, groupsOnly, storyId);
-                    host.Q<Label>("story-error").text = exception.Message;
-                    host.Q<Label>("story-error").AddToClassList("visible");
-                }
-            }
             void Names(VisualElement parent, System.Collections.Generic.IEnumerable<string> ids)
             {
                 var people = new VisualElement(); people.AddToClassList("story-people");
@@ -115,7 +116,7 @@ namespace PWManager.Presentation
                 var card = new VisualElement(); card.AddToClassList("story-card"); parent.Add(card);
                 var label = new Label(heading); label.AddToClassList("story-heading"); card.Add(label); return card;
             }
-            void Poster(StorylineState story, VisualElement parent, bool detail)
+            void Poster(StorylineState story, VisualElement parent)
             {
                 var poster = new VisualElement(); poster.AddToClassList("story-poster"); parent.Add(poster);
                 var stage = new VisualElement(); stage.AddToClassList("story-poster-stage"); poster.Add(stage);
@@ -131,8 +132,14 @@ namespace PWManager.Presentation
                             : save.Stables.FirstOrDefault(x => x.Id == groupId)?.Name;
                         var group = new Label(groupName ?? "그룹"); group.AddToClassList("story-poster-group"); partySide.Add(group);
                     }
-                    var portraits = new VisualElement(); portraits.AddToClassList("story-poster-portraits"); partySide.Add(portraits);
                     var members = StorylineService.PartyMembers(save, story, first);
+                    if (story.PartyType != StoryPartyType.Wrestler)
+                    {
+                        var leader = story.PartyType == StoryPartyType.Stable ? save.Stables.FirstOrDefault(s => s.Id == (first ? story.FirstGroupId : story.SecondGroupId))?.LeaderId : null;
+                        var groupPicture = new GroupPortraitView(members.Select(id => save.Wrestlers.FirstOrDefault(w => w.Id == id)), leaderId: leader);
+                        groupPicture.AddToClassList("story-poster-group-portrait"); partySide.Add(groupPicture); return;
+                    }
+                    var portraits = new VisualElement(); portraits.AddToClassList("story-poster-portraits"); partySide.Add(portraits);
                     foreach (var id in members.Take(3))
                     {
                         var wrestler = save.Wrestlers.FirstOrDefault(x => x.Id == id);
@@ -143,11 +150,10 @@ namespace PWManager.Presentation
                 }
                 Party(true);
                 var center = new VisualElement(); center.AddToClassList("story-poster-center"); stage.Add(center);
-                var kind = new Label(story.PartyType == StoryPartyType.Wrestler ? "개인 대립" : story.PartyType == StoryPartyType.TagTeam ? "태그팀 대립" : "스테이블 대립");
+                var kind = new Label(story.IsAutomatic ? "선수 스토리" : story.PartyType == StoryPartyType.Wrestler ? "개인 대립" : story.PartyType == StoryPartyType.TagTeam ? "태그팀 대립" : "스테이블 대립");
                 kind.AddToClassList("story-poster-kind"); center.Add(kind);
-                var posterTitle = new Label(story.Name); posterTitle.AddToClassList("story-poster-title"); center.Add(posterTitle);
-                var versus = new Label("VS"); versus.AddToClassList("story-poster-vs"); center.Add(versus);
-                var latest = story.History?.LastOrDefault();
+                var posterTitle = WrestlerNameText.Create(StorylineHistory.Title(save, story), save.Wrestlers); posterTitle.AddToClassList("story-poster-title"); center.Add(posterTitle);
+                var latest = StorylineHistory.ForStory(save, story).LastOrDefault();
                 if (latest != null)
                 {
                     var latestText = new Label($"최근 전개 · {Incident(latest.Incident)}");
@@ -156,7 +162,11 @@ namespace PWManager.Presentation
                 Party(false);
                 var footer = new VisualElement(); footer.AddToClassList("story-poster-footer"); poster.Add(footer);
                 var reaction = new VisualElement(); reaction.AddToClassList("story-reaction"); footer.Add(reaction);
-                var trend = (story.History ?? new()).TakeLast(3).Sum(x => x.InterestChange);
+                var recordedChanges = save.ShowResults.Where(x => StorylineHistory.IsConfirmed(save, x))
+                    .SelectMany(x => x.StoryChanges ?? new()).Where(x => x.TargetId == story.Id && x.ValueKey == "관심도")
+                    .TakeLast(3).ToList();
+                var trend = recordedChanges.Count > 0 ? recordedChanges.Sum(x => x.Amount) :
+                    StorylineHistory.ForStory(save, story).TakeLast(3).Sum(x => x.InterestChange);
                 var change = trend > 0 ? $"▲ +{trend:0}" : trend < 0 ? $"▼ {trend:0}" : "—";
                 var reactionLabel = new Label($"관중 반응 {story.Interest:0}  {change}");
                 reactionLabel.AddToClassList("story-reaction-label"); reaction.Add(reactionLabel);
@@ -168,144 +178,47 @@ namespace PWManager.Presentation
                 {
                     var fatigue = new Label($"피로도 {story.Fatigue:0}"); fatigue.AddToClassList("story-poster-fatigue"); footer.Add(fatigue);
                 }
-                if (!detail)
+            }
+            void RenderSelected()
+            {
+                storyList.Clear(); side.scrollOffset = Vector2.zero;
+                foreach (var row in main.Query<Button>(className: "story-list-row").ToList())
+                    row.EnableInClassList("story-selected", row.name == "story-select-" + selectedStory?.Id);
+                if (selectedStory == null)
                 {
-                    var open = new Button(() => Open(host, storyId: story.Id)) { text = "전개 보기" };
-                    open.AddToClassList("story-poster-open"); footer.Add(open);
+                    var empty = new Label("표시할 스토리라인이 없습니다."); empty.AddToClassList("story-empty"); storyList.Add(empty); return;
                 }
-            }
-            if (wrestlerId == null)
-            {
-            var wrestlers = save.Wrestlers.Where(x => x.PromotionId == save.Promotion.Id).ToList();
-            if (groupsOnly)
-            {
-            Func<string[]> MemberSelection(VisualElement parent, System.Collections.Generic.IEnumerable<string> initial)
-            {
-                var selected = initial.ToHashSet();
-                var foldout = new Foldout { text = "소속 선수 선택", value = false }; parent.Add(foldout);
-                var toggles = new System.Collections.Generic.List<(string id, Toggle toggle)>();
-                foreach (var wrestler in wrestlers)
+                Poster(selectedStory, storyList);
+                var idleDays = StorylineService.DaysWithoutProgress(save, selectedStory);
+                var stateText = new Label($"{(selectedStory.Status == StorylineStatus.Inactive ? "휴지 중" : selectedStory.Status == StorylineStatus.Completed ? "종결" : idleDays >= 28 ? "28일 이상 전개 없음" : "진행 중")} · 마지막 전개 이후 {idleDays}일");
+                stateText.AddToClassList("story-list-meta"); storyList.Add(stateText);
+                if (selectedStory.Status != StorylineStatus.Completed)
                 {
-                    var row = new VisualElement(); row.AddToClassList("story-member"); foldout.Add(row);
-                    var toggle = new Toggle { value = selected.Contains(wrestler.Id), tooltip = "소속 선택" }; row.Add(toggle);
-                    Names(row, new[] { wrestler.Id });
-                    toggles.Add((wrestler.Id, toggle));
+                    var actions = new VisualElement(); actions.AddToClassList("story-people"); storyList.Add(actions);
+                    void Change(StorylineStatus status)
+                    {
+                        var before = JsonUtility.ToJson(save);
+                        try
+                        {
+                            StorylineService.ChangeStatus(save, selectedStory.Id, status); DashboardSession.PersistActive();
+                            Open(host, storyId: selectedStory.Id, showMap: showMap);
+                        }
+                        catch (System.Exception exception) { JsonUtility.FromJsonOverwrite(before, save); error.text = exception.Message; }
+                    }
+                    var paused = selectedStory.Status == StorylineStatus.Inactive;
+                    actions.Add(new Button(() => Change(paused ? StorylineStatus.Active : StorylineStatus.Inactive))
+                        { name = "story-toggle-hiatus", text = paused ? "재개" : "휴지" });
+                    actions.Add(new Button(() => Change(StorylineStatus.Completed)) { name = "story-complete", text = "종결" });
+                    actions.SetEnabled(!DashboardSession.IsShowRunning);
                 }
-                return () => toggles.Where(x => x.toggle.value).Select(x => x.id).ToArray();
-            }
-            if (wrestlers.Count >= 2)
-            {
-                var card = Card("새 태그팀", groupList);
-                var name = new TextField("이름"); card.Add(name);
-                var members = MemberSelection(card, Array.Empty<string>());
-                card.Add(new Button(() => Change(() => WrestlerGroupService.CreateTagTeam(save, name.value, members()))) { text = "태그팀 결성" });
-            }
-            if (wrestlers.Count >= 3)
-            {
-                var card = Card("새 스테이블", stableList);
-                var name = new TextField("이름"); card.Add(name);
-                var members = MemberSelection(card, Array.Empty<string>());
-                var leader = new DropdownField("리더", wrestlers.Select((x, i) => $"{i + 1}. {x.Identity.RingName}").ToList(), 0); card.Add(leader);
-                card.Add(new Button(() => Change(() => WrestlerGroupService.CreateStable(save, name.value, members(), wrestlers[leader.index].Id))) { text = "스테이블 결성" });
-            }
-            foreach (var team in save.TagTeams.Where(x => x.Status == TagTeamStatus.Active))
-            {
-                var card = Card(string.IsNullOrWhiteSpace(team.Name) ? "태그팀" : team.Name, groupList);
-                Names(card, team.MemberIds);
-                card.Add(new Label($"호흡 {team.Chemistry:0}"));
-                var members = MemberSelection(card, team.MemberIds);
-                card.Add(new Button(() => Change(() => WrestlerGroupService.SetTagTeamMembers(save, team.Id, members()))) { text = "태그팀 소속 저장" });
-                var confirm = new Toggle("해체 확인"); card.Add(confirm);
-                card.Add(new Button(() => { if (confirm.value) Change(() => WrestlerGroupService.Disband(save, team.Id, false)); }) { text = "태그팀 해체" });
-            }
-            foreach (var stable in save.Stables.Where(x => x.Status == TagTeamStatus.Active))
-            {
-                var card = Card(stable.Name, stableList);
-                Names(card, stable.MemberIds);
-                card.Add(new Label($"호흡 {stable.Chemistry:0} · 리더")); Names(card, new[] { stable.LeaderId });
-                var members = MemberSelection(card, stable.MemberIds);
-                var leader = new DropdownField("리더", wrestlers.Select((x, i) => $"{i + 1}. {x.Identity.RingName}").ToList(), Math.Max(0, wrestlers.FindIndex(x => x.Id == stable.LeaderId))); card.Add(leader);
-                card.Add(new Button(() => Change(() => WrestlerGroupService.SetStableMembers(save, stable.Id, members(), wrestlers[leader.index].Id))) { text = "소속·리더 저장" });
-                var confirm = new Toggle("해체 확인"); card.Add(confirm);
-                card.Add(new Button(() => { if (confirm.value) Change(() => WrestlerGroupService.Disband(save, stable.Id, true)); }) { text = "스테이블 해체" });
-            }
-            }
-            else
-            {
-            var creation = Card("대립 만들기", creationList);
-            foreach (var type in new[] { StoryPartyType.TagTeam, StoryPartyType.Stable })
-            {
-                var ids = type == StoryPartyType.TagTeam ? save.TagTeams.Where(x => x.Status == TagTeamStatus.Active).Select(x => x.Id).ToList() : save.Stables.Where(x => x.Status == TagTeamStatus.Active).Select(x => x.Id).ToList();
-                if (ids.Count < 2) continue;
-                if (groupList.childCount == 0)
-                {
-                    var heading = new Label("그룹 대립"); heading.AddToClassList("story-section-heading"); groupList.Add(heading);
-                }
-                var names = ids.Select((id, i) => $"{i + 1}. " + (type == StoryPartyType.TagTeam ? save.TagTeams.First(x => x.Id == id).Name : save.Stables.First(x => x.Id == id).Name)).ToList();
-                var card = Card(type == StoryPartyType.TagTeam ? "태그팀 대립" : "스테이블 대립", groupList);
-                var name = new TextField("스토리 이름"); card.Add(name);
-                var first = new DropdownField("첫 그룹", names, 0); card.Add(first);
-                var second = new DropdownField("둘째 그룹", names, 1); card.Add(second);
-                card.Add(new Button(() => Change(() => new StorylineService().CreateGroupStory(save, name.value, type, ids[first.index], ids[second.index]))) { text = "대립 생성" });
-            }
-            if (wrestlers.Count >= 2)
-            {
-                var choices = wrestlers.Select((x, i) => $"{i + 1}. {x.Identity.RingName}").ToList();
-                var name = new TextField("이름"); creation.Add(name);
-                var first = new DropdownField("첫 선수", choices, 0); creation.Add(first);
-                var second = new DropdownField("둘째 선수", choices, 1); creation.Add(second);
-                creation.Add(new Button(() => Change(() => new StorylineService().Create(save, name.value, wrestlers[first.index].Id, wrestlers[second.index].Id))) { text = "스토리 생성" });
-            }
-            }
-            }
-            if (!groupsOnly && wrestlerId == null && selectedStory == null)
-            {
-            var candidates = save.StoryCandidates.Where(x => x.Status == StoryCandidateStatus.Pending).ToList();
-            if (candidates.Count == 0)
-            {
-                var empty = new Label("아직 스토리 후보가 없습니다."); empty.AddToClassList("story-empty"); candidateList.Add(empty);
-            }
-            foreach (var candidate in candidates)
-            {
-                var card = Card("스토리 후보 · " + Incident(candidate.Event.Incident), candidateList);
-                Names(card, new[] { candidate.Event.ActorId, candidate.Event.TargetId });
-                var name = new TextField("새 스토리 이름"); card.Add(name);
-                card.Add(new Button(() => Change(() => new StorylineService().AdoptCandidate(save, candidate.Id, name.value))) { text = "새 스토리로 채택" });
-                var eligible = save.Storylines.Where(x => x.Status == StorylineStatus.Active && StorylineService.IncludesBothParties(save, x, new[] { candidate.Event.ActorId, candidate.Event.TargetId })).ToList();
-                if (eligible.Count > 0)
-                {
-                    var existing = new DropdownField("기존 스토리", eligible.Select((x, i) => $"{i + 1}. {x.Name}").ToList(), 0); card.Add(existing);
-                    card.Add(new Button(() => Change(() => new StorylineService().AdoptCandidate(save, candidate.Id, null, eligible[existing.index].Id))) { text = "기존 스토리에 연결" });
-                }
-            }
-            var activeStories = save.Storylines.Where(x => x.Status == StorylineStatus.Active).ToList();
-            if (activeStories.Count == 0)
-            {
-                var empty = new Label("진행 중인 대립이 없습니다."); empty.AddToClassList("story-empty"); storyList.Add(empty);
-            }
-            foreach (var story in activeStories)
-                Poster(story, storyList, false);
-            var completed = save.Storylines.Where(x => x.Status == StorylineStatus.Completed).ToList();
-            if (completed.Count > 0)
-            {
-                var archive = new Foldout { text = $"종료된 대립 {completed.Count}", value = false };
-                archive.AddToClassList("story-archive"); storyList.Add(archive);
-                foreach (var story in completed) Poster(story, archive, false);
-            }
-            }
-            if (selectedStory != null)
-            {
-                Poster(selectedStory, storyList, true);
-                var context = Card("대립 맥락", storyList);
-                var contextField = new TextField { value = selectedStory.Context, multiline = true };
-                contextField.AddToClassList("story-context"); context.Add(contextField);
-                context.Add(new Button(() => Change(() => selectedStory.Context = contextField.value)) { text = "맥락 저장" });
+                var origin = Card("대립의 시작", storyList);
+                origin.Add(WrestlerNameText.Create(StorylineHistory.Origin(save, selectedStory), save.Wrestlers));
                 var timelineHeading = new Label("전개 기록"); timelineHeading.AddToClassList("story-section-heading"); storyList.Add(timelineHeading);
-                if (selectedStory.History == null || selectedStory.History.Count == 0)
+                if (StorylineHistory.ForStory(save, selectedStory).Count == 0)
                 {
                     var empty = new Label("아직 진행된 사건이 없습니다."); empty.AddToClassList("story-empty"); storyList.Add(empty);
                 }
-                foreach (var beat in (selectedStory.History ?? new()).AsEnumerable().Reverse())
+                foreach (var beat in StorylineHistory.ForStory(save, selectedStory).AsEnumerable().Reverse())
                 {
                     var eventRow = new VisualElement(); eventRow.AddToClassList("story-event"); storyList.Add(eventRow);
                     var eventTitle = new Label($"{(beat.EventType == StoryEventType.Match ? "경기" : "프로모")} · {Incident(beat.Incident)}");
@@ -315,23 +228,98 @@ namespace PWManager.Presentation
                     Names(eventRow, new[] { beat.ActorId, beat.TargetId });
                 }
             }
-            if (wrestlerId != null)
+            void ListRow(StorylineState story, VisualElement parent)
             {
-            var relations = relationList;
-            var visibleRelations = save.StoryRelationships.Where(x =>
-                x.FirstWrestlerId == wrestlerId || x.SecondWrestlerId == wrestlerId).OrderBy(x => x.Value).ToList();
-            if (visibleRelations.Count == 0)
+                var row = new Button(() => { selectedStory = story; RenderSelected(); }) { name = "story-select-" + story.Id };
+                row.AddToClassList("story-list-row"); parent.Add(row);
+                var name = WrestlerNameText.Create(StorylineHistory.Title(save, story), save.Wrestlers); name.AddToClassList("story-list-name"); row.Add(name);
+                var status = story.Status == StorylineStatus.Active ? (StorylineService.DaysWithoutProgress(save, story) >= 28 ? "전개 없음" : "진행 중") : story.Status == StorylineStatus.Completed ? "종결" : "휴지 중";
+                var meta = new Label($"{status} · 관심 {story.Interest:0} · 긴장도 {story.Tension:0}"); meta.AddToClassList("story-list-meta"); row.Add(meta);
+            }
+            if (wrestlerId == null)
             {
-                var empty = new Label("아직 기록된 관계 변화가 없습니다."); empty.AddToClassList("story-empty"); relations.Add(empty);
+                var activeStories = save.Storylines.Where(x => x.Status == StorylineStatus.Active).ToList();
+                foreach (var story in activeStories.Where(s => StorylineService.DaysWithoutProgress(save, s) < 28)) ListRow(story, listRows);
+                var dormant = activeStories.Where(s => StorylineService.DaysWithoutProgress(save, s) >= 28).ToList();
+                if (dormant.Count > 0)
+                {
+                    var heading = new Label($"28일 이상 전개 없음 · {dormant.Count}개"); heading.AddToClassList("story-section-heading"); listRows.Add(heading);
+                    foreach (var story in dormant) ListRow(story, listRows);
+                }
+                if (activeStories.Count == 0)
+                {
+                    var empty = new Label("진행 중인 스토리라인이 없습니다."); empty.AddToClassList("story-empty"); listRows.Add(empty);
+                }
+                var completed = save.Storylines.Where(x => x.Status != StorylineStatus.Active).ToList();
+                if (completed.Count > 0)
+                {
+                    var archive = new Foldout { text = $"지난 스토리 {completed.Count}", value = selectedStory?.Status != StorylineStatus.Active };
+                    archive.AddToClassList("story-archive"); listRows.Add(archive);
+                    foreach (var story in completed) ListRow(story, archive);
+                }
+                RenderSelected();
             }
-            foreach (var pair in visibleRelations)
-            {
-                var row = new VisualElement(); row.AddToClassList("story-relation"); relations.Add(row);
-                Names(row, new[] { pair.FirstWrestlerId, pair.SecondWrestlerId });
-                var value = new Label($"관계 {pair.Value:+0;-0;0}"); value.AddToClassList("story-relation-value"); row.Add(value);
-            }
-            }
+            if (wrestlerId != null) RelationshipHistory(relationList, save, wrestlerId);
         }
+
+        private static void RelationshipHistory(VisualElement parent, GameSave save, string fixedFirst = null)
+        {
+            var heading = new Label("관계 이력"); heading.AddToClassList("story-section-heading"); parent.Add(heading);
+            var wrestlers = save.Wrestlers.Where(x => x != null && save.IsWrestlerDiscovered(x.Id)).ToList();
+            if (wrestlers.Count < 2) { parent.Add(new Label("이력을 조회할 두 선수가 필요합니다.")); return; }
+            var names = wrestlers.Select((x, i) => $"{i + 1}. {x.Identity.RingName}").ToList();
+            var first = new DropdownField("선수", names, Math.Max(0, wrestlers.FindIndex(x => x.Id == fixedFirst))) { name = "history-first" };
+            first.SetEnabled(fixedFirst == null); parent.Add(first);
+            var second = new DropdownField("상대", names, first.index == 0 ? 1 : 0) { name = "history-second" }; parent.Add(second);
+            var content = new VisualElement { name = "relationship-history" }; parent.Add(content);
+            void Refresh() => PairHistory(content, save, wrestlers[first.index].Id, wrestlers[second.index].Id);
+            first.RegisterValueChangedCallback(_ => Refresh()); second.RegisterValueChangedCallback(_ => Refresh()); Refresh();
+        }
+
+        internal static void PairHistory(VisualElement content, GameSave save, string firstId, string secondId)
+        {
+            content.Clear();
+            var a = save.Wrestlers.FirstOrDefault(x => x.Id == firstId);
+            var b = save.Wrestlers.FirstOrDefault(x => x.Id == secondId);
+            if (a == null || b == null) { content.Add(new Label("선수 기록을 찾을 수 없습니다.")); return; }
+            if (a.Id == b.Id) { content.Add(new Label("서로 다른 선수를 선택하세요.")); return; }
+            var people = new VisualElement(); people.AddToClassList("story-people"); content.Add(people);
+            people.Add(WrestlerProfileController.CreateLink(a)); people.Add(WrestlerProfileController.CreateLink(b));
+            var value = save.StoryRelationships.FirstOrDefault(x => x.FirstWrestlerId == a.Id && x.SecondWrestlerId == b.Id ||
+                x.FirstWrestlerId == b.Id && x.SecondWrestlerId == a.Id)?.Value ?? 0;
+            content.Add(new Label($"우호도 {value:+0;-0;0}"));
+            var stories = save.Storylines.Where(x => x.Status == StorylineStatus.Active && StorylineService.CanProgress(save, x) &&
+                StorylineService.IncludesBothParties(save, x, new[] { firstId, secondId })).ToList();
+            if (stories.Count > 0)
+            {
+                var heading = new Label("진행 중인 스토리"); heading.AddToClassList("story-section-heading"); content.Add(heading);
+                foreach (var story in stories) content.Add(WrestlerNameText.Create(StorylineHistory.Title(save, story), save.Wrestlers));
+            }
+            var events = StorylineHistory.ForPair(save, a.Id, b.Id).AsEnumerable().Reverse().ToList();
+            if (events.Count == 0) { content.Add(new Label("함께한 경기나 사건이 아직 없습니다.")); return; }
+            var position = 0;
+            var more = new Button { text = "이전 이력 더 보기" };
+            void Append()
+            {
+                more.RemoveFromHierarchy();
+                foreach (var beat in events.Skip(position).Take(30))
+                {
+                    var row = new VisualElement(); row.AddToClassList("story-event"); content.Add(row);
+                    row.Add(new Label($"{beat.Date.Year:D4}.{beat.Date.Month:D2}.{beat.Date.Day:D2}"));
+                    row.Add(WrestlerNameText.Create(StorylineHistory.Describe(save, beat), save.Wrestlers));
+                    if (beat.Incident == StoryIncident.Competition)
+                    {
+                        var match = save.MatchResults.FirstOrDefault(x => x.Id == beat.SourceResultId);
+                        var side = match?.ParticipantProfiles?.FirstOrDefault(x => x.MemberIds.Contains(a.Id));
+                        if (side != null) row.Add(new Label(side.MemberIds.Contains(b.Id) ? "같은 편으로 출전" : "상대편으로 출전"));
+                    }
+                }
+                position += 30;
+                if (position < events.Count) content.Add(more);
+            }
+            more.clicked += Append; Append();
+        }
+
         private static string Incident(StoryIncident incident) => incident switch
         {
             StoryIncident.Competition => "경쟁", StoryIncident.Challenge => "도전", StoryIncident.Taunt => "도발",

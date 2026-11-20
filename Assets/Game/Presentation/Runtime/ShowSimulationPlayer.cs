@@ -341,7 +341,7 @@ namespace PWManager.Presentation
             Text("simulation-match", "쇼 요약");
             Text("simulation-clock", "");
             Text("simulation-speaker", "해설");
-            Text("simulation-commentary", $"오늘 준비된 순서가 모두 끝났습니다! 쇼 평점 ★ {result.ShowEvaluation?.CriticReview?.DisplayedStars:0.##} · 순손익 ${result.FinancialSettlement.NetIncome:N0}");
+            Text("simulation-commentary", $"오늘 준비된 순서가 모두 끝났습니다! 쇼 평점 ★ {result.ShowEvaluation?.CriticReview?.DisplayedStars:0.##} · 티켓·개최 손익 ${result.FinancialSettlement.NetIncome:N0}");
             screen.Q("simulation-cast").Clear();
             Button("simulation-return").RemoveFromClassList("sim-hidden");
             Button("simulation-return").Focus();

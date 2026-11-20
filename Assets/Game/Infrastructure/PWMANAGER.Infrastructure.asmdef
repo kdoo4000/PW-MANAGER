@@ -2,7 +2,8 @@
   "name": "PWMANAGER.Infrastructure",
   "rootNamespace": "PWManager",
   "references": [
-    "PWMANAGER.Domain"
+    "PWMANAGER.Domain",
+    "Unity.Newtonsoft.Json"
   ],
   "autoReferenced": true
 }

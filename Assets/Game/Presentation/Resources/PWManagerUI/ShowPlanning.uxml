@@ -86,6 +86,7 @@
                     <ui:Label text="프로듀싱" class="show-edit-card-title"/>
                     <ui:Label name="show-detail-spots-summary" text="설정된 스팟 없음" class="show-edit-card-summary"/>
                 </ui:Button>
+                <ui:VisualElement name="show-momentum-risks"/>
                 <ui:VisualElement class="show-detail-actions">
                     <ui:Button name="show-move-up" text="위로" class="show-detail-action"/>
                     <ui:Button name="show-move-down" text="아래로" class="show-detail-action"/>

@@ -1,6 +1,9 @@
 :root { color: #dbe5f2; font-size: 16px; }
 .dashboard { flex-direction: row; width: 100%; height: 100%; background-color: #05070b; background-image: url("dashboard-pattern.svg"); -unity-background-scale-mode: scale-and-crop; overflow: hidden; }
 .sidebar { width: 224px; min-width: 224px; height: 100%; padding: 18px 16px 20px; background-color: #0b111b; border-right-width: 1px; border-right-color: #18243a; }
+.sidebar-menu { flex-grow:1; min-height:0; }
+.sidebar-menu .unity-scroll-view__content-container { min-height:100%; }
+.sidebar-menu .unity-scroll-view__horizontal-scroller { display:none; }
 .brand { height: 70px; min-height: 70px; flex-shrink: 0; padding-left: 12px; justify-content: flex-start; }
 .brand-title { color: #ebf5ff; font-size: 20px; -unity-font-style: bold; }
 .brand-subtitle { color: #d9b45b; font-size: 16px; -unity-font-style: bold; margin-top: 1px; }
@@ -425,6 +428,7 @@
 .nav-icon-teams { background-image: url("project://database/Assets/Game/Presentation/Resources/PWManagerUI/VectorIcons/teams.svg"); }
 .nav-icon-locker { background-image: url("project://database/Assets/Game/Presentation/Resources/PWManagerUI/VectorIcons/locker.svg"); }
 .nav-icon-scout { background-image: url("project://database/Assets/Game/Presentation/Resources/PWManagerUI/VectorIcons/scout.svg"); }
+.nav-icon-training { background-image: url("project://database/Assets/Game/Presentation/Resources/PWManagerUI/VectorIcons/training.svg"); }
 .nav-icon-show { background-image: url("project://database/Assets/Game/Presentation/Resources/PWManagerUI/VectorIcons/show.svg"); }
 .nav-icon-story { background-image: url("project://database/Assets/Game/Presentation/Resources/PWManagerUI/VectorIcons/story.svg"); }
 .nav-icon-title { background-image: url("project://database/Assets/Game/Presentation/Resources/PWManagerUI/VectorIcons/title.svg"); }
@@ -477,9 +481,9 @@
 .roster-panel { padding: 24px; }
 
 .dashboard .sidebar, .dashboard .topbar { background-color: rgba(20, 21, 24, 0.82); }
-.dashboard .sidebar > Button.nav { background-color: transparent; }
-.dashboard .sidebar > Button.nav:hover { background-color: rgba(217, 214, 207, 0.06); }
-.dashboard .sidebar > Button.nav.active { background-color: var(--pw-selected); }
+.dashboard .sidebar Button.nav { background-color: transparent; }
+.dashboard .sidebar Button.nav:hover { background-color: rgba(217, 214, 207, 0.06); }
+.dashboard .sidebar Button.nav.active { background-color: var(--pw-selected); }
 .dashboard .roster-content, .dashboard .message-content, .dashboard .dashboard-profile-content,
 .dashboard .show-schedule-content, .dashboard .show-planning-content,
 .dashboard .dashboard-profile-content .wp-screen { background-color: rgba(20, 21, 24, 0.16); }
@@ -534,3 +538,7 @@
 .dashboard .schedule-title-dialog, .dashboard .show-editor-dialog,
 .dashboard .save-load-dialog { background-color: var(--pw-card); }
 .dashboard Button:disabled { opacity: 0.38; }
+.message-filter { margin: 8px 16px; min-height: 40px; flex-shrink: 0; }
+.message-deadline { color: #d9b45b; font-size: 12px; margin-left: 8px; white-space: normal; }
+.message-filter .unity-base-field__input { background-color: #1a1b1f; color: #f4f0e7; border-width: 1px; border-color: #918c84; }
+#message-list Foldout > Toggle { min-height: 40px; white-space: normal; color: #bcb6ad; }

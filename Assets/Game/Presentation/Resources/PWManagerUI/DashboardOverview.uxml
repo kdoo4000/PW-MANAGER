@@ -73,7 +73,7 @@
                     <ui:Label name="cash-detail" text="활성 저장 없음" class="micro" style="padding-top: 2px; padding-bottom: 2px;"/>
                 </ui:VisualElement>
                 <ui:VisualElement class="metric" style="padding-top: 4px; padding-bottom: 4px;">
-                    <ui:Label text="단체 위상" class="eyebrow" style="margin-top: 2px; padding-top: 2px; margin-right: 4px; padding-bottom: 2px;"/>
+                    <ui:Label text="단체 명성" class="eyebrow" style="margin-top: 2px; padding-top: 2px; margin-right: 4px; padding-bottom: 2px;"/>
                     <ui:Label name="prestige-value" text="—" class="metric-value" style="padding-top: 2px; padding-bottom: 2px; margin-bottom: 1px;"/>
                     <ui:Label name="promotion-name" text="—" class="micro" style="padding-top: 2px; padding-bottom: 2px;"/>
                 </ui:VisualElement>
@@ -92,6 +92,11 @@
                     <ui:Label name="staff-value" text="—" class="metric-value blue-text" style="padding-top: 2px; padding-bottom: 2px; margin-bottom: 1px;"/>
                     <ui:Label name="staff-detail" text="부서 데이터 없음" class="micro" style="padding-top: 2px; padding-bottom: 2px;"/>
                 </ui:VisualElement>
+            </ui:VisualElement>
+            <ui:VisualElement name="quarter-summary" style="flex-direction: row; align-items: center; flex-shrink: 0; margin-top: 6px; margin-bottom: 6px;">
+                <ui:Label name="prestige-quarter-estimate" class="micro" style="flex-grow: 1; white-space: normal;"/>
+                <ui:Label name="prestige-next-unlock" class="micro" style="flex-grow: 1; white-space: normal;"/>
+                <ui:Button name="prestige-open-quarter" text="분기 결산" class="chip"/>
             </ui:VisualElement>
             <ui:VisualElement class="operations-grid">
                 <ui:VisualElement class="inner-card fan-card">
@@ -145,6 +150,7 @@
                     <ui:Label text="기술적 경기 품질" class="micro" style="padding-bottom: 0; padding-top: 0; margin-top: 2px;"/>
                 </ui:VisualElement>
             </ui:VisualElement>
+            <ui:Label name="result-prestige-bonus" class="muted" style="white-space: normal; display: none;"/>
             <ui:Label text="팬층별 만족도" class="inner-title"/>
             <ui:VisualElement class="rating">
                 <ui:Label text="매니아" class="mania-text"/>

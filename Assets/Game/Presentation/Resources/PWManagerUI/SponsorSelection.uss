@@ -1,0 +1,37 @@
+.sponsor-screen { flex-grow:1; min-height:0; color:#f2eee5; -unity-font-definition:url("project://database/Assets/Game/Presentation/Resources/PWManagerUI/Fonts/SEBANGGothic-Regular.ttf"); }
+.sponsor-heading { flex-direction:row; flex-wrap:wrap; justify-content:space-between; align-items:center; padding:12px 16px; border-bottom-width:1px; border-bottom-color:#3a3d42; }
+.sponsor-title { font-size:23px; color:#f2eee5; white-space:normal; -unity-font-definition:url("project://database/Assets/Game/Presentation/Resources/PWManagerUI/Fonts/SEBANGGothic-Bold.ttf"); }
+.sponsor-heading Label { margin:4px 0; }
+.sponsor-columns { flex-direction:row; flex-grow:1; min-height:0; }
+.sponsor-list { flex-grow:1; flex-basis:0; min-width:0; border-right-width:1px; border-right-color:#3a3d42; padding:12px 8px; }
+.sponsor-card-grid { flex-direction:row; flex-wrap:wrap; align-content:flex-start; }
+.sponsor-detail { flex-grow:1; flex-basis:0; min-width:0; padding:16px 22px; }
+.sponsor-row { width:32%; flex-basis:32%; flex-shrink:0; min-width:0; min-height:148px; margin:0 .66% 12px; padding:10px; border-width:1px; border-color:#45484d; border-radius:2px; flex-direction:row; align-items:center; background-color:#191c21; color:#f2eee5; }
+.sponsor-row:hover { background-color:#272a30; }
+.sponsor-row.focused { border-color:#e6d5af; }
+.sponsor-row.selected { background-color:#302c23; border-width:2px; border-color:#d9b45b; }
+.sponsor-row:focus { border-width:2px; border-color:#d9b45b; }
+.sponsor-row-identity { width:52%; min-width:0; flex-shrink:0; align-items:center; padding-right:8px; }
+.sponsor-row-logo { width:100%; height:76px; flex-shrink:0; margin-bottom:5px; }
+.sponsor-row-identity .sponsor-company { width:100%; font-size:15px; white-space:nowrap; -unity-text-align:middle-center; }
+.sponsor-row-copy { flex-grow:1; flex-basis:0; min-width:0; border-left-width:1px; border-left-color:#45484d; padding-left:10px; justify-content:center; }
+.sponsor-row-copy Label { -unity-text-align:middle-left; }
+.sponsor-row-copy .sponsor-money { font-size:14px; margin-top:9px; }
+.sponsor-row-copy .sponsor-muted { margin-top:0; }
+.sponsor-detail-pane { width:30%; max-width:420px; min-width:280px; flex-shrink:0; min-height:0; }
+.sponsor-narrow .sponsor-row { width:48%; flex-basis:48%; margin-left:1%; margin-right:1%; }
+.sponsor-detail-actions { flex-shrink:0; padding:0 22px 12px; border-top-width:1px; border-top-color:#3a3d42; }
+.sponsor-company { font-size:18px; color:#f2eee5; -unity-font-definition:url("project://database/Assets/Game/Presentation/Resources/PWManagerUI/Fonts/SEBANGGothic-Bold.ttf"); }
+.sponsor-muted { font-size:14px; color:#bab8b1; margin-top:5px; white-space:normal; }
+.sponsor-money { font-size:15px; color:#e5c986; margin-top:7px; white-space:normal; }
+.sponsor-selected { color:#e5c986; font-size:15px; margin-top:7px; }
+.sponsor-detail-logo { width:100%; height:132px; flex-shrink:0; background-color:#14171c; margin-bottom:12px; }
+.sponsor-description { white-space:normal; font-size:16px; margin:10px 0; color:#e0dcd2; }
+.sponsor-goal { margin-top:16px; padding:12px 0; border-top-width:1px; border-top-color:#3a3d42; }
+.sponsor-goal-text { font-size:17px; color:#f2eee5; white-space:normal; margin-top:7px; }
+.sponsor-action { min-height:42px; padding:8px 18px; margin:14px 0 4px; color:#f2eee5; background-color:#3b3325; border-width:1px; border-color:#a28d5d; border-radius:2px; font-size:16px; }
+.sponsor-action:hover { background-color:#51432e; }
+.sponsor-action:focus { border-color:#f2d491; border-width:2px; }
+.sponsor-action:disabled { background-color:#292a2c; color:#a6a49e; border-color:#55565a; }
+.sponsor-overlay { position:absolute; left:0; right:0; top:0; bottom:0; background-color:rgba(0,0,0,.84); justify-content:center; align-items:center; }
+.sponsor-dialog { width:96%; height:94%; background-color:#12151a; padding:16px 22px; border-width:1px; border-color:#6f6653; }

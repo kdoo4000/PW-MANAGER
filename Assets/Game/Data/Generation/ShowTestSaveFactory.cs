@@ -34,9 +34,12 @@ namespace PWManager.Data.Generation
                 }).ToList()
             });
             var wrestlerContractIds = save.Contracts.Where(x => x.Type == ContractType.Wrestler).Select(x => x.Id).ToHashSet();
+            var paymentIds = save.SalaryPayments.Where(x => wrestlerContractIds.Contains(x.ContractId)).Select(x => x.Id).ToHashSet();
             save.Wrestlers.Clear();
             save.Contracts.RemoveAll(x => x.Type == ContractType.Wrestler);
-            save.Transactions.RemoveAll(x => wrestlerContractIds.Contains(x.ReasonId));
+            save.Transactions.RemoveAll(x => wrestlerContractIds.Contains(x.ReasonId) || paymentIds.Contains(x.ReasonId));
+            save.SalaryPayments.RemoveAll(x => wrestlerContractIds.Contains(x.ContractId));
+            save.ProcessedIds.RemoveAll(x => wrestlerContractIds.Any(id => x.StartsWith($"salary:{id}:", StringComparison.Ordinal)));
             foreach (var wrestler in WweShowTestRoster.Create(generator, save.CurrentDate))
             {
                 wrestler.PromotionId = save.Promotion.Id;
@@ -46,9 +49,10 @@ namespace PWManager.Data.Generation
                 var offer = InitialContractOfferRules.Calculate(wrestler);
                 save.Contracts.Add(new ContractState
                 {
-                    Id = EntityId.CreateRuntimeId(), PersonId = wrestler.Id, Type = ContractType.Wrestler,
+                    Id = EntityId.CreateRuntimeId(), PersonId = wrestler.Id, PromotionId = save.Promotion.Id, Type = ContractType.Wrestler,
                     StartDate = save.CurrentDate, EndDate = new GameDate(2027, 5, 31),
                     MonthlySalary = offer.MonthlySalary, TerminationCost = offer.TerminationCost,
+                    MatchAppearanceFee = offer.MatchAppearanceFee, PromoAppearanceFee = offer.PromoAppearanceFee,
                     Status = ContractStatus.Active
                 });
             }
@@ -61,6 +65,7 @@ namespace PWManager.Data.Generation
             show.Date = save.CurrentDate;
             schedule.Date = save.CurrentDate;
             schedule.BookingDeadline = save.CurrentDate;
+            new SalaryPaymentService().ProcessDay(save, save.CurrentDate);
             var errors = GameSaveValidator.Validate(save);
             if (errors.Count > 0) throw new InvalidOperationException(string.Join(" | ", errors));
             return save;

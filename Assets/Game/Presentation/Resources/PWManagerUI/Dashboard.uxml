@@ -9,6 +9,7 @@
                 <ui:Label name="promotion-abbreviation" text="—" class="brand-title" style="margin-top: 1px;"/>
                 <ui:Label text="PROMOTION OFFICE" class="brand-subtitle"/>
             </ui:VisualElement>
+            <ui:ScrollView name="sidebar-menu" mode="Vertical" class="sidebar-menu">
             <ui:Button name="nav-home" class="nav active"><ui:VisualElement name="icon-home" class="nav-icon"/><ui:Label text="홈" class="nav-label"/><ui:Label name="home-badge" text="0" class="badge"/></ui:Button>
             <ui:Button name="nav-message" class="nav"><ui:VisualElement name="icon-message" class="nav-icon"/><ui:Label text="메시지" class="nav-label"/><ui:Label name="message-badge" text="0" class="badge"/></ui:Button>
             <ui:VisualElement class="divider"/>
@@ -16,6 +17,7 @@
             <ui:Button name="nav-teams" class="nav"><ui:VisualElement name="icon-teams" class="nav-icon"/><ui:Label text="태그팀·스테이블" class="nav-label"/></ui:Button>
             <ui:Button name="nav-locker" class="nav"><ui:VisualElement name="icon-locker" class="nav-icon"/><ui:Label text="라커룸" class="nav-label"/></ui:Button>
             <ui:Button name="nav-scout" class="nav"><ui:VisualElement name="icon-scout" class="nav-icon"/><ui:Label text="스카우팅" class="nav-label"/></ui:Button>
+            <ui:Button name="nav-training" class="nav"><ui:VisualElement name="icon-training" class="nav-icon"/><ui:Label text="훈련" class="nav-label"/></ui:Button>
             <ui:VisualElement class="divider"/>
             <ui:Button name="nav-show" class="nav"><ui:VisualElement name="icon-show" class="nav-icon"/><ui:Label text="쇼" class="nav-label"/><ui:Label name="show-badge" text="0" class="badge"/></ui:Button>
             <ui:Button name="nav-story" class="nav"><ui:VisualElement name="icon-story" class="nav-icon"/><ui:Label text="스토리라인" class="nav-label"/></ui:Button>
@@ -23,7 +25,7 @@
             <ui:Button name="nav-tournament" class="nav"><ui:VisualElement name="icon-tournament" class="nav-icon"/><ui:Label text="토너먼트" class="nav-label"/></ui:Button>
             <ui:VisualElement class="divider"/>
             <ui:Button name="nav-schedule" class="nav"><ui:VisualElement name="icon-schedule" class="nav-icon"/><ui:Label text="일정" class="nav-label"/></ui:Button>
-            <ui:Button name="nav-staff" class="nav"><ui:VisualElement name="icon-staff" class="nav-icon"/><ui:Label text="시설·스태프" class="nav-label"/></ui:Button>
+            <ui:Button name="nav-staff" class="nav"><ui:VisualElement name="icon-staff" class="nav-icon"/><ui:Label text="스태프·경기장" class="nav-label"/></ui:Button>
             <ui:Button name="nav-company" class="nav"><ui:VisualElement name="icon-company" class="nav-icon"/><ui:Label text="단체 정보" class="nav-label"/></ui:Button>
             <ui:Button name="nav-finance" class="nav"><ui:VisualElement name="icon-finance" class="nav-icon"/><ui:Label text="재정" class="nav-label"/></ui:Button>
             <ui:VisualElement class="divider"/>
@@ -32,6 +34,7 @@
             <ui:Button name="nav-history" class="nav"><ui:VisualElement name="icon-history" class="nav-icon"/><ui:Label text="기록" class="nav-label"/></ui:Button>
             <ui:VisualElement class="sidebar-spacer"/>
             <ui:Button name="nav-settings" class="nav"><ui:VisualElement name="icon-settings" class="nav-icon"/><ui:Label text="저장 / 불러오기" class="nav-label"/></ui:Button>
+            </ui:ScrollView>
         </ui:VisualElement>
         <ui:VisualElement name="dashboard-workspace" class="workspace">
             <ui:VisualElement class="topbar">

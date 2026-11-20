@@ -8,12 +8,41 @@ namespace PWManager.Domain.Services
 {
     public static class ChampionshipService
     {
+        public static IReadOnlyList<string> CurrentMemberIds(GameSave save, ChampionshipState title) =>
+            string.IsNullOrEmpty(title.HolderId) ? Array.Empty<string>() : HolderMembers(save, title, title.HolderId, false);
+
+        public static IReadOnlyList<ChampionshipState> HeldBy(GameSave save, string wrestlerId) =>
+            (save?.Championships ?? new()).Where(t => t != null && CurrentMemberIds(save, t).Contains(wrestlerId))
+                .OrderByDescending(t => t.IsWorldChampionship).ThenByDescending(Prestige).ThenBy(t => t.Id, StringComparer.Ordinal).ToList();
+
+        public static void SetBeltDesign(GameSave save, ChampionshipState title, BeltDesignState design)
+        {
+            if (save?.Promotion == null || title == null || title.PromotionId != save.Promotion.Id || !save.Championships.Contains(title))
+                throw new InvalidOperationException("소속 단체의 챔피언십을 선택하세요.");
+            if (design == null) throw new ArgumentNullException(nameof(design));
+            BeltDesignRules.Validate(design);
+            title.BeltDesign = design.Copy();
+        }
+
+        public static void Rename(GameSave save, ChampionshipState title, string name)
+        {
+            name = name?.Trim();
+            if (save?.Promotion == null || title == null || title.PromotionId != save.Promotion.Id || !save.Championships.Contains(title))
+                throw new InvalidOperationException("소속 단체의 챔피언십을 선택하세요.");
+            if (string.IsNullOrWhiteSpace(name)) throw new InvalidOperationException("챔피언십 이름을 입력하세요.");
+            if (save.Championships.Any(x => x.Id != title.Id && x.PromotionId == title.PromotionId && string.Equals(x.Name, name, StringComparison.OrdinalIgnoreCase)))
+                throw new InvalidOperationException("같은 이름의 챔피언십이 있습니다.");
+            title.Name = name;
+        }
+
         public static ChampionshipState Create(GameSave save, string name, ChampionshipType type,
-            bool world = false, string holderId = null)
+            bool world = false, string holderId = null, ChampionshipDivision division = ChampionshipDivision.Open)
         {
             if (save?.Promotion == null) throw new InvalidOperationException("단체를 찾을 수 없습니다.");
             name = name?.Trim();
             if (string.IsNullOrWhiteSpace(name)) throw new InvalidOperationException("챔피언십 이름을 입력하세요.");
+            if (!Enum.IsDefined(typeof(ChampionshipDivision), division))
+                throw new InvalidOperationException("챔피언십 디비전을 선택하세요.");
             if (!Enum.IsDefined(typeof(ChampionshipType), type) || type == ChampionshipType.TagTeam && world)
                 throw new InvalidOperationException("월드 챔피언십은 개인 타이틀만 선택할 수 있습니다.");
             name = $"{save.Promotion.Name?.Trim()} {name}{(type == ChampionshipType.TagTeam ? " Tag Team" : "")} Championship".Trim();
@@ -21,7 +50,7 @@ namespace PWManager.Domain.Services
                 string.Equals(x.Name, name, StringComparison.OrdinalIgnoreCase)))
                 throw new InvalidOperationException("같은 이름의 챔피언십이 있습니다.");
             var title = new ChampionshipState { Id = EntityId.CreateRuntimeId(), PromotionId = save.Promotion.Id,
-                Name = name, Type = type, IsWorldChampionship = world, HasPrestige = true, Prestige = world ? 60f : 30f };
+                Name = name, Type = type, Division = division, IsWorldChampionship = world, BeltDesign = BeltDesignRules.Default(type, world), CreatedDate = new OptionalGameDate(save.CurrentDate), HasPrestige = true, Prestige = world ? 60f : 30f };
             SetHolder(save, title, holderId);
             (save.Championships ??= new()).Add(title);
             return title;
@@ -41,6 +70,26 @@ namespace PWManager.Domain.Services
                 { HolderId = holderId, MemberIds = members, WonDate = save.CurrentDate });
         }
 
+        public static bool IsEligible(ChampionshipDivision division, WrestlerState wrestler) => wrestler?.Identity != null && (division switch
+        {
+            ChampionshipDivision.Open => true,
+            ChampionshipDivision.Men => wrestler.Identity.Gender == WrestlerGender.Male,
+            ChampionshipDivision.Women => wrestler.Identity.Gender == WrestlerGender.Female,
+            _ => false
+        });
+
+        public static void SetDivisionAndHolder(GameSave save, ChampionshipState title, ChampionshipDivision division, string holderId)
+        {
+            if (save?.Promotion == null || title == null || title.PromotionId != save.Promotion.Id || !save.Championships.Contains(title))
+                throw new InvalidOperationException("소속 단체의 챔피언십을 선택하세요.");
+            if (!Enum.IsDefined(typeof(ChampionshipDivision), division))
+                throw new InvalidOperationException("챔피언십 디비전을 선택하세요.");
+            if (!string.IsNullOrEmpty(holderId))
+                HolderMembers(save, new ChampionshipState { PromotionId = title.PromotionId, Type = title.Type, Division = division }, holderId, title.HolderId != holderId);
+            title.Division = division;
+            if (title.HolderId != holderId) SetHolder(save, title, holderId);
+        }
+
         public static float Prestige(ChampionshipState title) => title.HasPrestige ? title.Prestige : title.IsWorldChampionship ? 60f : 30f;
 
         public static void Upgrade(GameSave save)
@@ -50,6 +99,7 @@ namespace PWManager.Domain.Services
                 if (title == null) continue;
                 if (!title.HasPrestige) { title.Prestige = Prestige(title); title.HasPrestige = true; }
                 title.MatchHistory ??= new();
+                title.BeltDesign ??= BeltDesignRules.Default(title.Type, title.IsWorldChampionship);
             }
         }
 
@@ -70,6 +120,8 @@ namespace PWManager.Domain.Services
                 var wrestler = save.Wrestlers.FirstOrDefault(x => x.Id == id && x.PromotionId == title.PromotionId);
                 if (wrestler == null || active && wrestler.Roster.ActivityState != RosterActivityState.Active)
                     throw new InvalidOperationException("챔피언은 소속 로스터의 활동 중인 선수여야 합니다.");
+                if (!IsEligible(title.Division, wrestler))
+                    throw new InvalidOperationException("챔피언십 디비전의 참가 자격에 맞는 선수를 선택하세요.");
                 return new List<string> { id };
             }
             var team = save.TagTeams.FirstOrDefault(x => x.Id == id && x.PromotionId == title.PromotionId);
@@ -79,6 +131,8 @@ namespace PWManager.Domain.Services
                 team.MemberIds.Any(member => !save.Wrestlers.Any(x => x.Id == member &&
                     x.PromotionId == title.PromotionId && (!active || x.Roster.ActivityState == RosterActivityState.Active))))
                 throw new InvalidOperationException("챔피언은 소속 선수로 구성된 활동 중인 태그팀이어야 합니다.");
+            if (team.MemberIds.Any(member => !IsEligible(title.Division, save.Wrestlers.First(x => x.Id == member))))
+                throw new InvalidOperationException("태그팀 전원이 챔피언십 디비전의 참가 자격에 맞아야 합니다.");
             return new List<string>(team.MemberIds);
         }
 
@@ -89,10 +143,13 @@ namespace PWManager.Domain.Services
             {
                 if (title == null || !EntityId.IsValidRuntimeId(title.Id) || !ids.Add(title.Id) ||
                     title.PromotionId != save.Promotion.Id || string.IsNullOrWhiteSpace(title.Name) ||
-                    !Enum.IsDefined(typeof(ChampionshipType), title.Type) ||
+                    !Enum.IsDefined(typeof(ChampionshipType), title.Type) || !Enum.IsDefined(typeof(ChampionshipDivision), title.Division) ||
                     title.Type == ChampionshipType.TagTeam && title.IsWorldChampionship || title.Reigns == null ||
                     float.IsNaN(Prestige(title)) || float.IsInfinity(Prestige(title)) || Prestige(title) < 0 || Prestige(title) > 100)
                     throw new InvalidOperationException("챔피언십 정보가 올바르지 않습니다.");
+                BeltDesignRules.Validate(title.BeltDesign);
+                if (title.CreatedDate.HasValue && (!ChampionshipRecords.KnownDate(title.CreatedDate.Value) || title.CreatedDate.Value.CompareTo(save.CurrentDate) > 0))
+                    throw new InvalidOperationException("챔피언십 창설일이 올바르지 않습니다.");
                 if (!string.IsNullOrEmpty(title.HolderId)) HolderMembers(save, title, title.HolderId, false);
                 var open = title.Reigns.Where(x => x != null && !x.LostDate.HasValue).ToList();
                 if (title.Reigns.Any(x => x == null || string.IsNullOrEmpty(x.HolderId) || x.MemberIds == null ||
@@ -142,8 +199,8 @@ namespace PWManager.Domain.Services
             var staged = new GameSave { Promotion = save.Promotion, Wrestlers = save.Wrestlers, TagTeams = save.TagTeams, CurrentDate = date };
             staged.Championships = (save.Championships ?? new()).Select(x => new ChampionshipState
             {
-                Id = x.Id, PromotionId = x.PromotionId, Name = x.Name, Type = x.Type,
-                IsWorldChampionship = x.IsWorldChampionship, HolderId = x.HolderId,
+                Id = x.Id, PromotionId = x.PromotionId, Name = x.Name, Type = x.Type, Division = x.Division,
+                IsWorldChampionship = x.IsWorldChampionship, BeltDesign = x.BeltDesign?.Copy(), CreatedDate = x.CreatedDate, HolderId = x.HolderId,
                 HasPrestige = true, Prestige = Prestige(x), MatchHistory = new(x.MatchHistory ?? new()),
                 Reigns = x.Reigns.Select(r => new ChampionshipReignState { HolderId = r.HolderId, MemberIds = new(r.MemberIds),
                     WonDate = r.WonDate, LostDate = r.LostDate, SourceResultId = r.SourceResultId, Defenses = r.Defenses }).ToList()

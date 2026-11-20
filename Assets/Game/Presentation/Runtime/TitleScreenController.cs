@@ -34,7 +34,7 @@ namespace PWManager.Presentation
     {
         private const string SaveSlot = "autosave";
         private const long InitialCash = 100000;
-        private static readonly string[] StepTitles = { "기본 정보", "능력 설정", "단체 설정", "선수 영입", "시즌 운영", "경기장 계약", "최종 검토" };
+        private static readonly string[] StepTitles = { "기본 정보", "능력 설정", "단체 설정", "선수 영입", "시즌 운영", "경기장 계약", "스폰서 선택", "최종 검토" };
         private static readonly string[] PlayerRoleChoices = { "선수 겸 단장", "전문 단장" };
         private static readonly string[] GenderChoices = { "남성", "여성" };
         private static readonly string[] ReputationChoices = { "지역 무명", "지역 스타", "전국구", "스타", "전설" };
@@ -88,6 +88,10 @@ namespace PWManager.Presentation
         private int seed;
         private int step;
         private PortraitEditorView playerAppearance;
+
+        private GameSave sponsorPreview;
+        private string sponsorSettingsKey;
+        private SponsorSelectionView sponsorSelection;
 
         private string SaveDirectory => Path.Combine(Application.persistentDataPath, "Saves");
 
@@ -186,6 +190,7 @@ namespace PWManager.Presentation
             try
             {
                 DashboardSession.Clear();
+                sponsorPreview = null; sponsorSettingsKey = null; sponsorSelection = null;
                 seed = unchecked((int)DateTime.UtcNow.Ticks);
                 candidates = new WrestlerGenerator(new StaticContentRegistry(catalog), seed)
                     .GenerateInitialCandidates(new GameDate(2026, 6, 1)).Take(20).ToList();
@@ -201,9 +206,9 @@ namespace PWManager.Presentation
                 birthDateCalendar.AddToClassList("hidden");
                 RefreshStyleChoices("style_007");
                 RefreshPlayerAbilities();
-                regularFrequency.choices = RegularChoices.ToList();
+                regularFrequency.choices = RegularChoices.Take(PromotionProgressionRules.MaxRegular(0) + 1).ToList();
                 regularFrequency.index = 0;
-                ppvFrequency.choices = PpvChoices.ToList();
+                ppvFrequency.choices = PpvChoices.Take(PromotionProgressionRules.MaxPpvFrequency(0) + 1).ToList();
                 ppvFrequency.index = 0;
                 BuildRosterHeader();
                 RenderRoster();
@@ -266,7 +271,10 @@ namespace PWManager.Presentation
             backButton.text = step == 0 ? "취소" : "이전";
             nextButton.text = step == StepTitles.Length - 1 ? "게임 시작" : "다음";
             if (step == 1) RefreshStyleChoices();
-            if (step == StepTitles.Length - 1) RenderFinalReview();
+            if (step == 7) RenderFinalReview();
+            newGameRoot.Q(className: "cost-panel").style.display = step == 6 ? DisplayStyle.None : DisplayStyle.Flex;
+            if (step == 6) RenderSponsorSelection();
+            else nextButton.SetEnabled(true);
             RefreshSummary();
         }
 
@@ -283,6 +291,7 @@ namespace PWManager.Presentation
 
         private bool ValidateStep()
         {
+            if (step >= 6 && sponsorSelection?.SelectedIds.Count != SponsorMissionService.SelectionCount) return Fail("스폰서 제안 3개를 선택하세요.");
             if (step == 0)
             {
                 if (string.IsNullOrWhiteSpace(playerName.value)) return Fail("플레이어 이름을 입력해 주세요.");
@@ -340,6 +349,7 @@ namespace PWManager.Presentation
                 var offer = ContractOfferFor(current);
                 AddRosterCell(row, Money(offer.SigningBonus), "col-money", "roster-money");
                 AddRosterCell(row, Money(offer.MonthlySalary), "col-money", "roster-money");
+                row.tooltip = $"월 기본급 {Money(offer.MonthlySalary)} · 경기 수당 {Money(offer.MatchAppearanceFee)} · 프로모 수당 {Money(offer.PromoAppearanceFee)}";
                 row.clicked += () =>
                 {
                     if (!selectedWrestlerIds.Remove(current.Id)) selectedWrestlerIds.Add(current.Id);
@@ -390,7 +400,7 @@ namespace PWManager.Presentation
             AddSortHeader(header, "경기", "match", "col-rating");
             AddSortHeader(header, "프로모", "promo", "col-rating");
             AddSortHeader(header, "계약금", "signing", "col-money");
-            AddSortHeader(header, "월급", "salary", "col-money");
+            AddSortHeader(header, "월 기본급", "salary", "col-money");
         }
 
         private static void AddRosterCell(VisualElement row, string text, string widthClass, string extraClass = null)
@@ -529,11 +539,11 @@ namespace PWManager.Presentation
             Ui<Label>("summary-promotion").text = $"{promotionName.value?.Trim()?.ToUpperInvariant()} · {promotionAbbreviation.value?.Trim()?.ToUpperInvariant()}";
             Ui<Label>("summary-player").text = $"{playerName.value?.Trim()} · {ReputationChoices[Mathf.Max(0, playerReputation.index)]}";
             Ui<Label>("summary-roster").text = $"{selectedWrestlerIds.Count}명";
-            Ui<Label>("summary-signing").text = Money(signing);
+            Ui<Label>("summary-signing").text = Money(signing + monthly);
             Ui<Label>("summary-salary").text = Money(monthly);
             Ui<Label>("summary-season-fixed").text = Money(monthly * 12);
             Ui<Label>("summary-show-cost").text = selectedVenue == null ? "—" : Money(showCost);
-            Ui<Label>("summary-remaining").text = Money(InitialCash - signing);
+            Ui<Label>("summary-remaining").text = Money(InitialCash - signing - monthly);
             var count = Ui<Label>("roster-count");
             if (count != null) count.text = $"{selectedWrestlerIds.Count}명 선택";
         }
@@ -623,11 +633,16 @@ namespace PWManager.Presentation
             var signing = selected.Sum(x => ContractOfferFor(x).SigningBonus);
             var monthly = selected.Sum(x => ContractOfferFor(x).MonthlySalary);
             AddReviewRow(review, "시작 로스터", $"{selectedWrestlerIds.Count}명");
-            AddReviewRow(review, "즉시 지급액", $"선수 계약금 {Money(signing)}");
-            AddReviewRow(review, "월간 / 시즌 고정비", $"{Money(monthly)} / {Money(monthly * 12)}");
+            AddReviewRow(review, "즉시 지급액", $"계약금 {Money(signing)} · 첫 달 기본급 {Money(monthly)}");
+            AddReviewRow(review, "월간 / 시즌 기본급", $"{Money(monthly)} / {Money(monthly * 12)}");
+            AddReviewRow(review, "출연 수당", $"전원 경기 시 쇼당 {Money(selected.Sum(x => ContractOfferFor(x).MatchAppearanceFee))} · 전원 프로모만 출연 시 {Money(selected.Sum(x => ContractOfferFor(x).PromoAppearanceFee))}");
             AddReviewRow(review, "시즌 운영", $"정규 쇼 {regularFrequency.value} · PPV {ppvFrequency.value}");
             AddReviewRow(review, "홈 경기장", $"{selectedVenue.DisplayName} · 시간당 {Money(selectedVenue.ProductionCost)} · 정규 쇼 예상 {Money(selectedVenue.ProductionCost * 2 * RegularShowCount())}");
-            AddReviewRow(review, "계약 후 잔여 현금", Money(InitialCash - signing));
+            AddReviewRow(review, "계약 후 잔여 현금", Money(InitialCash - signing - monthly));
+            var sponsors = sponsorPreview?.SponsorSeasons.Single().Offers.Where(x => sponsorSelection.SelectedIds.Contains(x.Id)).ToList() ?? new();
+            AddReviewRow(review, "선택 스폰서", string.Join(" · ", sponsors.Select(x => x.CompanyName)));
+            AddReviewRow(review, "스폰서 기본금 / 달성금", $"{Money(sponsors.Sum(x => x.BasePayment))} / 최대 {Money(sponsors.Sum(x => x.CompletionPayment))}");
+            AddReviewRow(review, "최종 시작 자금", Money(InitialCash - signing - monthly + sponsors.Sum(x => x.BasePayment)));
         }
 
         private static void AddReviewRow(VisualElement parent, string labelText, string valueText)
@@ -638,11 +653,9 @@ namespace PWManager.Presentation
             parent.Add(row);
         }
 
-        private void StartNewGame()
+        private GameStartRequest CreateStartRequest()
         {
-            try
-            {
-                var request = new GameStartRequest
+            return new GameStartRequest
                 {
                     HasPlayerCharacter = true,
                     PlayerName = playerName.value.Trim(),
@@ -659,13 +672,14 @@ namespace PWManager.Presentation
                     InitialPrestige = 0,
                     WorldSeed = seed,
                     UtcNow = DateTime.UtcNow,
+                    InitialCandidates = candidates,
                     WrestlerContracts = candidates.Where(x => selectedWrestlerIds.Contains(x.Id)).Select(wrestler =>
                     {
                         var offer = ContractOfferFor(wrestler);
                         return new InitialWrestlerContractInput
                         {
                             Wrestler = wrestler, ContractEndYear = 2027, SigningBonus = offer.SigningBonus,
-                            MonthlySalary = offer.MonthlySalary, TerminationCost = offer.TerminationCost
+                            MonthlySalary = offer.MonthlySalary, MatchAppearanceFee = offer.MatchAppearanceFee, PromoAppearanceFee = offer.PromoAppearanceFee, TerminationCost = offer.TerminationCost
                         };
                     }).ToList(),
                     RegularVenueId = selectedVenue.Id,
@@ -673,11 +687,44 @@ namespace PWManager.Presentation
                     RegularShowFrequency = (RegularShowFrequency)Mathf.Max(0, regularFrequency.index),
                     PpvFrequency = (PpvFrequency)Mathf.Max(0, ppvFrequency.index)
                 };
-                EnterDashboard(new GameStartPersistenceService(saveService).CreateSaveAndReload(SaveSlot, request));
-            }
-            catch (Exception exception) { Debug.LogException(exception); Fail($"게임을 시작하지 못했습니다: {exception.Message}"); }
         }
 
+        private void RenderSponsorSelection()
+        {
+            try
+            {
+                var key = string.Join("|", seed, playerName.value, playerRole.index, playerGender.index, playerReputation.index,
+                    playerWrestlingType.index, SelectedPlayerStyleId(), playerBirthDate.value, playerHeight.value, playerWeight.value,
+                    JsonUtility.ToJson(playerAppearance?.Appearance), promotionName.value, promotionAbbreviation.value,
+                    string.Join(",", selectedWrestlerIds.OrderBy(x => x)), selectedVenue?.Id, regularFrequency.index, ppvFrequency.index);
+                var previousSelection = sponsorSettingsKey == key ? sponsorSelection?.SelectedIds.ToArray() : null;
+                if (sponsorPreview == null || sponsorSettingsKey != key)
+                {
+                    sponsorPreview = new GameStartService().CreateInitialSave(CreateStartRequest());
+                    new WrestlerGenerator(new StaticContentRegistry(catalog), seed).InitializeWorld(sponsorPreview);
+                    new SponsorMissionService().PrepareOffers(sponsorPreview, SponsorSelectionView.Companies());
+                    sponsorSettingsKey = key;
+                }
+                var host = Ui<VisualElement>("wizard-step-6"); host.Clear();
+                sponsorSelection = new SponsorSelectionView(host, sponsorPreview, sponsorPreview.SponsorSeasons.Single(), changed: () =>
+                    nextButton.SetEnabled(sponsorSelection.SelectedIds.Count == SponsorMissionService.SelectionCount), selectedIds: previousSelection, showTitle: false);
+
+                nextButton.SetEnabled(sponsorSelection.SelectedIds.Count == SponsorMissionService.SelectionCount);
+            }
+            catch (Exception exception) { Fail(exception.Message); nextButton.SetEnabled(false); }
+        }
+
+        private void StartNewGame()
+        {
+            try
+            {
+                if (sponsorPreview == null || sponsorSelection == null) throw new InvalidOperationException("스폰서를 먼저 선택하세요.");
+                new SponsorMissionService().ConfirmSelection(sponsorPreview, sponsorPreview.SponsorSeasons.Single(), sponsorSelection.SelectedIds);
+                saveService.Save(SaveSlot, sponsorPreview);
+                EnterDashboard(saveService.Load(SaveSlot));
+            }
+            catch (Exception exception) { Fail($"게임을 시작하지 못했습니다: {exception.Message}"); }
+        }
         private void ContinueGame()
         {
             try

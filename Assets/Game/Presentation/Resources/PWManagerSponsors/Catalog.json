@@ -1,0 +1,244 @@
+{
+  "Companies": [
+    {
+      "Id": "sponsor_001",
+      "Name": "브라볼트",
+      "Industry": "스포츠웨어",
+      "Description": "힘과 내구성을 내세우는 경기복 브랜드",
+      "LogoResource": "PWManagerSponsors/logos/01-bravolt",
+      "PreferredGoal": 4
+    },
+    {
+      "Id": "sponsor_002",
+      "Name": "벨트레드",
+      "Industry": "스포츠화",
+      "Description": "가벼운 발놀림과 도전을 강조하는 스포츠화 기업",
+      "LogoResource": "PWManagerSponsors/logos/02-veltread",
+      "PreferredGoal": 4
+    },
+    {
+      "Id": "sponsor_003",
+      "Name": "그립포지",
+      "Industry": "훈련 장비",
+      "Description": "그립·웨이트 등 전문 훈련 장비 제조사",
+      "LogoResource": "PWManagerSponsors/logos/03-gripforge",
+      "PreferredGoal": 4
+    },
+    {
+      "Id": "sponsor_004",
+      "Name": "루크라인",
+      "Industry": "생활 스포츠",
+      "Description": "입문자와 신인을 지원하는 대중 스포츠 브랜드",
+      "LogoResource": "PWManagerSponsors/logos/04-rookline",
+      "PreferredGoal": 8
+    },
+    {
+      "Id": "sponsor_005",
+      "Name": "에어로마스크",
+      "Industry": "레슬링 용품",
+      "Description": "가면과 공중기 중심 선수용 장비 브랜드",
+      "LogoResource": "PWManagerSponsors/logos/05-aeromask",
+      "PreferredGoal": 6
+    },
+    {
+      "Id": "sponsor_006",
+      "Name": "콜로세라",
+      "Industry": "피트니스",
+      "Description": "대형 체육관과 근력 운동 장비를 운영하는 기업",
+      "LogoResource": "PWManagerSponsors/logos/06-colossera",
+      "PreferredGoal": 7
+    },
+    {
+      "Id": "sponsor_007",
+      "Name": "킥스프링",
+      "Industry": "에너지 음료",
+      "Description": "거침없는 도전과 역동적인 공연을 후원하는 음료사",
+      "LogoResource": "PWManagerSponsors/logos/07-kickspring",
+      "PreferredGoal": 3
+    },
+    {
+      "Id": "sponsor_008",
+      "Name": "클리어페이스",
+      "Industry": "스포츠 음료",
+      "Description": "수분 보충과 꾸준한 활동을 강조하는 음료사",
+      "LogoResource": "PWManagerSponsors/logos/08-clearpace",
+      "PreferredGoal": 4
+    },
+    {
+      "Id": "sponsor_009",
+      "Name": "몰트하버",
+      "Industry": "맥아 음료",
+      "Description": "관람과 축제 문화를 후원하는 음료 제조사",
+      "LogoResource": "PWManagerSponsors/logos/09-maltharbor",
+      "PreferredGoal": 2
+    },
+    {
+      "Id": "sponsor_010",
+      "Name": "레드케틀",
+      "Industry": "간편식",
+      "Description": "빠르고 든든한 식사를 내세우는 간편식 기업",
+      "LogoResource": "PWManagerSponsors/logos/10-redkettle",
+      "PreferredGoal": 5
+    },
+    {
+      "Id": "sponsor_011",
+      "Name": "선바스켓",
+      "Industry": "식품 유통",
+      "Description": "지역 상권과 가족 고객을 겨냥하는 식품 유통사",
+      "LogoResource": "PWManagerSponsors/logos/11-sunbasket",
+      "PreferredGoal": 2
+    },
+    {
+      "Id": "sponsor_012",
+      "Name": "라운드하우스 그릴",
+      "Industry": "외식",
+      "Description": "경기 관람과 식사를 결합한 그릴 레스토랑 체인",
+      "LogoResource": "PWManagerSponsors/logos/12-roundhousegrill",
+      "PreferredGoal": 5
+    },
+    {
+      "Id": "sponsor_013",
+      "Name": "프레임캐스트",
+      "Industry": "방송",
+      "Description": "경기의 완성도와 안정적인 방송 편성을 중시하는 방송사",
+      "LogoResource": "PWManagerSponsors/logos/13-framecast",
+      "PreferredGoal": 3
+    },
+    {
+      "Id": "sponsor_014",
+      "Name": "링웨이브",
+      "Industry": "스트리밍",
+      "Description": "새 얼굴과 눈에 띄는 대진을 발굴하는 중계 플랫폼",
+      "LogoResource": "PWManagerSponsors/logos/14-ringwave",
+      "PreferredGoal": 3
+    },
+    {
+      "Id": "sponsor_015",
+      "Name": "스토리라크",
+      "Industry": "콘텐츠 제작",
+      "Description": "선수의 캐릭터와 성장 서사를 다루는 제작사",
+      "LogoResource": "PWManagerSponsors/logos/15-storylark",
+      "PreferredGoal": 8
+    },
+    {
+      "Id": "sponsor_016",
+      "Name": "에코포스트",
+      "Industry": "소셜 플랫폼",
+      "Description": "화제성과 팬의 참여를 중심으로 운영하는 플랫폼",
+      "LogoResource": "PWManagerSponsors/logos/16-echopost",
+      "PreferredGoal": 5
+    },
+    {
+      "Id": "sponsor_017",
+      "Name": "반타플레이",
+      "Industry": "게임 퍼블리싱",
+      "Description": "경쟁과 개성 강한 캐릭터를 후원하는 게임사",
+      "LogoResource": "PWManagerSponsors/logos/17-vantaplay",
+      "PreferredGoal": 7
+    },
+    {
+      "Id": "sponsor_018",
+      "Name": "픽셀배저",
+      "Industry": "컴퓨터 주변기기",
+      "Description": "튼튼한 조작감과 집중력을 내세우는 주변기기 기업",
+      "LogoResource": "PWManagerSponsors/logos/18-pixelbadger",
+      "PreferredGoal": 3
+    },
+    {
+      "Id": "sponsor_019",
+      "Name": "키네포트",
+      "Industry": "모바일 기기",
+      "Description": "움직임과 연결을 강조하는 모바일 기기 제조사",
+      "LogoResource": "PWManagerSponsors/logos/19-kineport",
+      "PreferredGoal": 2
+    },
+    {
+      "Id": "sponsor_020",
+      "Name": "서큐바",
+      "Industry": "통신",
+      "Description": "공연 현장의 연결과 생중계 기술을 제공하는 통신사",
+      "LogoResource": "PWManagerSponsors/logos/20-circuva",
+      "PreferredGoal": 5
+    },
+    {
+      "Id": "sponsor_021",
+      "Name": "앵커볼트",
+      "Industry": "금융",
+      "Description": "장기 성장과 신뢰를 강조하는 금융 기업",
+      "LogoResource": "PWManagerSponsors/logos/21-anchorvault",
+      "PreferredGoal": 1
+    },
+    {
+      "Id": "sponsor_022",
+      "Name": "마일페리",
+      "Industry": "여행",
+      "Description": "원정 관람과 공연 여행 상품을 취급하는 여행사",
+      "LogoResource": "PWManagerSponsors/logos/22-mileferry",
+      "PreferredGoal": 2
+    },
+    {
+      "Id": "sponsor_023",
+      "Name": "카고크레스트",
+      "Industry": "물류",
+      "Description": "행사 장비와 상품 운송에 강점을 둔 물류사",
+      "LogoResource": "PWManagerSponsors/logos/23-cargocrest",
+      "PreferredGoal": 3
+    },
+    {
+      "Id": "sponsor_024",
+      "Name": "아이언마일",
+      "Industry": "자동차",
+      "Description": "강인함과 장거리 주행을 내세우는 자동차 브랜드",
+      "LogoResource": "PWManagerSponsors/logos/24-ironmile",
+      "PreferredGoal": 7
+    },
+    {
+      "Id": "sponsor_025",
+      "Name": "노스빔",
+      "Industry": "숙박",
+      "Description": "공연 관람객과 출장 고객을 겨냥하는 호텔 기업",
+      "LogoResource": "PWManagerSponsors/logos/25-northbeam",
+      "PreferredGoal": 2
+    },
+    {
+      "Id": "sponsor_026",
+      "Name": "허시레스트",
+      "Industry": "침구",
+      "Description": "편안한 휴식과 회복을 내세우는 수면용품 브랜드",
+      "LogoResource": "PWManagerSponsors/logos/26-hushrest",
+      "PreferredGoal": 4
+    },
+    {
+      "Id": "sponsor_027",
+      "Name": "멘도라",
+      "Industry": "스포츠 케어",
+      "Description": "테이핑과 재활 보조용품을 만드는 스포츠 케어 기업",
+      "LogoResource": "PWManagerSponsors/logos/27-mendora",
+      "PreferredGoal": 8
+    },
+    {
+      "Id": "sponsor_028",
+      "Name": "루멘리프",
+      "Industry": "생활·뷰티",
+      "Description": "선수의 개성과 대중적 이미지를 후원하는 생활 브랜드",
+      "LogoResource": "PWManagerSponsors/logos/28-lumenleaf",
+      "PreferredGoal": 5
+    },
+    {
+      "Id": "sponsor_029",
+      "Name": "테일타이드",
+      "Industry": "반려동물 용품",
+      "Description": "친근한 선수와 팬 커뮤니티를 후원하는 반려동물 기업",
+      "LogoResource": "PWManagerSponsors/logos/29-tailtide",
+      "PreferredGoal": 5
+    },
+    {
+      "Id": "sponsor_030",
+      "Name": "앙코르파크",
+      "Industry": "공연·테마파크",
+      "Description": "다채로운 공연과 특별 이벤트를 운영하는 엔터테인먼트 기업",
+      "LogoResource": "PWManagerSponsors/logos/30-encorepark",
+      "PreferredGoal": 7
+    }
+  ]
+}

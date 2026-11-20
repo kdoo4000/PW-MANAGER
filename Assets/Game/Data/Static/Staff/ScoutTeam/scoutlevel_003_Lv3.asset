@@ -18,8 +18,8 @@ MonoBehaviour:
   Level: 3
   RequiredPrestige: 2500
   UpgradeCost: 50000
-  EffectDescription: "\uD6C4\uBCF4 10\uBA85 \xB7 \uB4F1\uAE09 \uC815\uD655\uB3C4
-    60%"
+  EffectDescription: "\uD6C4\uBCF4 10\uBA85 \xB7 \uC138\uBD80 \uB2A5\uB825 7\uAC1C
+    \uB4F1\uAE09 \uACF5\uAC1C"
   CandidateCount: 10
   KnowledgeLevel: 3
   ExactValueChance: 0.6

@@ -1,0 +1,25 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements">
+    <Style src="Dashboard.uss"/>
+    <Style src="OperationsScreens.uss"/>
+    <ui:VisualElement name="scouting-content" class="ops-content hidden">
+        <ui:VisualElement class="ops-tabs"><ui:Button name="scouting-tab-reports" text="후보 보고서" class="ops-tab ops-active"/><ui:Button name="scouting-tab-assignment" text="탐색 배정" class="ops-tab"/></ui:VisualElement>
+        <ui:VisualElement class="ops-summary"><ui:Label name="scouting-team"/><ui:Label name="scouting-candidate-count"/><ui:Label name="scouting-progress"/></ui:VisualElement>
+        <ui:VisualElement name="scouting-reports-panel" class="ops-page-panel">
+            <ui:VisualElement class="ops-body">
+                <ui:VisualElement class="ops-list-pane ops-scout-list">
+                    <ui:VisualElement class="ops-table-heading"><ui:Label text="선수" class="ops-cell ops-name-cell"/><ui:Label text="나이" class="ops-cell ops-number-cell"/><ui:Label text="경기" class="ops-cell"/><ui:Label text="프로모" class="ops-cell"/></ui:VisualElement>
+                    <ui:ScrollView name="scouting-results" mode="Vertical" class="ops-scroll"/>
+                </ui:VisualElement>
+                <ui:ScrollView name="scouting-detail" mode="Vertical" class="ops-scroll ops-detail-pane ops-scout-detail"/>
+            </ui:VisualElement>
+        </ui:VisualElement>
+        <ui:VisualElement name="scouting-assignment-panel" class="ops-search-panel" style="display:none;">
+            <ui:Label name="scouting-status" class="ops-status ops-search-status"/>
+            <ui:VisualElement name="scouting-filters" class="ops-form ops-search-form">
+                <ui:DropdownField name="scouting-gender" label="성별"/>
+                <ui:DropdownField name="scouting-background" label="출신 배경"/>
+                <ui:VisualElement class="ops-actions"><ui:Button name="scouting-start" text="탐색 배정" class="ops-action ops-primary"/></ui:VisualElement>
+            </ui:VisualElement>
+        </ui:VisualElement>
+    </ui:VisualElement>
+</ui:UXML>

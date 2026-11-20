@@ -11,9 +11,6 @@ namespace PWManager.Domain.Services
         private const float ConditionCostPerMinute = 0.6f;
         private const float MinimumConditionCost = 3f;
         private const float MaximumConditionCost = 30f;
-        private const float ConsistentVarianceRange = 0.25f;
-        private const float DefaultVarianceRange = 0.50f;
-        private const float WildCardVarianceRange = 1.00f;
         private readonly IMatchTypeRules matchTypeRules;
         private readonly IWrestlingStyleRules styleRules;
         private readonly Func<string> createId;
@@ -80,6 +77,12 @@ namespace PWManager.Domain.Services
             }
             var participantIds = sides.SelectMany(x => x.MemberIds).ToList();
             var participants = participantIds.Select(id => save.Wrestlers.Single(x => x.Id == id)).ToList();
+            var lastMatch = (show.TimelineEventIds ?? new()).LastOrDefault(id => save.ShowEvents.Any(e => e.Id == id && e.EventType == ShowEventType.Match));
+            var importance = show.ShowType != ScheduledShowType.Regular || lastMatch == showEventId ||
+                !string.IsNullOrEmpty(match.ChampionshipId) || match.StoryAction == StoryAction.End ? 1f : 0f;
+            var offsets = participants.ToDictionary(w => w.Id,
+                w => (Variance: CalculateVariance(w, resultSeed), Context: WrestlerHiddenRules.BigMatchAdjustment(w, importance),
+                    Adaptation: WrestlerAdaptationService.Penalty(save, w, show.Date)), StringComparer.Ordinal);
             var finishType = endingSpot?.ScriptedEffect == SpotScriptedEffect.MatchStopped ? MatchFinishType.Draw :
                 endingSpot?.ScriptedEffect == SpotScriptedEffect.Disqualification ? MatchFinishType.Disqualification : match.FinishType;
             var finishPerformerId = endingSpot?.ScriptedEffect == SpotScriptedEffect.Disqualification ? endingSpot.TargetId :
@@ -110,6 +113,7 @@ namespace PWManager.Domain.Services
                     DominantSideId = match.DominantSideId,
                     OpeningStyle = match.OpeningStyle,
                     OpeningHostility = MatchOpening.Hostility(save, sides),
+                    InjuryAggravationMultiplier = StaffTeamEffects.For(save, StaffDepartmentType.Medical).Aggravation,
                     ImportantMatch = show.MainEventId == showEvent.Id || match.StoryAction == StoryAction.End,
                     Pinfall = Allowed(MatchFinishType.Pinfall),
                     Submission = Allowed(MatchFinishType.Submission),
@@ -124,19 +128,16 @@ namespace PWManager.Domain.Services
                     new MatchEngineParticipant
                     {
                         Id = x.Id,
+                        InjuryProneness = x.Hidden?.InjuryProneness ?? 10,
+                        Collegiality = x.Hidden?.Collegiality ?? 10,
+                        RiskTaking = x.Hidden?.RiskTaking ?? 10,
                         WrestlingStyleId = x.Presentation.WrestlingStyleId,
                         Alignment = x.Roster.Alignment,
                         SideId = sides.Single(side => side.MemberIds.Contains(x.Id)).Id,
                         StatusValue = x.Status.StatusValue,
                         AmbushTendency = x.Roster.Alignment == KayfabeAlignment.Heel ? x.Attributes.HeelWork / 20f : .05f,
-                        Attributes = new WrestlerAttributesState
-                        {
-                            Brawling = x.Attributes.Brawling, Power = x.Attributes.Power, Technical = x.Attributes.Technical,
-                            HighFlying = x.Attributes.HighFlying, Selling = x.Attributes.Selling,
-                            Stamina = x.Attributes.Stamina, RingPsychology = x.Attributes.RingPsychology,
-                            RingImprovisation = x.Attributes.RingImprovisation, Charisma = x.Attributes.Charisma,
-                            Acting = x.Attributes.Acting, FaceWork = x.Attributes.FaceWork, HeelWork = x.Attributes.HeelWork
-                        },
+                        Attributes = PerformanceAttributes(x.Attributes, offsets[x.Id].Variance + offsets[x.Id].Context - offsets[x.Id].Adaptation),
+                        MoveEligibilityAttributes = x.Attributes.Copy(),
                         Fatigue = Math.Max(0f, Math.Min(100f, 100f - x.Condition.Condition)),
                         RealInjury = x.Condition.InjuryStatus, RealInjuryRegion = x.Condition.InjuryRegion,
                         HeadDamage = StoryDamage(x, BodyRegion.Head), BodyDamage = StoryDamage(x, BodyRegion.Body),
@@ -177,7 +178,7 @@ namespace PWManager.Domain.Services
             var winningSide = finishType == MatchFinishType.Draw ? null : sides.Single(x => x.MemberIds.Contains(finishPerformerId));
             var losingSide = string.IsNullOrEmpty(loserTargetId) ? null : sides.Single(x => x.MemberIds.Contains(loserTargetId));
             var evaluationMinutes = engineState == null ? actualMatchDuration : engineState.ElapsedSeconds / 60f;
-            var performances = participants.Select(x => CalculatePerformance(x, evaluationMinutes, resultSeed)).ToList();
+            var performances = participants.Select(x => CalculatePerformance(x, evaluationMinutes, offsets[x.Id].Variance, offsets[x.Id].Context, offsets[x.Id].Adaptation)).ToList();
             var performanceByWrestler = performances.ToDictionary(x => x.WrestlerId, StringComparer.Ordinal);
             var profiles = sides.Select(x => CreateParticipantProfile(save, x, minimumTeamCount > 0, performanceByWrestler)).ToList();
             var routineExecution = profiles.Average(x => x.RoutineExecution);
@@ -309,7 +310,23 @@ namespace PWManager.Domain.Services
                     throw new InvalidOperationException($"Match participant was not found: {id}");
         }
 
-        private WrestlerMatchPerformanceState CalculatePerformance(WrestlerState wrestler, float duration, int resultSeed)
+        private static float CalculateVariance(WrestlerState wrestler, int resultSeed)
+        {
+            var random = new Random(CreateWrestlerSeed(resultSeed, wrestler.Id));
+            return (float)(random.NextDouble() + random.NextDouble() - 1d) * WrestlerHiddenRules.PerformanceVariance(wrestler);
+        }
+
+        private static WrestlerAttributesState PerformanceAttributes(WrestlerAttributesState source, float offset)
+        {
+            var value = source.Copy();
+            value.Brawling = Clamp(value.Brawling + offset, 1, 20); value.Power = Clamp(value.Power + offset, 1, 20);
+            value.Technical = Clamp(value.Technical + offset, 1, 20); value.HighFlying = Clamp(value.HighFlying + offset, 1, 20);
+            value.Selling = Clamp(value.Selling + offset, 1, 20); value.RingPsychology = Clamp(value.RingPsychology + offset, 1, 20);
+            value.RingImprovisation = Clamp(value.RingImprovisation + offset, 1, 20);
+            return value;
+        }
+
+        private WrestlerMatchPerformanceState CalculatePerformance(WrestlerState wrestler, float duration, float performanceVariance, float bigMatchAdjustment, float adaptationPenalty)
         {
             if (!styleRules.TryGetStyleWeights(wrestler.Presentation.WrestlingStyleId, out var weights))
                 throw new InvalidOperationException($"Wrestling style was not found: {wrestler.Presentation.WrestlingStyleId}");
@@ -320,16 +337,18 @@ namespace PWManager.Domain.Services
             var staminaCapacity = Clamp(2.5f * attributes.Stamina - 2.5f, 5f, 50f);
             var overtime = Math.Max(0f, duration - staminaCapacity);
             var staminaPenalty = GetStaminaPenalty(overtime);
-            var varianceRange = GetPerformanceVarianceRange(wrestler);
-            var random = new Random(CreateWrestlerSeed(resultSeed, wrestler.Id));
-            var performanceVariance = (float)(random.NextDouble() + random.NextDouble() - 1d) * varianceRange;
             return new WrestlerMatchPerformanceState
             {
                 WrestlerId = wrestler.Id,
+                WrestlingStyleId = wrestler.Presentation.WrestlingStyleId,
+                BrawlingGrowthBonus = weights.BrawlingGrowthBonus, PowerGrowthBonus = weights.PowerGrowthBonus,
+                HighFlyingGrowthBonus = weights.HighFlyingGrowthBonus, TechnicalGrowthBonus = weights.TechnicalGrowthBonus,
                 BaseRoutine = individualRoutine,
                 PerformanceVariance = performanceVariance,
+                BigMatchAdjustment = bigMatchAdjustment,
+                AdaptationPenalty = adaptationPenalty,
                 StaminaPenalty = staminaPenalty,
-                EffectiveRoutine = Clamp(individualRoutine + performanceVariance - staminaPenalty, 0f, 20f)
+                EffectiveRoutine = Clamp(individualRoutine + performanceVariance + bigMatchAdjustment - adaptationPenalty - staminaPenalty, 0f, 20f)
             };
         }
 
@@ -447,14 +466,6 @@ namespace PWManager.Domain.Services
                 }
                 return (int)(hash & 0x7fffffffu);
             }
-        }
-
-        private static float GetPerformanceVarianceRange(WrestlerState wrestler)
-        {
-            var traits = wrestler.Presentation?.TraitIds;
-            if (traits?.Contains("trait_013") == true) return WildCardVarianceRange;
-            if (traits?.Contains("trait_012") == true) return ConsistentVarianceRange;
-            return DefaultVarianceRange;
         }
 
         private static float GetStaminaPenalty(float overtime)

@@ -1,0 +1,66 @@
+.cp-tier-columns { flex-direction:row; flex-wrap:wrap; align-items:flex-start; }
+.cp-gallery { align-items:stretch; }
+.cp-card { width:320px; height:460px; flex-shrink:0; margin:0 0 18px; border-width:0; background-color:#17181c; overflow:hidden; }
+.cp-tier { width:320px; flex-shrink:0; margin:0 24px 20px 0; }
+.cp-tier-heading { font-size:18px; margin:0 0 12px; color:#d7deea; -unity-font-definition:url("project://database/Assets/Game/Presentation/Resources/PWManagerUI/Fonts/SEBANGGothic-Bold.ttf"); }
+.cp-card:hover { border-color:#d9b45b; }
+.cp-card:focus { border-color:#d9b45b; border-width:2px; }
+.cp-card-pictures { flex-direction:row; height:250px; flex-shrink:0; background-color:#24262c; }
+.cp-card-pictures > .group-portrait { flex-grow:1; height:100%; }
+.cp-media .mg-lineup { flex-direction:column; align-items:stretch; }
+.cp-media .mg-lineup > .group-portrait { height:260px; width:100%; }
+.cp-card-portrait { flex-grow:1; flex-basis:0; min-width:0; height:100%; border-width:0; border-radius:0; background-color:transparent; padding:0; margin:0; }
+.cp-card-portrait:hover { background-color:#34363e; }
+.cp-card-portrait .wrestler-portrait-frame { width:100%; height:100%; background-color:transparent; border-width:0; padding:0; margin:0; }
+.cp-card-portrait Image { width:100%; height:100%; }
+.cp-card-portrait .wrestler-portrait-name { display:none; }
+.cp-vacant-belt { flex-grow:1; height:100%; margin:18px; }
+.championship-link { border-width:0; background-color:transparent; color:#d9b45b; padding:4px 0; margin:0; white-space:normal; -unity-text-align:middle-left; }
+.championship-link:hover { color:#f4e0aa; }
+.championship-link:focus { background-color:#3c321d; }
+.cp-card-title { height:56px; min-height:56px; flex-shrink:0; padding:8px 12px; border-radius:0; background-color:#42371f; color:#f8e7b8; -unity-text-align:middle-center; font-size:16px; -unity-font-definition:url("project://database/Assets/Game/Presentation/Resources/PWManagerUI/Fonts/SEBANGGothic-Bold.ttf"); }
+.cp-card-title:hover { background-color:#554728; }
+.cp-card-champion { justify-content:center; align-items:center; height:64px; flex-shrink:0; padding:4px 12px; }
+.cp-card-champion .cp-team-name { width:100%; height:20px; margin:0; font-size:13px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; -unity-text-align:middle-center; }
+.cp-card-members { width:100%; height:24px; flex-direction:row; justify-content:center; align-items:center; }
+.cp-card-members .wrestler-link { flex-grow:1; flex-basis:0; min-width:0; -unity-text-align:middle-center; }
+.cp-card-champion .wrestler-link { min-height:22px; margin:0 4px; padding:0; border-width:0; background-color:transparent; color:#d9b45b; font-size:13px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.cp-card-date { height:18px; flex-shrink:0; color:#d9d6cf; -unity-text-align:middle-center; margin:0 10px 4px; font-size:13px; }
+.cp-card-duration { height:18px; flex-shrink:0; color:#d9b45b; -unity-text-align:middle-center; margin:0 10px 6px; font-size:14px; }
+.cp-card-source { color:#d9b45b; -unity-text-align:middle-center; white-space:normal; margin:0 10px 12px; font-size:13px; }
+.cp-profile .ops-body > .ops-detail-pane { padding-left:0; border-left-width:0; }
+.cp-overview { flex-direction:row; flex-wrap:wrap; margin-top:12px; }
+.cp-media { flex-grow:4; flex-basis:300px; min-width:0; margin-right:24px; }
+.cp-facts { flex-grow:6; flex-basis:370px; min-width:0; }
+.cp-profile-belt { width:100%; height:230px; flex-shrink:0; min-width:0; margin-bottom:12px; background-color:#17181c; }
+.cp-profile-champion > .group-portrait { width:100%; height:230px; background-color:#17181c; }
+.cp-profile-champion-names { flex-direction:row; flex-wrap:wrap; align-items:center; justify-content:center; padding:6px 0; }
+.cp-profile-champion-names .wrestler-link { margin:0 8px; padding:4px 0; border-width:0; background-color:transparent; color:#d9b45b; }
+.cp-media .mg-lineup { justify-content:center; }
+.cp-info-row { flex-direction:row; min-height:26px; margin-bottom:2px; align-items:center; }
+.cp-info-key { flex-basis:130px; flex-shrink:0; min-height:28px; padding:0; margin:0; color:#b8c4d9; font-size:14px; white-space:normal; -unity-text-align:middle-left; }
+.cp-info-value { flex-grow:1; flex-basis:0; min-width:0; min-height:28px; align-items:flex-end; justify-content:center; padding:0 0 0 12px; }
+.cp-info-value > Label { padding:0; margin:0; min-height:28px; -unity-text-align:middle-right; }
+.cp-info-value > Label { color:#d9d6cf; font-size:14px; white-space:normal; }
+.cp-info-value .wrestler-link { color:#d9b45b; min-height:28px; margin:0; padding:0; border-width:0; background-color:transparent; -unity-text-align:middle-right; white-space:normal; font-size:14px; }
+.cp-records { margin-top:12px; }
+.cp-records .cp-info-value { flex-direction:row; flex-wrap:wrap; justify-content:flex-end; align-items:center; }
+.cp-records .cp-info-key { align-self:flex-start; }
+.cp-records-title { font-size:16px; color:#d7deea; margin:0 0 8px; -unity-font-definition:url("project://database/Assets/Game/Presentation/Resources/PWManagerUI/Fonts/SEBANGGothic-Bold.ttf"); }
+.cp-record-line { flex-direction:row; flex-wrap:nowrap; align-items:center; margin:0 0 0 12px; }
+.cp-record-line > Label { margin-left:10px; color:#d9d6cf; font-size:14px; }
+.cp-team-name { white-space:normal; color:#d9d6cf; margin-right:8px; }
+.cp-reign-row { flex-direction:row; min-height:60px; align-items:center; padding:6px 0; }
+.cp-reign-heading { min-height:36px; margin-bottom:8px; color:#a9a399; }
+.cp-reign-number { flex-basis:56px; flex-shrink:0; -unity-text-align:middle-center; white-space:normal; }
+.cp-reign-holder { flex-grow:3; flex-basis:0; min-width:90px; margin-right:12px; }
+.cp-reign-holder .wrestler-link { color:#d9b45b; border-width:0; background-color:transparent; margin:0; padding:3px 0; white-space:normal; -unity-text-align:middle-left; }
+.cp-reign-period { flex-grow:4; flex-basis:0; min-width:130px; margin-right:8px; white-space:normal; }
+.cp-reign-period Label { white-space:normal; }
+.ops-narrow .cp-media { margin-right:0; }
+.ops-narrow .cp-info-key { flex-basis:115px; }
+.ops-narrow .cp-reign-heading { display:none; }
+.ops-narrow .cp-reign-row { flex-wrap:wrap; }
+.ops-narrow .cp-reign-holder { flex-basis:150px; }
+.ops-narrow .cp-reign-period { flex-basis:100%; margin:6px 0 8px; }
+.cp-reign-defenses { flex-basis:78px; flex-shrink:0; -unity-text-align:middle-center; white-space:normal; }

@@ -68,9 +68,22 @@
 .story-management Button:hover { background-color: var(--pw-selected); border-color: var(--pw-accent); color: var(--pw-text-strong); }
 .story-card > Button { align-self: stretch; }
 .story-management .story-close { min-width: 130px; margin: 0 0 0 auto; }
+.story-management.story-tabbed { padding: 18px 24px; }
+.story-tabbed .story-header { height: 44px; margin-bottom: 12px; padding: 0; border-width: 0; background-color: transparent; }
+.story-tabbed .story-title { font-size: 24px; }
 .story-management .wrestler-link { min-height: 28px; height: 28px; margin: 0 8px 0 0; padding: 0 3px; border-width: 0; background-color: transparent; color: var(--pw-accent); }
 .story-management .wrestler-link:hover { background-color: transparent; color: var(--pw-text-strong); }
 .story-profile { padding: 16px 0 0; background-color: transparent; }
 .story-profile .story-header { display: none; }
 .story-error { color: #ff9393; white-space: normal; }
 .story-error.visible { margin-top: 10px; padding: 10px 14px; border-left-width: 3px; border-left-color: #e66e72; background-color: #2a171f; }
+
+.story-browser .story-main { flex-grow: 1; flex-basis: 0; min-width: 0; margin-right: 16px; }
+.story-browser .story-side { flex-grow: 2.4; flex-basis: 0; min-width: 0; padding-left: 16px; border-left-width: 1px; border-left-color: var(--pw-soft-border); }
+.story-browser .story-list-row { min-height: 76px; flex-shrink: 0; margin: 0 0 8px; padding: 14px; border-width: 1px; border-color: var(--pw-soft-border); background-color: var(--pw-panel); align-items: stretch; white-space: normal; }
+.story-browser .story-list-row:hover, .story-browser .story-list-row:focus, .story-browser .story-list-row.story-selected { border-color: var(--pw-accent); background-color: var(--pw-selected); }
+.story-list-name { color: var(--pw-text-strong); font-size: 17px; white-space: normal; -unity-font-definition: url("project://database/Assets/Game/Presentation/Resources/PWManagerUI/Fonts/SEBANGGothic-Bold.ttf"); }
+.story-list-meta { margin-top: 6px; color: var(--pw-text-muted); font-size: 13px; white-space: normal; }
+.story-browser.story-browser-narrow .story-body { flex-direction: column; }
+.story-browser.story-browser-narrow .story-main { flex-grow: 1; margin-right: 0; margin-bottom: 12px; }
+.story-browser.story-browser-narrow .story-side { flex-grow: 1.8; padding-left: 0; padding-top: 12px; border-left-width: 0; border-top-width: 1px; border-top-color: var(--pw-soft-border); }

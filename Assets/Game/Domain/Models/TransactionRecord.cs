@@ -19,7 +19,14 @@ namespace PWManager.Domain.Models
         PerformanceBonus,
         TerminationFee,
         Refund,
-        LatePayment
+        LatePayment,
+        TrainingFacilityUpgrade,
+        TrainerUpgrade,
+        MerchandiseProductionCost,
+        MerchandiseSalesCost,
+        MerchandiseRoyalty,
+        MatchAppearanceFee,
+        PromoAppearanceFee
     }
 
     [Serializable]

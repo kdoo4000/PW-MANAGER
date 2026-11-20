@@ -214,11 +214,11 @@ namespace PWManager.Domain.Services
             Find(string.IsNullOrEmpty(e.TechniqueId) ? e.MoveId : e.TechniqueId);
 
         public static bool CanExecute(MatchMoveRules move, MatchEngineParticipant actor) => MatchHealth.CanUse(move, actor) &&
-            (move == null || !IsOutsideDive(move.Situation) || actor.Attributes.HighFlying >= 10 && actor.Fatigue < 75);
+            (move == null || !IsOutsideDive(move.Situation) || actor.Eligibility.HighFlying >= 10 && actor.Fatigue < 75);
 
         public static List<MatchTechnique> Candidates(MatchActionType action, MatchEngineParticipant actor, MatchEngineParticipant target, MatchPosture? targetPosture = null) =>
             All.Where(x => x.Enabled && x.CanUseGenerally && (x.Rules.Situation == MoveSituation.Automatic || IsSupported(x.Rules.Situation)) &&
-                x.Action == action && x.GroundedTarget == (targetPosture.HasValue ? targetPosture != MatchPosture.Standing : target.IsDowned) && FitsSituation(x.Rules, actor, target, targetPosture) && x.AllowsStyle(actor.WrestlingStyleId) && x.MeetsRequirement(actor.Attributes) &&
+                x.Action == action && x.GroundedTarget == (targetPosture.HasValue ? targetPosture != MatchPosture.Standing : target.IsDowned) && FitsSituation(x.Rules, actor, target, targetPosture) && x.AllowsStyle(actor.WrestlingStyleId) && x.MeetsRequirement(actor.Eligibility) &&
                 (action is not (MatchActionType.LimbAttack or MatchActionType.Submission) || x.Rules.TargetRegion == actor.TargetRegion) &&
                 (action != MatchActionType.Submission || !actor.IsDowned || MatchMoveMotion.ActorEndPosture(x.Id) != MatchPosture.Standing) &&
                 CanExecute(x.Rules, actor) && MatchHealth.CanReceive(x.Rules, target)).ToList();
@@ -235,6 +235,8 @@ namespace PWManager.Domain.Services
             var weights = candidates.Select(x => Math.Pow(2 + actor.Attributes.Brawling * x.Rules.BrawlingWeight +
                 actor.Attributes.Power * x.Rules.PowerWeight + actor.Attributes.Technical * x.Rules.TechnicalWeight +
                 actor.Attributes.HighFlying * x.Rules.HighFlyingWeight, 2) *
+                WrestlerHiddenRules.RiskPreferenceWeight(actor.RiskTaking, (x.Rules.ExecutionDifficulty - 8) / 12 +
+                    (MatchPhysics.Kind(x.Rules) == MoveKind.Aerial || x.Rules.Situation == MoveSituation.Table ? .25f : 0)) *
                 (IsRear(x.Rules.Situation)
                     ? 1 + actor.Attributes.RingPsychology * .15f : 1) *
                 (candidates.Count > 1 && state.Exchange?.Kind is not (ExchangeKind.GripCombo or ExchangeKind.Hold or ExchangeKind.Chain)

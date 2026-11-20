@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using NUnit.Framework;
@@ -9,6 +9,35 @@ namespace PWManager.Tests
 {
     public sealed class StorylineServiceTests
     {
+        [Test]
+        public void VariedGoodPromos_OutperformRepeatedTauntsAndHiatusPreservesInterest()
+        {
+            (float Interest, float Fatigue) Run(StoryIncident[] incidents)
+            {
+                var save = ShowExecutionServiceTests.CreateSave(); save.Shows.Clear();
+                var story = new StorylineService().Create(save, "대립", "a", "b");
+                var promo = save.PromoPlans[0]; promo.ParticipantIds.Add("b"); promo.StorylineId = story.Id; promo.StoryAction = StoryAction.Progress;
+                for (var i = 0; i < incidents.Length; i++)
+                {
+                    promo.Incident = incidents[i]; save.CurrentDate = save.CurrentDate.AddDays(7);
+                    var output = new ShowResultState();
+                    StorylineService.Evaluate(save, output, Array.Empty<MatchResultState>(), new[] { new PromoResultState { Id = "source" + i, PromoPlanId = promo.Id, PromoScore = 80 } });
+                    StorylineService.Apply(save, output, save.CurrentDate);
+                }
+                var interest = story.Interest;
+                StorylineService.ChangeStatus(save, story.Id, StorylineStatus.Inactive); save.CurrentDate = save.CurrentDate.AddDays(35);
+                Assert.That(StorylineService.UnprogressedInterestChanges(save, new()), Is.Empty);
+                Assert.That(story.Interest, Is.EqualTo(interest));
+                StorylineService.ChangeStatus(save, story.Id, StorylineStatus.Active);
+                Assert.That(StorylineService.UnprogressedInterestChanges(save, new()).Single().Amount, Is.EqualTo(-Math.Min(5, interest)));
+                TestContext.WriteLine($"{string.Join(",", incidents)} interest={story.Interest} fatigue={story.Fatigue}");
+                return (story.Interest, story.Fatigue);
+            }
+            var varied = Run(new[] { StoryIncident.Challenge, StoryIncident.Attack, StoryIncident.Rescue, StoryIncident.Respect });
+            var repeated = Run(Enumerable.Repeat(StoryIncident.Taunt, 4).ToArray());
+            Assert.That(varied.Interest, Is.GreaterThan(repeated.Interest)); Assert.That(varied.Fatigue, Is.LessThan(repeated.Fatigue));
+        }
+
         [Test]
         public void StartingConfirmedShow_ExpiresOnlyPendingCandidates()
         {
@@ -47,15 +76,10 @@ namespace PWManager.Tests
         public void CandidateAdoption_DoesNotRepeatRelationshipEffect_AndPendingCandidatesExpire()
         {
             var save = ShowExecutionServiceTests.CreateSave();
-            var promo = save.PromoPlans[0];
-            promo.ParticipantIds = new() { "a", "b" };
-            promo.Incident = StoryIncident.Betrayal;
-            var output = new ShowResultState();
-            StorylineService.Evaluate(save, output, Array.Empty<MatchResultState>(),
-                new[] { new PromoResultState { Id = "candidate-source", PromoPlanId = promo.Id, PromoScore = 70 } });
-            StorylineService.Apply(save, output, save.CurrentDate);
-            save.StoryCandidates.AddRange(output.StoryCandidates);
-            Assert.That(save.StoryCandidates, Has.Count.EqualTo(1));
+            save.StoryRelationships.Add(new StoryRelationshipState { FirstWrestlerId = "a", SecondWrestlerId = "b", Value = -35 });
+            save.StoryCandidates.Add(new StoryCandidateState { Id = "legacy-candidate", Quality = 70,
+                Event = new StoryEventState { SourceResultId = "candidate-source", EventType = StoryEventType.Promo,
+                    Incident = StoryIncident.Betrayal, ActorId = "a", TargetId = "b", Date = save.CurrentDate } });
             var candidate = save.StoryCandidates[0];
             var story = new StorylineService().AdoptCandidate(save, candidate.Id, "배신의 시작");
             Assert.That(story.History, Has.Count.EqualTo(1));

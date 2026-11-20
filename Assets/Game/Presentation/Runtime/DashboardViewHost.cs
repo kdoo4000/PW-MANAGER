@@ -17,6 +17,8 @@ namespace PWManager.Presentation
                 ("DashboardOverview", "overview-content"), ("DashboardRoster", "roster-content"),
                 ("DashboardSchedule", "show-schedule-content"), ("DashboardInbox", "message-content"),
                 ("DashboardFacilities", "facilities-content"),
+                ("DashboardScouting", "scouting-content"),
+                ("DashboardTraining", "training-content"),
                 ("ShowPlanning", "show-planning-content"), ("ShowEditor", "show-editor-overlay") })
             {
                 var view = root.Q(element);

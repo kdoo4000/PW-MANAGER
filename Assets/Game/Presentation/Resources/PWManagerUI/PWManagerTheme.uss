@@ -174,17 +174,17 @@ Button:active {
     color: var(--pw-text-strong);
 }
 
-.sidebar > .nav,
+.sidebar .nav,
 .wp-sidebar > .wp-nav {
     background-color: var(--pw-surface);
 }
 
-.sidebar > .nav:hover,
+.sidebar .nav:hover,
 .wp-sidebar > .wp-nav:hover {
     background-color: #1a1b1f;
 }
 
-.sidebar > .nav.active,
+.sidebar .nav.active,
 .wp-sidebar > .wp-nav.active,
 .tabs > .tab.active-tab,
 .wp-tabs > .wp-tab.active,
@@ -194,7 +194,7 @@ Button:active {
     border-bottom-color: var(--pw-accent);
 }
 
-.sidebar > .nav.active .nav-label,
+.sidebar .nav.active .nav-label,
 .wp-sidebar > .wp-nav.active .nav-label {
     color: var(--pw-text-strong);
 }

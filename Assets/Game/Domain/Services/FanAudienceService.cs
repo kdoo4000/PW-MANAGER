@@ -54,7 +54,8 @@ namespace PWManager.Domain.Services
             var recent = save.Shows.Count(x => x != null && x.Status == ShowStatus.Completed &&
                 x.Date.DaysUntil(show.Date) >= 0 && x.Date.DaysUntil(show.Date) < 7);
             var programLength = Math.Min(1d, Events(save, show).Sum(x => x.PlannedDuration) / 90d);
-            return (long)Math.Floor(draw * .16 * premium * affordability * programLength / (1 + .35 * recent));
+            return (long)Math.Floor(draw * .16 * premium * affordability * programLength *
+                StaffTeamEffects.For(save, StaffDepartmentType.Promotion).TicketDemand / (1 + .35 * recent));
         }
 
         public static void Evaluate(GameSave save, ShowState show, ShowResultState result,
@@ -81,7 +82,8 @@ namespace PWManager.Domain.Services
                         (group == 0 ? (w.Roster.Alignment == KayfabeAlignment.Heel ? w.Attributes.HeelWork : w.Attributes.FaceWork) :
                          group == 1 ? w.Attributes.Charisma : w.Attributes.RingPsychology) * 5f);
                     var qualityWeight = group == 0 ? .7f : group == 1 ? .8f : .95f;
-                    var delivered = quality * qualityWeight + performance * (1 - qualityWeight);
+                    var delivered = (quality * qualityWeight + performance * (1 - qualityWeight)) *
+                        StaffTeamEffects.For(save, StaffDepartmentType.Commentary).LiveReaction;
                     var satisfaction = Clamp(50 + (delivered - Expected(wrestlers, show.ShowType, group)) * 1.2f, 0, 100);
                     Set(reaction, group, satisfaction);
                     Set(result.FanSatisfaction, group, Get(result.FanSatisfaction, group) + satisfaction * showEvent.PlannedDuration / duration);
@@ -138,6 +140,8 @@ namespace PWManager.Domain.Services
                     !InRange(fans.Satisfaction, 0, 100) || !InRange(fans.WeeklyExposure, 0, 1.5) ||
                     !InRange(fans.FollowerRemainder, -1, 1) || Math.Abs(fans.FollowerRemainder) >= 1)
                     throw new InvalidOperationException("Audience values are missing, non-finite or outside their limits.");
+                if (!InRange(fans.PendingAcquisition, 0, MaximumFollowersPerGroup))
+                    throw new InvalidOperationException("Pending fan acquisition is invalid.");
             }
         }
 
@@ -183,13 +187,26 @@ namespace PWManager.Domain.Services
                 }
                 wrestler.FanReaction.LastUpdatedAt = new OptionalGameDate(show.Date);
             }
+            var reach = NewFanReach(save, show, result);
             for (var group = 0; group < 3; group++)
             {
                 var audience = Group(save.Promotion.Audience, group);
                 var exposure = Math.Min(result.FanExposure, 1.5f - audience.WeeklyExposure);
+                var share = group == 0 ? .35 : group == 1 ? .40 : .25;
+                var conversion = Math.Max(0, Get(result.FanSatisfaction, group) - 40) / 1000d;
+                audience.PendingAcquisition = Math.Min(MaximumFollowersPerGroup, audience.PendingAcquisition + reach * share * conversion * exposure *
+                    StaffTeamEffects.For(save, StaffDepartmentType.Promotion).NewFans);
                 audience.Satisfaction += (Get(result.FanSatisfaction, group) - audience.Satisfaction) * .4f * exposure;
                 audience.WeeklyExposure += exposure;
             }
+        }
+
+        public static double NewFanReach(GameSave save, ShowState show, ShowResultState result)
+        {
+            var fame = Events(save, show).SelectMany(e => Participants(save, e)).Distinct().OrderByDescending(w => w.Fame.Value)
+                .Take(5).Sum(w => (double)w.Fame.Value);
+            return 2000 + Math.Max(0, result.FinancialSettlement?.Attendance ?? 0) * 4d +
+                Math.Max(0, save.Promotion.PromotionPrestige) * 2d + 40 * Math.Sqrt(fame);
         }
 
         public static void AdvanceWeek(GameSave save, GameDate date)
@@ -203,15 +220,16 @@ namespace PWManager.Domain.Services
                 for (var group = 0; group < 3; group++)
                 {
                     var fans = Group(audience, group);
-                    var acquisition = fans.WeeklyExposure * (.003 + Math.Max(0, fans.Satisfaction - 50) * .0006);
                     var churn = fans.WeeklyExposure == 0 ? .004 : .003 + Math.Max(0, 50 - fans.Satisfaction) * .0006;
-                    var rate = Math.Max(-.02, Math.Min(.02, acquisition - churn));
-                    var exact = fans.Followers * rate + fans.FollowerRemainder;
+                    var leaving = fans.Followers * Math.Min(.02, churn);
+                    var exact = fans.PendingAcquisition - leaving + fans.FollowerRemainder;
                     var change = (long)Math.Truncate(exact);
                     fans.Followers = Math.Max(0, Math.Min(MaximumFollowersPerGroup, fans.Followers + change));
-                    fans.FollowerRemainder = fans.Followers == 0 || fans.Followers == MaximumFollowersPerGroup ? 0 : exact - change;
+                    fans.FollowerRemainder = fans.Followers == 0 && exact < 0 || fans.Followers == MaximumFollowersPerGroup && exact > 0
+                        ? 0 : exact - change;
                     fans.Satisfaction += (50 - fans.Satisfaction) * .1f;
                     fans.WeeklyExposure = 0;
+                    fans.PendingAcquisition = 0;
                 }
                 audience.LastWeeklyChange = audience.TotalFollowers - before;
                 audience.LastWeeklyUpdate = audience.LastWeeklyUpdate.AddDays(7);

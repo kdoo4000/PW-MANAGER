@@ -1,0 +1,6 @@
+#story-tabs { flex-direction: row; flex-shrink: 0; min-height: 44px; margin-bottom: 14px; border-bottom-width: 1px; border-bottom-color: #343238; }
+#story-tabs .ops-tab { height: 44px; min-height: 44px; margin: 0 24px 0 0; padding: 6px 2px 10px; border-width: 0; border-bottom-width: 2px; border-bottom-color: transparent; border-radius: 0; background-color: transparent; color: #bcb6ad; font-size: 16px; }
+#story-tabs .ops-tab.ops-active { border-bottom-color: #d9b45b; color: #d9b45b; }
+#story-tabs .ops-tab:hover { background-color: #211f1b; color: #f4f0e7; }
+#story-tabs .ops-tab:focus { background-color: #302a1e; border-bottom-color: #d9b45b; }
+#story-tabs .ops-tab:disabled { color: #918c84; }

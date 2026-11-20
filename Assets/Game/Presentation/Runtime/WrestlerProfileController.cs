@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using PWManager.Data.Catalogs;
@@ -42,6 +42,19 @@ namespace PWManager.Presentation
 
         private void BindInteractiveRoot(VisualElement target)
         {
+            root?.Q("wrestler-relationships")?.RemoveFromHierarchy();
+            root?.Q("career-history-overlay")?.RemoveFromHierarchy();
+            var previousCareer = root?.Q<Button>("wp-open-career");
+            var previousReport = root?.Q<Button>("wp-open-report");
+            if (previousReport != null) previousReport.clicked -= OpenBehaviorReport;
+            root?.Q("wrestler-report-overlay")?.RemoveFromHierarchy();
+            if (previousCareer != null) previousCareer.clicked -= OpenCareer;
+            root?.Q("growth-history-overlay")?.RemoveFromHierarchy();
+            var previousGrowth = root?.Q<Button>("wp-open-growth");
+            if (previousGrowth != null) previousGrowth.clicked -= OpenGrowth;
+            root?.Q("contract-negotiation-overlay")?.RemoveFromHierarchy();
+            var previousContract = root?.Q<Button>("wp-open-contract");
+            if (previousContract != null) previousContract.clicked -= OpenContract;
             CloseAppearanceEditor();
             var previousRelations = root?.Q<Button>("wp-open-relationships");
             if (previousRelations != null) previousRelations.clicked -= OpenRelationships;
@@ -54,6 +67,19 @@ namespace PWManager.Presentation
             if (editAppearanceButton != null) editAppearanceButton.clicked -= OpenAppearanceEditor;
             root = target;
             if (root == null) return;
+            var careerButton = root.Q<Button>("wp-open-career");
+            var reportButton = root.Q<Button>("wp-open-report");
+            if (reportButton == null)
+            {
+                reportButton = new Button { name = "wp-open-report", text = "개인 보고서" }; reportButton.AddToClassList("wp-tab");
+                root.Q(className: "wp-tabs")?.Add(reportButton);
+            }
+            reportButton.clicked += OpenBehaviorReport;
+            if (careerButton != null) careerButton.clicked += OpenCareer;
+            var growthButton = root.Q<Button>("wp-open-growth");
+            if (growthButton != null) growthButton.clicked += OpenGrowth;
+            var contractButton = root.Q<Button>("wp-open-contract");
+            if (contractButton != null) contractButton.clicked += OpenContract;
             var relations = root.Q<Button>("wp-open-relationships");
             if (relations != null) relations.clicked += OpenRelationships;
             var overview = root.Q<Button>("wp-open-overview");
@@ -67,7 +93,7 @@ namespace PWManager.Presentation
             if (savePromoStyleButton != null) savePromoStyleButton.clicked += SavePromoStyle;
             if (editMovesButton != null) editMovesButton.clicked += OpenMovesEditor;
             if (editAppearanceButton != null) editAppearanceButton.clicked += OpenAppearanceEditor;
-            foreach (var key in new[] { "home", "roster", "teams", "locker", "scout", "show", "story", "title", "tournament", "schedule", "staff", "company", "finance", "report", "world", "history", "settings" })
+            foreach (var key in new[] { "home", "roster", "teams", "locker", "scout", "training", "show", "story", "title", "tournament", "schedule", "staff", "company", "finance", "report", "world", "history", "settings" })
             {
                 var icon = root.Q<VisualElement>($"wp-icon-{key}");
                 if (icon == null) continue;
@@ -78,6 +104,18 @@ namespace PWManager.Presentation
 
         private void OnDisable()
         {
+            root?.Q("wrestler-report-overlay")?.RemoveFromHierarchy();
+            var reportButton = root?.Q<Button>("wp-open-report");
+            if (reportButton != null) reportButton.clicked -= OpenBehaviorReport;
+            root?.Q("career-history-overlay")?.RemoveFromHierarchy();
+            var careerButton = root?.Q<Button>("wp-open-career");
+            if (careerButton != null) careerButton.clicked -= OpenCareer;
+            root?.Q("growth-history-overlay")?.RemoveFromHierarchy();
+            var growthButton = root?.Q<Button>("wp-open-growth");
+            if (growthButton != null) growthButton.clicked -= OpenGrowth;
+            root?.Q("contract-negotiation-overlay")?.RemoveFromHierarchy();
+            var contractButton = root?.Q<Button>("wp-open-contract");
+            if (contractButton != null) contractButton.clicked -= OpenContract;
             CloseAppearanceEditor();
             var relations = root?.Q<Button>("wp-open-relationships");
             if (relations != null) relations.clicked -= OpenRelationships;
@@ -92,6 +130,10 @@ namespace PWManager.Presentation
         }
         private void Close()
         {
+            root?.Q("wrestler-report-overlay")?.RemoveFromHierarchy();
+            root.Q("career-history-overlay")?.RemoveFromHierarchy();
+            root.Q("growth-history-overlay")?.RemoveFromHierarchy();
+            root.Q("contract-negotiation-overlay")?.RemoveFromHierarchy();
             CloseAppearanceEditor();
             root.style.display = DisplayStyle.None;
             DashboardController.ShowRosterShell();
@@ -109,6 +151,7 @@ namespace PWManager.Presentation
         public static void Open(WrestlerState wrestler)
         {
             if (wrestler == null || instance == null) return;
+            if (DashboardSession.ActiveSave?.IsWrestlerDiscovered(wrestler.Id) == false) return;
             var inGame = DashboardSession.ActiveSave != null;
             if (inGame && instance.embeddedRoot == null) instance.embeddedRoot = GameObject.Find("Dashboard UI")?.GetComponent<UIDocument>()?.rootVisualElement.Q<VisualElement>("wrestler-profile");
             instance.BindInteractiveRoot(inGame && instance.embeddedRoot != null ? instance.embeddedRoot : instance.standaloneRoot);
@@ -192,6 +235,7 @@ namespace PWManager.Presentation
 
         private void Bind(WrestlerState wrestler)
         {
+            if (DashboardSession.ActiveSave?.IsWrestlerDiscovered(wrestler.Id) == false) return;
             CloseAppearanceEditor();
             boundWrestler = wrestler;
             previewStyleId = wrestler.Presentation?.WrestlingStyleId ?? "style_007";
@@ -200,7 +244,19 @@ namespace PWManager.Presentation
             var save = DashboardSession.ActiveSave; var id = wrestler.Identity ?? new WrestlerIdentityState(); var a = wrestler.Attributes ?? new WrestlerAttributesState();
             var c = wrestler.Condition ?? new WrestlerConditionState(); var g = wrestler.Growth ?? new WrestlerGrowthState(); var f = wrestler.FanReaction ?? new WrestlerFanReactionState();
             var roster = wrestler.Roster ?? new WrestlerRosterState(); var status = wrestler.Status ?? new WrestlerStatusState(); var date = save?.CurrentDate ?? id.CreatedDate;
-            var card = CardStatus(status); var contract = save?.Contracts?.FirstOrDefault(x => x != null && x.PersonId == wrestler.Id && (x.Status == ContractStatus.Active || x.Status == ContractStatus.Expiring));
+            var card = CardStatus(status); var contract = save?.OwnContracts?.FirstOrDefault(x => x != null && x.PersonId == wrestler.Id && x.IsInForce);
+            var futureContract = save?.OwnContracts.FirstOrDefault(x => x.PersonId == wrestler.Id && x.Type == ContractType.Wrestler &&
+                x.Status == ContractStatus.Scheduled && x.EndDate.CompareTo(date) >= 0);
+            var hasOwnAgreement = contract?.Covers(date) == true || futureContract != null;
+            root.Q<Button>("wp-open-report")?.SetEnabled(save != null && save.IsWrestlerDiscovered(wrestler.Id) &&
+                (wrestler.PromotionId == save.Promotion.Id || save.WrestlerBehaviors.Any(s => s.PromotionId == save.Promotion.Id && s.WrestlerId == wrestler.Id)));
+            root.Q<Button>("wp-open-contract")?.SetEnabled(save != null && !DashboardSession.IsShowRunning &&
+                (string.IsNullOrEmpty(wrestler.PromotionId) || wrestler.PromotionId == save.Promotion.Id || hasOwnAgreement) &&
+                save.IsWrestlerDiscovered(wrestler.Id) &&
+                (hasOwnAgreement || ContractNegotiationService.HasCurrentRecruitmentInformation(save, wrestler)));
+            root.Q<Button>("wp-open-growth")?.SetEnabled(save != null && ScoutReport == null);
+            root.Q<Button>("wp-open-career")?.SetEnabled(save != null && ScoutReport == null);
+            root.Q<Button>("wp-open-relationships")?.SetEnabled(save != null && ScoutReport == null);
             var homeBadge = root.Q<Label>("wp-home-badge"); if (homeBadge != null) { var count = DashboardController.HomeBadgeCount; homeBadge.text = count.ToString(); homeBadge.style.display = count > 0 ? DisplayStyle.Flex : DisplayStyle.None; }
             canSaveStyles = contract != null && !DashboardSession.IsShowRunning;
             canEditAppearance = save != null && !DashboardSession.IsShowRunning && (contract != null || save.Player?.WrestlerId == wrestler.Id);
@@ -242,7 +298,8 @@ namespace PWManager.Presentation
             var activeStable = save?.Stables?.FirstOrDefault(x => x.Id == roster.ActiveStableId);
             Set("wp-tag", activeTag == null ? "없음" : string.IsNullOrWhiteSpace(activeTag.Name) ? "태그팀" : activeTag.Name);
             Set("wp-stable", activeStable?.Name ?? "없음");
-            Set("wp-card-status", card.Label); Set("wp-role", Alignment(roster.Alignment)); Set("wp-contract-end", contract == null ? "계약 없음" : Date(contract.EndDate)); Set("wp-salary", contract == null ? "—" : $"${contract.MonthlySalary / 4:N0}"); Set("wp-last-match", roster.LastMatchDate.HasValue ? Date(roster.LastMatchDate.Value) : "기록 없음");
+            Set("wp-card-status", card.Label); Set("wp-role", Alignment(roster.Alignment)); Set("wp-contract-end", contract == null ? "계약 없음" : Date(contract.EndDate)); Set("wp-salary", contract == null ? "—" : $"${contract.MonthlySalary:N0}"); Set("wp-last-match", roster.LastMatchDate.HasValue ? Date(roster.LastMatchDate.Value) : "기록 없음");
+            Set("wp-fame-tier", WrestlerFameRules.Label(wrestler.Fame.Value));
             var moves = Resources.Load<StaticContentCatalog>("PWManagerRuntime/GameStaticContentCatalog")?.Moves;
             string MoveName(IReadOnlyList<string> ids, int index)
             {
@@ -277,15 +334,25 @@ namespace PWManager.Presentation
             Set("wp-matches", Math.Max(status.OfficialMatchCount, results.Count).ToString()); Set("wp-wins", wins.ToString()); Set("wp-draws", draws.ToString()); Set("wp-losses", losses.ToString()); Set("wp-recent-result", results.Count == 0 ? "기록 없음" : wins > 0 ? "승리" : "패배");
             Set("wp-championships", ChampionshipService.ReignCount(save, wrestler.Id).ToString());
             Set("wp-world-championships", ChampionshipService.ReignCount(save, wrestler.Id, true).ToString());
+            var heldTitles = root.Q("wp-current-titles");
+            if (heldTitles != null)
+            {
+                heldTitles.Clear(); var currentTitles = ChampionshipService.HeldBy(save, wrestler.Id);
+                heldTitles.style.display = currentTitles.Count == 0 ? DisplayStyle.None : DisplayStyle.Flex;
+                if (currentTitles.Count > 0) { var heading = new Label("보유 챔피언십"); heading.AddToClassList("wp-card-title"); heldTitles.Add(heading); }
+                foreach (var title in currentTitles) heldTitles.Add(ChampionshipProfileView.CreateLink(title));
+            }
             Set("wp-win-streak", winStreak.ToString());
             Class("wp-status-title", card.ClassName); Class("wp-card-status", card.ClassName); Class("wp-role", $"role-{roster.Alignment.ToString().ToLowerInvariant()}"); Class("wp-condition", ConditionClass(condition)); Class("wp-satisfaction", StateClass(100f - c.Satisfaction)); Class("wp-momentum", MomentumClass(momentum));
             var matchAbilities = MatchAbilities(a); var promoAbilities = PromoAbilities(a); var abilityRows = Math.Max(matchAbilities.Length, promoAbilities.Length);
             Abilities("wp-match-abilities", matchAbilities, abilityRows);
             Abilities("wp-promo-abilities", promoAbilities, abilityRows);
-            SetGrade("wp-match-potential", g.MatchPotentialCap); SetGrade("wp-promo-potential", g.PromoPotentialCap);
+            SetGrade("wp-match-potential", g.MatchPotentialCap);
+            SetGrade("wp-promo-potential", g.PromoPotentialCap);
             RenderStyleChoices();
             RenderPromoChoices();
             UpdatePreviewSummary();
+            ApplyScoutingReport();
         }
 
         private void RenderStyleChoices()
@@ -428,6 +495,33 @@ namespace PWManager.Presentation
             appearanceOverlay = overlay; root.Add(overlay); saveButton.Focus();
         }
 
+        private void OpenCareer()
+        {
+            if (boundWrestler != null) WrestlerCareerView.Open(root, boundWrestler.Id);
+        }
+
+        private void OpenGrowth()
+        {
+            if (boundWrestler != null) WrestlerGrowthView.Open(root, boundWrestler.Id);
+        }
+
+        private void OpenBehaviorReport()
+        {
+            if (boundWrestler != null) WrestlerBehaviorView.Open(root, boundWrestler.Id);
+        }
+
+        private void OpenContract()
+        {
+            var save = DashboardSession.ActiveSave;
+            var id = boundWrestler?.Id;
+            if (save == null || id == null || DashboardSession.IsShowRunning) return;
+            ContractNegotiationView.Open(root, id, ContractType.Wrestler, () =>
+            {
+                var wrestler = save.Wrestlers.FirstOrDefault(x => x.Id == id);
+                if (wrestler != null) Bind(wrestler);
+            });
+        }
+
         private void SaveMatchStyle()
         {
             if (!canSaveStyles || boundWrestler == null || DashboardSession.IsShowRunning) return;
@@ -456,11 +550,13 @@ namespace PWManager.Presentation
             if (overview != null) overview.style.display = DisplayStyle.None;
             root.Q<Button>("wp-open-overview")?.EnableInClassList("active", false);
             root.Q<Button>("wp-open-relationships")?.EnableInClassList("active", true);
-            StoryManagementView.Open(root.Q<VisualElement>(className: "wp-content"), boundWrestler.Id);
+            root.Q("story-management")?.RemoveFromHierarchy();
+            WrestlerRelationshipsView.Open(root.Q<VisualElement>(className: "wp-content"), DashboardSession.ActiveSave, boundWrestler.Id);
         }
 
         private void ShowOverview()
         {
+            root?.Q("wrestler-relationships")?.RemoveFromHierarchy();
             root?.Q("story-management")?.RemoveFromHierarchy();
             var overview = root?.Q<VisualElement>(className: "wp-scroll");
             if (overview != null) overview.style.display = DisplayStyle.Flex;
@@ -522,9 +618,54 @@ namespace PWManager.Presentation
             return button;
         }
 
+        private ScoutCandidateState ScoutReport => DashboardSession.ActiveSave?.ScoutCandidates?.FirstOrDefault(x => x.WrestlerId == boundWrestler?.Id);
+
+        private void ApplyScoutingReport()
+        {
+            var report = ScoutReport; if (report == null) return;
+            var match = new[] { ScoutValueType.RingPsychology, ScoutValueType.RingImprovisation, ScoutValueType.Brawling, ScoutValueType.Power,
+                ScoutValueType.Technical, ScoutValueType.HighFlying, ScoutValueType.SpotWork, ScoutValueType.SpecialtyMatches, ScoutValueType.Selling, ScoutValueType.Stamina };
+            var promo = new[] { ScoutValueType.Charisma, ScoutValueType.MicWork, ScoutValueType.Improvisation, ScoutValueType.Acting,
+                ScoutValueType.FaceWork, ScoutValueType.HeelWork, ScoutValueType.Comedy };
+            foreach (var (target, types) in new[] { ("wp-match-abilities", match), ("wp-promo-abilities", promo) })
+            {
+                var values = root.Q(target)?.Query<Label>(className: "wp-ability-value").ToList();
+                if (values == null) continue;
+                for (var i = 0; i < values.Count && i < types.Length; i++)
+                    SetScoutGrade(values[i], DashboardScoutingController.Estimate(report, types[i]));
+            }
+            SetScoutGrade(root.Q<Label>("wp-match-potential"), DashboardScoutingController.Estimate(report, ScoutValueType.MatchPotential));
+            SetScoutGrade(root.Q<Label>("wp-promo-potential"), DashboardScoutingController.Estimate(report, ScoutValueType.PromoPotential));
+        }
+
+        internal static void SetScoutGrade(Label label, string text)
+        {
+            if (label == null) return;
+            foreach (var old in Palette) label.RemoveFromClassList(old);
+            label.RemoveFromClassList("scout-unconfirmed"); label.text = text;
+            if (text == "미확인" || text.Contains("~")) label.AddToClassList("scout-unconfirmed");
+            else
+            {
+                var gradeClass = text switch
+                {
+                    "매우 낮음" => "grade-e", "낮음" => "grade-eplus", "보통" => "grade-dplus",
+                    "높음" => "grade-a", "매우 높음" => "grade-ss",
+                    _ => "grade-" + text.ToLowerInvariant().Replace("+", "plus")
+                };
+                if (Palette.Contains(gradeClass)) label.AddToClassList(gradeClass);
+            }
+        }
+
         private void UpdatePreviewSummary()
         {
             if (boundWrestler == null) return;
+            var report = ScoutReport;
+            if (report != null)
+            {
+                SetScoutGrade(root.Q<Label>("wp-match-overall"), DashboardScoutingController.Estimate(report, ScoutValueType.MatchOverall));
+                SetScoutGrade(root.Q<Label>("wp-promo-overall"), DashboardScoutingController.Estimate(report, ScoutValueType.PromoOverall));
+                return;
+            }
             SetGrade("wp-match-overall", WrestlerOverallCalculator.Match(boundWrestler, previewStyleId));
             SetGrade("wp-promo-overall", WrestlerOverallCalculator.Promo(boundWrestler, previewAlignment, previewDisposition));
             ApplyMatchStyleEmphasis();
@@ -554,7 +695,7 @@ namespace PWManager.Presentation
         private void Set(string key, string value) { var label = root.Q<Label>(key); if (label != null) label.text = value ?? "—"; }
         private void Class(string key, string value) { var e = root.Q<VisualElement>(key); if (e == null) return; foreach (var old in Palette) e.RemoveFromClassList(old); e.AddToClassList(value); }
         private void GradeClass(string key, float value) => Class(key, ToGradeClass(value));
-        private void SetGrade(string key, float value) { Set(key, Grade(value)); GradeClass(key, value); }
+        private void SetGrade(string key, float value) { root.Q(key)?.RemoveFromClassList("scout-unconfirmed"); Set(key, Grade(value)); GradeClass(key, value); }
         private void ApplyMatchStyleEmphasis()
         {
             var target = root.Q<VisualElement>("wp-match-abilities");

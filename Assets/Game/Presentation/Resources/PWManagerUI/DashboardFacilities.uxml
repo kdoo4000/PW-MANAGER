@@ -4,7 +4,7 @@
     <ui:VisualElement name="facilities-content" class="facilities-content hidden">
         <ui:VisualElement class="tabs facilities-tabs">
             <ui:Button name="facilities-tab-staff" text="스태프" class="tab active-tab"/>
-            <ui:Button name="facilities-tab-venues" text="시설" class="tab"/>
+            <ui:Button name="facilities-tab-venues" text="경기장" class="tab"/>
         </ui:VisualElement>
         <ui:VisualElement class="facilities-summary">
             <ui:VisualElement class="facilities-summary-item">

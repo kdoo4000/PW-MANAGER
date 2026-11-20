@@ -335,6 +335,35 @@ namespace PWManager.Tests
             public override double NextDouble() => values.Dequeue();
         }
 
+        [Test]
+        public void InjuryProneness_ScalesTheExistingAccidentRollForTheVictim()
+        {
+            var low = State(); var high = State(); low.AccidentsEnabled = high.AccidentsEnabled = true;
+            low.Participants[0].InjuryProneness = 1; high.Participants[0].InjuryProneness = 20;
+            MatchEngineEvent Event() => new() { PerformerId = "a", ReceiverId = "b", Type = MatchActionType.Dive,
+                IsPhysicalAttack = true, PhysicalExecutionFailed = true, TargetRegion = BodyRegion.Body };
+            MatchHealth.Observe(low, Event(), new SafetyRolls(0, .01));
+            MatchHealth.Observe(high, Event(), new SafetyRolls(0, .01, 0));
+            Assert.That(low.Participants[0].RealInjury, Is.EqualTo(InjuryStatus.None));
+            Assert.That(high.Participants[0].RealInjury, Is.EqualTo(InjuryStatus.Minor));
+            Assert.That(high.Participants[1].RealInjury, Is.EqualTo(InjuryStatus.None));
+        }
+
+        [Test]
+        public void MedicalSupport_ReducesAggravationWithoutChangingHealthyAccidentRisk()
+        {
+            var ordinary = State(); var supported = State();
+            ordinary.AccidentsEnabled = supported.AccidentsEnabled = true;
+            ordinary.Participants[0].RealInjury = supported.Participants[0].RealInjury = InjuryStatus.Minor;
+            supported.Rules.InjuryAggravationMultiplier = .6f;
+            MatchEngineEvent Event() => new() { PerformerId = "a", ReceiverId = "b", Type = MatchActionType.Dive,
+                IsPhysicalAttack = true, PhysicalExecutionFailed = true, TargetRegion = BodyRegion.Legs };
+            MatchHealth.Observe(ordinary, Event(), new SafetyRolls(0, .008, .9));
+            MatchHealth.Observe(supported, Event(), new SafetyRolls(0, .008));
+            Assert.That(ordinary.Participants[0].RealInjury, Is.EqualTo(InjuryStatus.Moderate));
+            Assert.That(supported.Participants[0].RealInjury, Is.EqualTo(InjuryStatus.Minor));
+        }
+
         [TestCase(.7999, InjuryStatus.Minor)]
         [TestCase(.8, InjuryStatus.Moderate)]
         [TestCase(.9799, InjuryStatus.Moderate)]

@@ -23,6 +23,10 @@ namespace PWManager.Domain.Services
         public string Id;
         public string WrestlingStyleId;
         public WrestlerAttributesState Attributes = new();
+        public WrestlerAttributesState MoveEligibilityAttributes;
+        public WrestlerAttributesState Eligibility => MoveEligibilityAttributes ?? Attributes;
+        public int InjuryProneness = 10;
+        public int Collegiality = 10, RiskTaking = 10;
         public float Fatigue, StartingFatigue;
         public float MatchControl = 50f;
         public float ActionReadiness = 50f;
@@ -234,6 +238,10 @@ namespace PWManager.Domain.Services
             foreach (var p in list)
             {
                 if (p.Attributes == null) throw new ArgumentException("Attributes are required.");
+                foreach (var v in new[] { p.Eligibility.Brawling, p.Eligibility.Power, p.Eligibility.Technical, p.Eligibility.HighFlying })
+                    if (!MatchPhysics.Finite(v) || v < 0 || v > 20) throw new ArgumentOutOfRangeException(nameof(participants));
+                if (p.InjuryProneness is < 1 or > 20) throw new ArgumentException("Injury proneness must be between 1 and 20.");
+                if (p.Collegiality is < 1 or > 20 || p.RiskTaking is < 1 or > 20) throw new ArgumentException("Match personality values must be between 1 and 20.");
                 foreach (var v in new[] { p.Attributes.Brawling, p.Attributes.Power, p.Attributes.Technical, p.Attributes.HighFlying,
                     p.Attributes.Selling, p.Attributes.Stamina, p.Attributes.RingPsychology, p.Attributes.RingImprovisation,
                     p.Attributes.Charisma, p.Attributes.Acting, p.Attributes.FaceWork, p.Attributes.HeelWork })
@@ -257,7 +265,7 @@ namespace PWManager.Domain.Services
                     foreach (var p in side) { p.IsLegal = p == side.First(); if (!p.IsLegal) p.Position = MatchPosition.Apron; }
             // Singles roster order is not a tactical choice; tag starter order remains explicit.
             if (!rules.Tag) list = list.OrderBy(p => p.Id, StringComparer.Ordinal).ToList();
-            var state = new MatchEngineState { EngineVersion = 4, Participants = list, TargetDurationSeconds = targetDurationSeconds,
+            var state = new MatchEngineState { EngineVersion = 6, Participants = list, TargetDurationSeconds = targetDurationSeconds,
                 Booking = booking == null ? null : new MatchEngineBooking { WinnerId = booking.WinnerId,
                     LoserId = booking.LoserId, FinishType = booking.FinishType }, Rules = rules, FindMove = findMove,
                 AccidentsEnabled = accidentsEnabled, ScheduledSpots = spots?.ToList() ?? new List<SpotResultState>() };
@@ -453,6 +461,8 @@ namespace PWManager.Domain.Services
             if (state.Intensity > 40f && action.Type is MatchActionType.HeavyStrike or MatchActionType.Grapple or MatchActionType.Signature) score *= 1.2f;
             if (state.CrowdHeat < 25f && action.Type is MatchActionType.HeavyStrike or MatchActionType.Signature or MatchActionType.Finisher) score *= 1.25f;
             score *= TacticalFit(state, action, performer, receiver);
+            if (action.Type is MatchActionType.Climb or MatchActionType.Dive or MatchActionType.TopRopeAttack or MatchActionType.ObjectSetup or MatchActionType.ObjectClimb)
+                score *= (float)WrestlerHiddenRules.RiskPreferenceWeight(performer.RiskTaking, .5f);
             bool singles = state.Participants.Count == 2 && !state.Rules.Tag;
             // Recovery and hold ticks must not erase the opponent's memory of recent offense.
             var repeats = singles ? state.Events.Where(x => x.PerformerId == action.PerformerId && (string.IsNullOrEmpty(x.ReceiverId) || x.ReceiverId == action.ReceiverId) &&

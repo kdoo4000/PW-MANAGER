@@ -1,0 +1,88 @@
+.ops-content { flex-grow:1; min-height:0; padding:18px 24px; background-color:#101114; color:#d9d6cf; -unity-font-definition:url("project://database/Assets/Game/Presentation/Resources/PWManagerUI/Fonts/SEBANGGothic-Regular.ttf"); }
+.ops-page-panel { flex-grow:1; min-height:0; }
+.ops-tabs { flex-direction:row; flex-shrink:0; border-bottom-width:1px; border-bottom-color:#343238; margin-bottom:14px; }
+.ops-tab { min-height:38px; margin:0 22px 0 0; padding:6px 0 10px; border-width:0; border-bottom-width:2px; border-bottom-color:transparent; border-radius:0; background-color:transparent; color:#a9a399; font-size:15px; }
+.ops-tab:hover { color:#f4f0e7; }
+.ops-tab.ops-active { border-bottom-color:#d9b45b; color:#f4f0e7; }
+.ops-tab:focus { background-color:#29251e; }
+.ops-summary { flex-direction:row; flex-wrap:wrap; flex-shrink:0; padding-bottom:14px; }
+.ops-summary > Label { margin-right:24px; font-size:14px; color:#bcb6ad; }
+.ops-status { white-space:normal; color:#d9b45b; margin-bottom:12px; }
+.ops-scroll { flex-grow:1; min-height:0; }
+.ops-body { flex-direction:row; flex-grow:1; min-height:0; }
+.ops-list-pane { flex-grow:4; flex-basis:0; min-width:260px; margin-right:18px; }
+.ops-detail-pane { flex-grow:6; flex-basis:0; min-width:0; border-left-width:1px; border-left-color:#343238; padding-left:18px; }
+.ops-scout-list { flex-grow:5; }
+.ops-scout-detail { flex-grow:5; }
+.ops-scroll .unity-scroll-view__horizontal-scroller { display:none; }
+.ops-heading { color:#f4f0e7; font-size:16px; margin-bottom:10px; -unity-font-definition:url("project://database/Assets/Game/Presentation/Resources/PWManagerUI/Fonts/SEBANGGothic-Bold.ttf"); }
+.ops-table-heading,.ops-table-row { flex-direction:row; align-items:center; flex-shrink:0; }
+.ops-table-heading { min-height:36px; background-color:#1a1b1f; border-bottom-width:1px; border-bottom-color:#343238; }
+.ops-table-heading > Label { color:#a9a399; font-size:13px; }
+.ops-table-row { min-height:52px; border-bottom-width:1px; border-bottom-color:#29282d; background-color:#101114; }
+.ops-table-row.ops-alt { background-color:#141518; }
+.ops-table-row:hover { background-color:#242222; }
+.ops-table-row.ops-selected { background-color:#302a1e; }
+.ops-table-row:focus { border-bottom-color:#d9b45b; }
+.ops-cell { flex-grow:1; flex-basis:0; min-width:0; margin:0 8px; font-size:14px; white-space:normal; }
+.ops-name-cell { flex-grow:2; min-width:85px; }
+.ops-name-cell .wrestler-link { min-width:0; max-width:100%; margin:0; padding:5px 0; border-width:0; background-color:transparent; color:#f4f0e7; font-size:14px; -unity-text-align:middle-left; text-overflow:ellipsis; overflow:hidden; white-space:nowrap; }
+.ops-name-cell .wrestler-link:hover { color:#d9b45b; }
+.ops-number-cell { flex-grow:0; flex-basis:46px; -unity-text-align:middle-center; }
+.ops-gauge-cell { flex-grow:0; flex-basis:56px; align-items:center; justify-content:center; }
+.ops-gauge-cell .wp-metric-gauge { width:44px; height:44px; }
+.ops-gauge-cell .wp-gauge-state { font-size:12px; }
+.ops-actions { flex-direction:row; flex-wrap:wrap; justify-content:flex-end; align-items:center; flex-shrink:0; margin-top:14px; }
+.ops-action { min-height:34px; min-width:76px; margin:0 0 0 8px; padding:5px 12px; border-width:1px; border-color:#918c84; border-radius:3px; background-color:#1a1b1f; color:#f4f0e7; font-size:14px; }
+.ops-action:hover { background-color:#302a1e; }
+.ops-action:focus { border-color:#d9b45b; }
+.ops-action:disabled { color:#918c84; border-color:#49454a; background-color:#141518; }
+.ops-primary { border-color:#d9b45b; color:#d9b45b; }
+.ops-identity { flex-direction:row; align-items:center; justify-content:space-between; margin-bottom:16px; padding-bottom:14px; border-bottom-width:1px; border-bottom-color:#343238; }
+.ops-identity-copy { flex-grow:1; min-width:0; }
+.ops-identity > .group-portrait.ops-identity-portrait { width:112px; height:100px; margin-right:16px; flex-shrink:0; }
+.ops-identity-copy .wrestler-link { background-color:transparent; border-width:0; color:#f4f0e7; font-size:21px; margin:0; padding:0; -unity-text-align:middle-left; white-space:normal; -unity-font-definition:url("project://database/Assets/Game/Presentation/Resources/PWManagerUI/Fonts/SEBANGGothic-Bold.ttf"); }
+.ops-meta { font-size:13px; color:#a9a399; white-space:normal; margin-top:5px; }
+.ops-detail-columns { flex-direction:row; flex-wrap:wrap; }
+.ops-detail-section { flex-grow:1; flex-basis:240px; min-width:0; margin:0 16px 18px 0; }
+.ops-form { flex-shrink:0; }
+.ops-form > .unity-base-field, .ops-form TextField { margin:0 0 14px; flex-direction:column; }
+.ops-form > .unity-base-field > .unity-base-field__label, .ops-form TextField > .unity-base-field__label { color:#bcb6ad; font-size:13px; margin:0 0 6px; white-space:normal; }
+.ops-form > .unity-base-field > .unity-base-field__input, .ops-form TextField > .unity-base-field__input { min-height:34px; background-color:#101114; color:#f4f0e7; border-width:1px; border-color:#918c84; border-radius:3px; padding-left:8px; }
+.ops-form > .unity-toggle { flex-direction:row; align-items:center; }
+.ops-form > .unity-toggle > .unity-base-field__label { min-width:0; flex-grow:0; margin:0 12px 0 0; }
+.ops-form > .unity-toggle > .unity-base-field__input { flex-grow:0; min-width:24px; min-height:24px; background-color:transparent; border-width:0; padding-left:0; }
+.ops-value-row { flex-direction:row; justify-content:space-between; align-items:center; min-height:28px; flex-shrink:0; padding:2px 0; }
+.ops-value-name { flex-grow:1; flex-basis:0; min-width:0; color:#bcb6ad; font-size:14px; white-space:normal; margin:0 12px 0 0; }
+.ops-value { min-width:58px; font-size:14px; margin:0; padding:0; -unity-text-align:middle-right; white-space:normal; }
+.ops-ability-column { flex-grow:1; flex-basis:180px; min-width:0; margin:0 16px 18px 0; }
+.ops-notice { white-space:normal; font-size:14px; color:#d9b45b; margin-top:10px; }
+.ops-empty { flex-grow:1; min-height:100px; justify-content:center; align-items:center; padding:24px; color:#a9a399; white-space:normal; font-size:15px; }
+.ops-record { margin-bottom:18px; padding-bottom:12px; border-bottom-width:1px; border-bottom-color:#343238; }
+.ops-period { color:#a9a399; font-size:13px; margin-bottom:8px; }
+.ops-search-panel { flex-grow:1; min-height:0; }
+.ops-search-form { max-width:620px; }
+.ops-search-status { margin-bottom:20px; }
+.ops-upgrade-grid { flex-direction:row; flex-wrap:wrap; }
+.ops-upgrade-grid .facility-card { flex-grow:1; flex-basis:300px; min-width:250px; width:auto; margin-right:16px; }
+.ops-narrow .ops-body { flex-direction:column; }
+.ops-narrow .ops-list-pane { flex-grow:4; flex-basis:0; min-height:150px; min-width:0; margin:0 0 14px; }
+.ops-narrow .ops-detail-pane { flex-grow:6; flex-basis:0; border-left-width:0; border-top-width:1px; border-top-color:#343238; padding:14px 0 0; }
+.ops-toolbar { flex-direction:row; flex-wrap:wrap; align-items:center; justify-content:space-between; flex-shrink:0; margin-bottom:14px; }
+.ops-toolbar .ops-tabs { flex-grow:1; margin-bottom:0; }
+.ops-toolbar .ops-heading { margin:0; }
+.ops-detail-title { color:#f4f0e7; font-size:22px; white-space:normal; margin-bottom:12px; -unity-font-definition:url("project://database/Assets/Game/Presentation/Resources/PWManagerUI/Fonts/SEBANGGothic-Bold.ttf"); }
+.ops-picker-member { flex-direction:row; flex-wrap:wrap; align-items:center; min-height:40px; border-bottom-width:1px; border-bottom-color:#29282d; padding:5px 0; }
+.ops-picker-member > Toggle { margin:0 10px 0 0; flex-shrink:0; }
+.ops-picker-member .wrestler-link { margin:0; padding:4px 0; color:#f4f0e7; background-color:transparent; border-width:0; -unity-text-align:middle-left; font-size:14px; }
+.ops-picker-member > .wrestler-link { flex-grow:1; flex-basis:0; min-width:0; margin-right:12px; white-space:normal; }
+.ops-picker-member > .unity-toggle > .unity-base-field__label { min-width:0; margin-right:8px; }
+.ops-picker-member .ops-meta { margin:0 0 0 12px; }
+.ops-picker-list { min-height:100px; max-height:300px; margin-bottom:12px; }
+.ops-picked { margin:8px 0 14px; color:#d9b45b; font-size:14px; white-space:normal; }
+.ops-detail .ops-form { margin-bottom:16px; }
+.ops-confirm { margin-top:16px; padding:12px; border-width:1px; border-color:#a76666; }
+.ops-danger { color:#f87171; border-color:#a76666; }
+.ops-history-row { margin-bottom:12px; padding:10px 0; border-bottom-width:1px; border-bottom-color:#343238; }
+.ops-people { flex-direction:row; flex-wrap:wrap; }
+.ops-people .wrestler-link { margin:0 12px 5px 0; background-color:transparent; border-width:0; padding:4px 0; color:#f4f0e7; font-size:14px; }

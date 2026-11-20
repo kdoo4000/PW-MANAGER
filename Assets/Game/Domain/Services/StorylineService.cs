@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using PWManager.Domain.Identifiers;
@@ -8,8 +8,30 @@ namespace PWManager.Domain.Services
 {
     public sealed class StorylineService
     {
+        private const float UnprogressedInterestLoss = 5f;
         private readonly Func<string> createId;
         public StorylineService(Func<string> createId = null) => this.createId = createId ?? EntityId.CreateRuntimeId;
+
+        public static int DaysWithoutProgress(GameSave save, StorylineState story) => Math.Max(0,
+            (StorylineHistory.ForStory(save, story).LastOrDefault()?.Date ?? story.StartedDate).DaysUntil(save.CurrentDate));
+
+        public static void ChangeStatus(GameSave save, string storyId, StorylineStatus status)
+        {
+            if (save?.Promotion == null || !Enum.IsDefined(typeof(StorylineStatus), status)) throw new InvalidOperationException("스토리 상태가 올바르지 않습니다.");
+            var story = save.Storylines.SingleOrDefault(s => s.Id == storyId && s.PromotionId == save.Promotion.Id)
+                ?? throw new InvalidOperationException("우리 단체의 스토리를 찾을 수 없습니다.");
+            if (story.Status == status) return;
+            if (story.Status == StorylineStatus.Completed) throw new InvalidOperationException("종결된 스토리는 다시 열 수 없습니다.");
+            if (save.Shows.Any(s => s.Status is ShowStatus.InProgress or ShowStatus.ResultReview or ShowStatus.ResultsReviewed))
+                throw new InvalidOperationException("진행 중인 쇼의 결과를 먼저 확정하세요.");
+            if (status == StorylineStatus.Active)
+            {
+                var projected = story.CopyForSimulation(); projected.Status = status;
+                if (!CanProgress(save, projected)) throw new InvalidOperationException("양측 참가 구성을 확인한 뒤 재개하세요.");
+            }
+            story.Status = status;
+            if (status == StorylineStatus.Completed) story.CompletedDate = save.CurrentDate;
+        }
 
         public static void UpgradeRelationships(GameSave save)
         {
@@ -43,7 +65,6 @@ namespace PWManager.Domain.Services
             {
                 Id = id, PromotionId = save.Promotion.Id, Name = name.Trim(),
                 FirstWrestlerId = firstWrestlerId, SecondWrestlerId = secondWrestlerId,
-                // ponytail: initial 25-point baseline; replace with candidate snapshots when candidate adoption is implemented.
                 Tension = 25f, Interest = 25f, StartedDate = save.CurrentDate
             };
             save.Storylines ??= new();
@@ -110,6 +131,10 @@ namespace PWManager.Domain.Services
                 _ => StoryIncident.None
             };
 
+        public static StoryIncident SpotIncident(string id) => id is "spot_009" or "spot_016" ? StoryIncident.Betrayal :
+            id is "spot_001" or "spot_002" or "spot_003" or "spot_004" or "spot_007" or "spot_010" or "spot_011" or
+                "spot_012" or "spot_013" or "spot_014" or "spot_015" ? StoryIncident.Attack : StoryIncident.None;
+
         public static void ValidatePromoIncident(GameSave save, PromoPlanState plan)
         {
             if (plan.ParticipantIds == null || plan.ParticipantIds.Count == 0)
@@ -126,7 +151,7 @@ namespace PWManager.Domain.Services
                 throw new InvalidOperationException("Promo incident must reference its speaker and participant or target.");
         }
 
-        private static (string Actor, string Target) PromoPair(GameSave save, PromoPlanState plan)
+        public static (string Actor, string Target) PromoPair(GameSave save, PromoPlanState plan)
         {
             var actor = string.IsNullOrEmpty(plan.IncidentActorId) ? plan.ParticipantIds.FirstOrDefault() : plan.IncidentActorId;
             var target = plan.IncidentTargetId;
@@ -144,59 +169,115 @@ namespace PWManager.Domain.Services
                 .OrderBy(x => order.IndexOf(x.Id)).ToList();
             foreach (var item in events)
             {
+                var showId = item.Match?.ShowId ?? item.Promo?.ShowId;
+                var date = save.Shows.FirstOrDefault(x => x.Id == showId)?.Date ?? save.CurrentDate;
                 if (item.Match != null)
                 {
                     var result = item.Match;
+                    if (!string.IsNullOrEmpty(result.CancellationReason)) continue;
                     var plan = save.MatchPlans.Single(x => x.Id == result.MatchPlanId);
                     void AddSpot(SpotResultState spot)
                     {
                         if (spot.WasSkipped) return;
                         // Spot outcome grades execution, not whether the scripted betrayal happened.
-                        var incident = spot.SpotId is "spot_009" or "spot_016" ? StoryIncident.Betrayal :
-                            spot.SpotId is "spot_001" or "spot_002" or "spot_003" or "spot_004" or "spot_007" or
-                                "spot_010" or "spot_011" or "spot_012" or "spot_013" or "spot_014" or "spot_015"
-                                ? StoryIncident.Attack : StoryIncident.None;
+                        var incident = SpotIncident(spot.SpotId);
                         if (incident == StoryIncident.None) return;
                         var linked = (save.Storylines ?? new()).FirstOrDefault(x => x.Id == plan.StorylineId);
                         var inStory = linked != null && IncludesBothParties(save, linked, new[] { spot.ActorId, spot.TargetId });
-                        Add(save, output, plan.StorylineId, inStory ? StoryAction.Progress : StoryAction.None,
-                            result.Id, StoryEventType.Match, incident, spot.ActorId, spot.TargetId, 50f);
+                        Add(save, output, inStory ? plan.StorylineId : null, inStory ? StoryAction.Progress : StoryAction.None,
+                            result.Id, StoryEventType.Match, incident, spot.ActorId, spot.TargetId, 50f,
+                            result.Id + ":spot:" + result.SpotResults.IndexOf(spot), date);
                     }
                     foreach (var spot in (result.SpotResults ?? new()).Where(x => x.Phase != MatchSpotPhase.PostMatch).OrderBy(x => x.Phase)) AddSpot(spot);
-                    if (result.WasStoppedByExecution) continue;
-                    Add(save, output, plan.StorylineId, plan.StoryAction, result.Id, StoryEventType.Match,
-                        StoryIncident.Competition, result.FinishPerformerId ?? plan.WinnerId, result.LoserTargetId,
-                        result.FinalMatchQuality * 5f);
+                    if (!result.WasStoppedByExecution)
+                    {
+                        var members = StorylineHistory.MatchMembers(save, result).ToList();
+                        Add(save, output, plan.StorylineId, plan.StoryAction, result.Id, StoryEventType.Match,
+                            StoryIncident.Competition, result.FinishPerformerId ?? result.WinnerId ?? plan.WinnerId, result.LoserTargetId,
+                            result.FinalMatchQuality * 5f, result.Id + ":match", date, members);
+                        var otherPairs = string.IsNullOrEmpty(plan.StorylineId) ? save.Storylines.Concat(output.CreatedStorylines)
+                            .Where(x => x.PartyType == StoryPartyType.Wrestler && CanProgress(save, x) &&
+                                IncludesBothParties(save, x, members))
+                            .GroupBy(x => string.CompareOrdinal(x.FirstWrestlerId, x.SecondWrestlerId) < 0 ?
+                                (x.FirstWrestlerId, x.SecondWrestlerId) : (x.SecondWrestlerId, x.FirstWrestlerId))
+                            .Select(x => x.OrderByDescending(s => s.LastEventDate).ThenBy(s => s.Id, StringComparer.Ordinal).First()).ToList() : new List<StorylineState>();
+                        foreach (var story in otherPairs)
+                        {
+                            if (output.StorylineChanges.Any(x => x.StorylineId == story.Id && x.EventId == result.Id + ":match")) continue;
+                            Add(save, output, story.Id, StoryAction.Progress, result.Id, StoryEventType.Match,
+                                StoryIncident.Competition, story.FirstWrestlerId, story.SecondWrestlerId,
+                                result.FinalMatchQuality * 5f, result.Id + ":match", date, members);
+                        }
+                        if (result.FinishType == MatchFinishType.Disqualification &&
+                            !string.IsNullOrEmpty(result.LoserTargetId) && !string.IsNullOrEmpty(result.FinishPerformerId))
+                            output.RelationshipChanges.Add(new StoryRelationshipChangeState { FirstWrestlerId = result.FinishPerformerId,
+                                SecondWrestlerId = result.LoserTargetId, SourceResultId = result.Id, ValueChange = -3f });
+                    }
                     foreach (var spot in (result.SpotResults ?? new()).Where(x => x.Phase == MatchSpotPhase.PostMatch)) AddSpot(spot);
                     // End only after post-match events have been evaluated.
                     if (plan.StoryAction == StoryAction.End)
-                        output.StorylineChanges.Last(x => x.StorylineId == plan.StorylineId && x.SourceResultId == result.Id).Action = StoryAction.End;
+                    {
+                        var ending = output.StorylineChanges.LastOrDefault(x => x.StorylineId == plan.StorylineId && x.SourceResultId == result.Id);
+                        if (ending != null) ending.Action = StoryAction.End;
+                    }
                 }
                 else
                 {
                     var result = item.Promo;
+                    if (!string.IsNullOrEmpty(result.CancellationReason)) continue;
                     var plan = save.PromoPlans.Single(x => x.Id == result.PromoPlanId);
                     ValidatePromoIncident(save, plan);
                     var (actor, target) = PromoPair(save, plan);
                     Add(save, output, plan.StorylineId, plan.StoryAction, result.Id, StoryEventType.Promo,
-                        PromoIncident(plan), actor, target, result.PromoScore);
+                        PromoIncident(plan), actor, target, result.PromoScore, result.Id + ":promo", date,
+                        plan.ParticipantIds.Concat(plan.TargetIds ?? new()));
                 }
             }
         }
 
         private static void Add(GameSave save, ShowResultState output, string storyId, StoryAction action, string source,
-            StoryEventType type, StoryIncident incident, string actor, string target, float quality)
+            StoryEventType type, StoryIncident incident, string actor, string target, float quality,
+            string eventId = null, GameDate? date = null, IEnumerable<string> participants = null)
         {
             if (!Finite(quality) || quality < 0 || quality > 100) throw new InvalidOperationException("Invalid story event quality.");
-            var story = (save.Storylines ?? new()).SingleOrDefault(x => x?.Id == storyId);
+            eventId ??= source + ":" + incident + ":" + actor + ":" + target;
+            var eventDate = date ?? save.CurrentDate;
+            var pairValid = !string.IsNullOrEmpty(actor) && !string.IsNullOrEmpty(target) && actor != target;
+            if (pairValid) ValidatePair(save, actor, target);
+            if (!output.StoryEvents.Any(x => x.Id == eventId))
+                output.StoryEvents.Add(new StoryEventState { Id = eventId, SourceResultId = source, EventType = type,
+                    Incident = incident, ActorId = actor, TargetId = target, Date = eventDate,
+                    ParticipantIds = (participants ?? Array.Empty<string>()).Where(x => !string.IsNullOrEmpty(x)).Distinct().ToList() });
+            var story = save.Storylines.Concat(output.CreatedStorylines).SingleOrDefault(x => x.Id == storyId);
             if (action != StoryAction.None && (story == null || story.Status != StorylineStatus.Active))
                 throw new InvalidOperationException("Linked storyline must be active.");
+            if (story == null && pairValid)
+            {
+                story = output.CreatedStorylines.FirstOrDefault(x => IncludesBothParties(save, x, new[] { actor, target })) ??
+                    StorylineHistory.FindActive(save, new[] { actor, target });
+                if (story == null && incident is StoryIncident.Attack or StoryIncident.Betrayal or StoryIncident.Challenge or StoryIncident.Taunt or StoryIncident.Rescue)
+                {
+                    string Name(string id) => save.Wrestlers.First(x => x.Id == id).Identity.RingName ?? id;
+                    story = new StorylineState { Id = EntityId.CreateRuntimeId(), PromotionId = save.Promotion.Id,
+                        Name = $"{Name(actor)} vs {Name(target)}",
+                        FirstWrestlerId = actor, SecondWrestlerId = target, IsAutomatic = true,
+                        StartedDate = eventDate, LastEventDate = eventDate, Tension = 25, Interest = 25 };
+                    var background = StorylineHistory.ForPair(save, actor, target).Concat(output.StoryEvents)
+                        .Where(x => x.Id != eventId && x.Incident == StoryIncident.Competition &&
+                            StorylineHistory.Involves(x, actor, target) && x.Date.Year > 0 && x.Date.CompareTo(eventDate) <= 0 &&
+                            x.Date.DaysUntil(eventDate) <= StorylineHistory.BackgroundDays).LastOrDefault();
+                    if (background != null) story.EventIds.Add(StorylineHistory.Key(background));
+                    output.CreatedStorylines.Add(story);
+                }
+                if (story != null) { storyId = story.Id; action = StoryAction.Progress; }
+            }
+            else if (story != null && action == StoryAction.None) action = StoryAction.Progress;
             if (story != null && action != StoryAction.None)
             {
                 if ((output.StorylineChanges ?? new()).Any(x => x.StorylineId == storyId && x.Action == StoryAction.End))
                     throw new InvalidOperationException("Cannot progress a storyline after its ending.");
                 // ponytail: count same incident in the last three beats; tune this window after playtesting.
-                var recent = (story.History ?? new()).Select(x => x.Incident).Concat(
+                var recent = StorylineHistory.ForStory(save, story).Select(x => x.Incident).Concat(
                     output.StorylineChanges.Where(x => x.StorylineId == storyId).Select(x => x.Incident)).TakeLast(3);
                 var repeats = incident == StoryIncident.None ? 0 : recent.Count(x => x == incident);
                 var tension = incident switch
@@ -208,7 +289,7 @@ namespace PWManager.Domain.Services
                 if (tension > 0) tension /= 1 + repeats;
                 output.StorylineChanges.Add(new StorylineResultChangeState
                 {
-                    StorylineId = storyId, SourceResultId = source, EventType = type,
+                    StorylineId = storyId, EventId = eventId, SourceResultId = source, EventType = type,
                     Action = type == StoryEventType.Match ? StoryAction.Progress : action,
                     Incident = incident, ActorId = actor, TargetId = target,
                     TensionChange = tension, InterestChange = (quality - 50f) / 10f - repeats * 2f,
@@ -220,19 +301,6 @@ namespace PWManager.Domain.Services
                 StoryIncident.Attack => -15f, StoryIncident.Betrayal => -35f, StoryIncident.Taunt => -4f,
                 StoryIncident.Rescue => 20f, StoryIncident.Respect => 8f, StoryIncident.Reconciliation => 25f, _ => 0f
             };
-            if (string.IsNullOrEmpty(storyId) && action == StoryAction.None &&
-                incident is StoryIncident.Attack or StoryIncident.Betrayal or StoryIncident.Challenge or StoryIncident.Taunt &&
-                !string.IsNullOrEmpty(actor) && !string.IsNullOrEmpty(target) && actor != target)
-            {
-                ValidatePair(save, actor, target);
-                var candidateId = source + ":" + incident + ":" + actor + ":" + target;
-                if (!output.StoryCandidates.Any(x => x.Id == candidateId))
-                    output.StoryCandidates.Add(new StoryCandidateState
-                    {
-                        Id = candidateId, Quality = quality,
-                        Event = new StoryEventState { SourceResultId = source, EventType = type, Incident = incident, ActorId = actor, TargetId = target }
-                    });
-            }
             if (delta == 0 || string.IsNullOrEmpty(actor) || string.IsNullOrEmpty(target)) return;
             ValidatePair(save, actor, target);
             output.RelationshipChanges.Add(new StoryRelationshipChangeState
@@ -241,9 +309,42 @@ namespace PWManager.Domain.Services
             });
         }
 
+        public static List<ResultChangeState> UnprogressedInterestChanges(GameSave save, ShowResultState result)
+        {
+            var progressed = result.StorylineChanges.Select(x => x.StorylineId).ToHashSet(StringComparer.Ordinal);
+            return save.Storylines.Where(story => story.Status == StorylineStatus.Active &&
+                story.PromotionId == save.Promotion.Id && story.Interest > 0 && !progressed.Contains(story.Id))
+                .Select(story => new ResultChangeState { TargetId = story.Id, ValueKey = "관심도",
+                    Amount = -Math.Min(UnprogressedInterestLoss, story.Interest), Reason = "쇼에서 스토리 전개 없음" }).ToList();
+        }
+
         public static void Validate(GameSave save, ShowResultState result)
         {
             ValidateState(save);
+            var createdIds = new HashSet<string>(StringComparer.Ordinal);
+            foreach (var story in result.CreatedStorylines ?? new())
+            {
+                if (story == null || !EntityId.IsValidRuntimeId(story.Id) || !createdIds.Add(story.Id) ||
+                    save.Storylines.Any(x => x.Id == story.Id) || !story.IsAutomatic ||
+                    story.Status != StorylineStatus.Active || story.PromotionId != save.Promotion.Id ||
+                    !Finite(story.Tension) || !Finite(story.Interest) || !Finite(story.Fatigue))
+                    throw new InvalidOperationException("Invalid automatic storyline draft.");
+                ValidatePair(save, story.FirstWrestlerId, story.SecondWrestlerId);
+            }
+            var eventIds = new HashSet<string>(StringComparer.Ordinal);
+            var recordedIds = result.StoryEvents.Count == 0 ? new HashSet<string>() :
+                StorylineHistory.All(save).Select(StorylineHistory.Key).ToHashSet();
+            foreach (var beat in result.StoryEvents ?? new())
+            {
+                if (beat == null || string.IsNullOrWhiteSpace(beat.Id) || !eventIds.Add(beat.Id) ||
+                    recordedIds.Contains(beat.Id) ||
+                    string.IsNullOrWhiteSpace(beat.SourceResultId) || !Enum.IsDefined(typeof(StoryIncident), beat.Incident) ||
+                    !Enum.IsDefined(typeof(StoryEventType), beat.EventType) || beat.Date.Year <= 0 ||
+                    result.TimelineResultIds?.Count > 0 && !result.TimelineResultIds.Contains(beat.SourceResultId))
+                    throw new InvalidOperationException("Invalid relationship history event.");
+                foreach (var id in (beat.ParticipantIds ?? new()).Concat(new[] { beat.ActorId, beat.TargetId }).Where(x => !string.IsNullOrEmpty(x)))
+                    if (!save.Wrestlers.Any(x => x.Id == id)) throw new InvalidOperationException("Unknown history participant.");
+            }
             var resultCandidateIds = new HashSet<string>(StringComparer.Ordinal);
             foreach (var candidate in result.StoryCandidates ?? new())
             {
@@ -262,7 +363,7 @@ namespace PWManager.Domain.Services
                 if (change == null) throw new InvalidOperationException("Story change is missing.");
                 if (sourceIds.Count > 0 && !sourceIds.Contains(change.SourceResultId))
                     throw new InvalidOperationException("Story change references another show's result.");
-                var story = (save.Storylines ?? new()).SingleOrDefault(x => x?.Id == change.StorylineId);
+                var story = (save.Storylines ?? new()).Concat(result.CreatedStorylines ?? new()).SingleOrDefault(x => x?.Id == change.StorylineId);
                 if (story == null || story.Status != StorylineStatus.Active || ended.Contains(story.Id))
                     throw new InvalidOperationException("Story change references a missing or completed storyline.");
                 if (!CanProgress(save, story) && !result.StorylineChanges.Any(x => x != null &&
@@ -272,8 +373,12 @@ namespace PWManager.Domain.Services
                     !Enum.IsDefined(typeof(StoryAction), change.Action) || !Enum.IsDefined(typeof(StoryIncident), change.Incident) ||
                     !Finite(change.TensionChange) || !Finite(change.InterestChange) || !Finite(change.FatigueChange))
                     throw new InvalidOperationException("Story change is invalid.");
-                if ((story.History ?? new()).Any(x => x.SourceResultId == change.SourceResultId))
+                if (!string.IsNullOrEmpty(change.EventId) ? (story.EventIds ?? new()).Contains(change.EventId) ||
+                    (story.History ?? new()).Any(x => x.Id == change.EventId) :
+                    (story.History ?? new()).Any(x => x.SourceResultId == change.SourceResultId))
                     throw new InvalidOperationException("Story result was already applied.");
+                if (!string.IsNullOrEmpty(change.EventId) && !eventIds.Contains(change.EventId))
+                    throw new InvalidOperationException("Story change references a missing event.");
                 if (change.Action == StoryAction.End) ended.Add(story.Id);
             }
             foreach (var change in result.RelationshipChanges ?? new())
@@ -334,6 +439,7 @@ namespace PWManager.Domain.Services
         public static void Apply(GameSave save, ShowResultState result, GameDate date)
         {
             Validate(save, result);
+            foreach (var created in result.CreatedStorylines ?? new()) save.Storylines.Add(created.CopyForSimulation());
             foreach (var change in result.StorylineChanges ?? new())
             {
                 var story = save.Storylines.Single(x => x.Id == change.StorylineId);
@@ -341,8 +447,14 @@ namespace PWManager.Domain.Services
                 story.Tension = Clamp(story.Tension + change.TensionChange);
                 story.Interest = Clamp(story.Interest + change.InterestChange);
                 story.Fatigue = Clamp(story.Fatigue + change.FatigueChange);
-                story.History.Add(new StoryEventState
+                story.LastEventDate = date;
+                if (story.IsAutomatic)
                 {
+                    if (!string.IsNullOrEmpty(change.EventId)) story.EventIds.Add(change.EventId);
+                }
+                else story.History.Add(new StoryEventState
+                {
+                    Id = change.EventId,
                     SourceResultId = change.SourceResultId, EventType = change.EventType, Date = date,
                     Incident = change.Incident, ActorId = change.ActorId, TargetId = change.TargetId,
                     TensionChange = change.TensionChange, InterestChange = change.InterestChange, FatigueChange = change.FatigueChange
@@ -363,6 +475,9 @@ namespace PWManager.Domain.Services
                 }
                 relation.Value = Math.Max(-100f, Math.Min(100f, relation.Value + change.ValueChange));
             }
+            result.StoryHistoryApplied = true;
+            if (!save.ShowResults.Contains(result) && result.StoryEvents.Count > 0) save.ShowResults.Add(result);
+            StorylineHistory.Invalidate(save);
         }
 
         public StorylineState AdoptCandidate(GameSave save, string candidateId, string name, string existingStoryId = null)

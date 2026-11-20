@@ -39,7 +39,8 @@ namespace PWManager.Presentation
             regularHost.Clear();
             ppvHost.Clear();
             var shows = save?.Shows?.Where(x => x != null).OrderBy(x => x.Date.Year).ThenBy(x => x.Date.Month).ThenBy(x => x.Date.Day).ToList() ?? new List<ShowState>();
-            var upcoming = save == null ? 0 : shows.Count(x => x.Status != ShowStatus.Completed && x.Date.CompareTo(save.CurrentDate) >= 0);
+            var upcoming = save == null ? 0 : shows.Count(x => x.Status != ShowStatus.Completed && x.Date.CompareTo(save.CurrentDate) >= 0 &&
+                !save.Schedules.Any(s => s.Id == x.ScheduleId && s.Status == ScheduleStatus.Cancelled));
             Set("show-schedule-caption", shows.Count == 0 ? "생성된 쇼 일정이 없습니다" : $"{DashboardText.Date(shows.First().Date)}부터 {DashboardText.Date(shows.Last().Date)}까지");
             Set("show-schedule-upcoming", $"예정 {upcoming}");
             Set("show-schedule-completed", $"완료 {shows.Count(x => x.Status == ShowStatus.Completed)}");
@@ -50,15 +51,16 @@ namespace PWManager.Presentation
                 var row = new Button { name = $"show-schedule-{show.Id}" }; row.AddToClassList("show-schedule-row");
                 var top = new VisualElement(); top.AddToClassList("show-schedule-row-top");
                 var date = new Label($"{show.Date.Year}. {show.Date.Month:D2}. {show.Date.Day:D2}."); date.AddToClassList("show-schedule-date"); top.Add(date);
-                var status = new Label(DashboardText.ShowStatus(show.Status)); status.AddToClassList("show-schedule-status"); status.EnableInClassList("open", show.Status != ShowStatus.Completed);
+                var cancelled = save.Schedules.Any(x => x.Id == show.ScheduleId && x.Status == ScheduleStatus.Cancelled);
+                var status = new Label(cancelled ? "취소" : DashboardText.ShowStatus(show.Status)); status.AddToClassList("show-schedule-status"); status.EnableInClassList("open", !cancelled && show.Status != ShowStatus.Completed);
                 top.Add(status); row.Add(top);
                 var name = new Label(string.IsNullOrWhiteSpace(show.Name) ? DashboardText.ShowName(show.ShowType) : show.Name); name.AddToClassList("show-schedule-name"); row.Add(name);
                 var meta = new Label($"{venueName(show)} · {show.CalculatePlannedDuration(events)}/{show.DurationLimit}분"); meta.AddToClassList("show-schedule-meta"); row.Add(meta);
                 var footer = new VisualElement(); footer.AddToClassList("show-schedule-row-footer");
                 AddMetric(footer, "편성", $"{events.Count}개 세그먼트");
-                AddMetric(footer, "예상 비용", DashboardText.Money(show.EstimatedCost));
+                AddMetric(footer, "예상 비용", DashboardText.Money(show.EstimatedCost + SalaryPaymentService.EstimateAppearanceFees(save, show)));
                 row.Add(footer);
-                var id = show.Id; row.clicked += () => openShow(id);
+                var id = show.Id; row.clicked += () => openShow(id); row.SetEnabled(!cancelled);
                 host.Add(row);
             }
             AddEmptyState(regularHost, "예정된 정규 쇼가 없습니다");
@@ -89,7 +91,7 @@ namespace PWManager.Presentation
             else
             {
                 save.SeasonPolicy.PpvShowTitles ??= new List<PpvTitlePolicyState>();
-                foreach (var month in save.Shows.Where(x => x != null && x.ShowType != ScheduledShowType.Regular)
+                foreach (var month in save.Shows.Where(x => x != null && x.ShowType != ScheduledShowType.Regular && InCurrentSeason(x))
                     .OrderBy(x => x.Date.Year).ThenBy(x => x.Date.Month).ThenBy(x => x.Date.Day)
                     .Select(x => x.Date.Month).Distinct())
                 {
@@ -130,7 +132,7 @@ namespace PWManager.Presentation
                 save.SeasonPolicy.PpvShowTitles = titles.Select(x => new PpvTitlePolicyState
                     { Month = x.Key, Title = x.Value, DurationMinutes = ppvDurationFields[x.Key].value }).ToList();
             }
-            var shows = save.Shows.Where(x => x != null && (x.ShowType == ScheduledShowType.Regular) == editingRegularTitles)
+            var shows = save.Shows.Where(x => x != null && InCurrentSeason(x) && (x.ShowType == ScheduledShowType.Regular) == editingRegularTitles)
                 .OrderBy(x => x.Date.Year).ThenBy(x => x.Date.Month).ThenBy(x => x.Date.Day).ToList();
             for (var index = 0; index < shows.Count; index++)
             {
@@ -151,6 +153,7 @@ namespace PWManager.Presentation
             CloseTitleEditor();
         }
 
+        private bool InCurrentSeason(ShowState show) => show.Date.CompareTo(save.SeasonPolicy.StartDate) >= 0 && show.Date.CompareTo(save.SeasonPolicy.EndDate) <= 0;
         private void CloseTitleEditor() => root.Q<VisualElement>("schedule-title-overlay")?.AddToClassList("hidden");
         private static bool ValidDuration(int value) => value > 0 && value % 60 == 0;
         private static IntegerField AddDurationControl(VisualElement row, int value)

@@ -14,6 +14,37 @@ namespace PWManager.Tests
 {
     public sealed class ShowPlanningServiceTests
     {
+        [Test]
+        public void ScheduledNewHire_CanBeBookedBeforeRosterActivationButSuspensionStillBlocks()
+        {
+            var save = CreateInitialSave(); var wrestler = save.Wrestlers[0]; var service = Service();
+            save.CurrentDate = new GameDate(2027, 5, 31); wrestler.Roster.ActivityState = RosterActivityState.Inactive;
+            wrestler.PromotionId = null;
+            var schedule = new ScheduleState { Id = Guid.NewGuid().ToString("D"), Date = new GameDate(2027, 6, 1),
+                BookingDeadline = new GameDate(2027, 5, 29), Status = ScheduleStatus.Confirmed }; save.Schedules.Add(schedule);
+            foreach (var participant in save.Wrestlers.Take(2)) save.Contracts.Add(new ContractState { Id = Guid.NewGuid().ToString("D"),
+                PersonId = participant.Id, Status = ContractStatus.Scheduled, StartDate = schedule.Date, EndDate = new GameDate(2028, 5, 31) });
+            var show = service.CreateDraft(save, schedule.Id, "New Season", save.VenueContracts[0].Id, 60);
+            service.AddMatch(save, show.Id, Match(save, 0, 1), 60);
+            Assert.That(service.Validate(save, show.Id).Any(x => x.Code == "participant.roster"), Is.False);
+            wrestler.Roster.ActivityState = RosterActivityState.Suspended;
+            Assert.That(service.Validate(save, show.Id).Any(x => x.Code == "participant.roster"), Is.True);
+        }
+
+        [Test]
+        public void Validate_FutureShowAcceptsScheduledRenewalsBeforeTheyActivate()
+        {
+            var save = CreateInitialSave(); var service = Service(10);
+            save.Schedules[0].Date = new GameDate(2027, 6, 7);
+            foreach (var wrestler in save.Wrestlers.Take(2))
+                save.Contracts.Add(new ContractState { Id = Guid.NewGuid().ToString("D"), PersonId = wrestler.Id,
+                    Type = ContractType.Wrestler, Status = ContractStatus.Scheduled,
+                    StartDate = new GameDate(2027, 6, 1), EndDate = new GameDate(2028, 5, 31) });
+            var show = service.CreateDraft(save, save.Schedules[0].Id, "Future show", save.VenueContracts[0].Id, 60);
+            service.AddMatch(save, show.Id, Match(save, 0, 1), 60);
+            Assert.That(service.Validate(save, show.Id).Any(x => x.Code == "participant.contract"), Is.False);
+        }
+
         private const string CatalogPath = "Assets/Game/Data/Static/GameStaticContentCatalog.asset";
 
         [Test]

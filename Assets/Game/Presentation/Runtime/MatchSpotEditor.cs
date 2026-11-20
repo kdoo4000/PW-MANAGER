@@ -68,7 +68,7 @@ namespace PWManager.Presentation
                     spot.Phase = selected.Phases[0]; spot.PartnerId = null;
                     var participants = ParticipantIds();
                     spot.ActorId = selected.ActorScope == SpotActorScope.Outsider
-                        ? save.Wrestlers.FirstOrDefault(x => x != null && !participants.Contains(x.Id))?.Id
+                        ? save.Wrestlers.FirstOrDefault(x => x != null && save.IsWrestlerDiscovered(x.Id) && !participants.Contains(x.Id))?.Id
                         : participants.FirstOrDefault();
                     spot.TargetId = TargetIds(selected, spot.ActorId).FirstOrDefault();
                     Render();
@@ -88,7 +88,7 @@ namespace PWManager.Presentation
                 phase.RegisterValueChangedCallback(_ => spot.Phase = phaseValues[phase.index]);
                 var participantIds = ParticipantIds();
                 var actorIds = definition.ActorScope == SpotActorScope.Outsider
-                    ? save.Wrestlers.Where(x => x != null && !participantIds.Contains(x.Id)).Select(x => x.Id).ToList()
+                    ? save.Wrestlers.Where(x => x != null && save.IsWrestlerDiscovered(x.Id) && !participantIds.Contains(x.Id)).Select(x => x.Id).ToList()
                     : participantIds;
                 AddRole(roles, definition.ActorLabel, $"spot-actor-{index}", actorIds, spot.ActorId, id => { spot.ActorId = id; Render(); });
                 AddRole(roles, definition.TargetLabel, $"spot-target-{index}", TargetIds(definition, spot.ActorId), spot.TargetId,

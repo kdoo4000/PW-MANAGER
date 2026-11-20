@@ -23,8 +23,8 @@ namespace PWManager.Domain.Services
                 var targetSide = sides.FirstOrDefault(x => x.MemberIds.Contains(spot.TargetId));
                 if (targetSide == null) yield return $"{definition.Name}: 피해 선수는 경기 참가자여야 합니다.";
                 if (definition.ActorScope == SpotActorScope.Outsider &&
-                    (actorSide != null || save?.Wrestlers?.Any(x => x?.Id == spot.ActorId) != true))
-                    yield return $"{definition.Name}: 주체는 이 경기에 출전하지 않는 선수여야 합니다.";
+                    (actorSide != null || save?.Wrestlers?.Any(x => x != null && x.Id == spot.ActorId && save.IsWrestlerDiscovered(x.Id)) != true))
+                    yield return $"{definition.Name}: 주체는 확인된 선수 중 이 경기에 출전하지 않는 선수여야 합니다.";
                 if (definition.ActorScope == SpotActorScope.Participant && actorSide == null)
                     yield return $"{definition.Name}: 주체는 경기 참가자여야 합니다.";
                 if (definition.Relationship == SpotRelationship.Opponents && (actorSide == null || targetSide == null || actorSide == targetSide))

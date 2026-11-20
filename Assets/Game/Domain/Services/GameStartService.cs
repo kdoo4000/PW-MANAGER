@@ -13,6 +13,8 @@ namespace PWManager.Domain.Services
         public int ContractEndYear = 2027;
         public long SigningBonus;
         public long MonthlySalary;
+        public long MatchAppearanceFee;
+        public long PromoAppearanceFee;
         public long TerminationCost;
         public bool HasExpectedRole;
         public ExpectedRole ExpectedRole;
@@ -38,6 +40,7 @@ namespace PWManager.Domain.Services
         public int WorldSeed;
         public DateTime UtcNow;
         public IReadOnlyList<InitialWrestlerContractInput> WrestlerContracts;
+        public IReadOnlyList<WrestlerState> InitialCandidates;
         public string RegularVenueId;
         public long RegularVenueProductionCost;
         public RegularShowFrequency RegularShowFrequency;
@@ -86,11 +89,15 @@ namespace PWManager.Domain.Services
                 {
                     Id = createId(),
                     PersonId = wrestler.Id,
+                    PromotionId = save.Promotion.Id,
                     Type = ContractType.Wrestler,
+                    WasRookieWhenHired = wrestler.Status.IsRookie,
                     StartDate = StartDate,
                     EndDate = new GameDate(input.ContractEndYear, 5, 31),
                     SigningBonus = input.SigningBonus,
                     MonthlySalary = input.MonthlySalary,
+                    MatchAppearanceFee = input.MatchAppearanceFee,
+                    PromoAppearanceFee = input.PromoAppearanceFee,
                     TerminationCost = input.TerminationCost,
                     HasExpectedRole = input.HasExpectedRole,
                     ExpectedRole = input.ExpectedRole,
@@ -106,6 +113,23 @@ namespace PWManager.Domain.Services
                         ReasonId = contract.Id
                     });
                 }
+            }
+
+            var contractedIds = save.Wrestlers.Select(x => x.Id).ToHashSet(StringComparer.Ordinal);
+            foreach (var source in request.InitialCandidates ?? Array.Empty<WrestlerState>())
+            {
+                if (contractedIds.Contains(source.Id)) continue;
+                var wrestler = CloneWrestler(source);
+                wrestler.Identity.ExpiryDate = default;
+                save.Wrestlers.Add(wrestler);
+                save.ScoutCandidates.Add(new ScoutCandidateState
+                {
+                    WrestlerId = wrestler.Id, Source = ScoutReportSource.InitialRecruitment, KnowledgeLevel = 4,
+                    ExpiryDate = source.Identity.ExpiryDate,
+                    ValueEstimates = ScoutAssessmentRules.ActualValues(wrestler)
+                        .Select(x => ScoutAssessmentRules.Evaluate(x.Type, x.Value, 5, true, null)).ToList(),
+                    RevealedTraitIds = new()
+                });
             }
 
             AddInitialStaff(save);
@@ -139,10 +163,18 @@ namespace PWManager.Domain.Services
             save.Promotion.Audience = request.HasPlayerCharacter
                 ? FanAudienceService.CreateInitial(save.CurrentDate, PlayerCharacterRules.StartingFans(request.PlayerReputation))
                 : FanAudienceService.CreateInitial(save.CurrentDate);
+            PromotionQuarterService.Initialize(save);
+            TrainingService.Initialize(save);
+            PromotionProgressionRules.ValidateOperations(PromotionProgressionRules.ActiveTier(save), request.RegularShowFrequency,
+                request.PpvFrequency, scheduleResult.Schedules.Where(x => x.ShowType != ScheduledShowType.Regular).Select(x => x.ShowType));
 
+            WrestlerHiddenRules.InitializeSave(save);
+            WrestlerAdaptationService.InitializeSave(save, initialGame: true);
             var errors = GameSaveValidator.Validate(save);
             if (errors.Count > 0)
                 throw new InvalidOperationException("Initial save validation failed: " + string.Join(" | ", errors));
+            MerchandiseService.Initialize(save);
+            new SalaryPaymentService(createId).ProcessDay(save, StartDate);
             return save;
         }
 
@@ -200,8 +232,18 @@ namespace PWManager.Domain.Services
             if (contracts.Any(x => x?.Wrestler == null)) throw new ArgumentException("Every contract requires a wrestler.", nameof(request));
             if (contracts.Select(x => x.Wrestler.Id).Distinct(StringComparer.Ordinal).Count() != contracts.Count)
                 throw new ArgumentException("The initial roster contains duplicate wrestlers.", nameof(request));
+            if (request.InitialCandidates != null)
+            {
+                var pool = request.InitialCandidates;
+                if (pool.Any(x => x?.Identity == null || x.Roster == null || !EntityId.IsValidRuntimeId(x.Id) ||
+                        !string.IsNullOrEmpty(x.PromotionId) || x.Roster.ActivityState != RosterActivityState.Inactive))
+                    throw new ArgumentException("Initial candidates must be valid uncontracted wrestlers.", nameof(request));
+                var poolIds = pool.Select(x => x.Id).ToHashSet(StringComparer.Ordinal);
+                if (poolIds.Count != pool.Count || contracts.Any(x => !poolIds.Contains(x.Wrestler.Id)))
+                    throw new ArgumentException("Initial candidates must be unique and include every contracted wrestler.", nameof(request));
+            }
             if (contracts.Any(x => x.ContractEndYear < 2027)) throw new ArgumentException("Initial contracts must end on or after May 31, 2027.", nameof(request));
-            if (contracts.Any(x => x.SigningBonus < 0 || x.MonthlySalary < 0 || x.TerminationCost < 0))
+            if (contracts.Any(x => x.SigningBonus < 0 || x.MonthlySalary < 0 || x.TerminationCost < 0 || x.MatchAppearanceFee < 0 || x.PromoAppearanceFee < 0))
                 throw new ArgumentException("Contract amounts cannot be negative.", nameof(request));
             if (contracts.Sum(x => x.SigningBonus) > request.InitialCash)
                 throw new ArgumentException("Signing bonuses exceed the initial cash.", nameof(request));
@@ -227,7 +269,7 @@ namespace PWManager.Domain.Services
             {
                 var manager = new ManagerState
                 {
-                    Id = createId(), PromotionId = save.Promotion.Id, PromoPotentialCap = build.PromoAbility,
+                    Id = createId(), Name = playerName, PromotionId = save.Promotion.Id, PromoPotentialCap = build.PromoAbility,
                     ActivityState = RosterActivityState.Active,
                     Attributes = new ManagerAttributesState
                     {
@@ -260,6 +302,7 @@ namespace PWManager.Domain.Services
                         save.Player.Appearance.BodyType == 3 ? WrestlerBodyType.Heavyweight : WrestlerBodyType.Balanced, CareerYears = 10
                 },
                 Attributes = build.Attributes,
+                Fame = WrestlerFameRules.Create(WrestlerFameRules.InitialForPlayer(request.PlayerReputation)),
                 Growth = new WrestlerGrowthState { MatchPotentialCap = 20, PromoPotentialCap = 20 },
                 Condition = new WrestlerConditionState { Condition = 100, Satisfaction = 50, Availability = WrestlerAvailability.Available },
                 Roster = new WrestlerRosterState { PromotionId = save.Promotion.Id, ActivityState = RosterActivityState.Active },
@@ -301,6 +344,8 @@ namespace PWManager.Domain.Services
                     BodyType = source.Identity.BodyType, CareerYears = source.Identity.CareerYears
                 },
                 Attributes = CloneAttributes(source.Attributes),
+                Hidden = source.Hidden?.Copy(),
+                Adaptation = source.Adaptation?.Copy() ?? new(),
                 Condition = new WrestlerConditionState
                 {
                     Condition = source.Condition.Condition, InjuryStatus = source.Condition.InjuryStatus,
@@ -327,6 +372,7 @@ namespace PWManager.Domain.Services
                     LastMomentumRelease = source.Momentum.LastMomentumRelease, ReleaseType = source.Momentum.ReleaseType,
                     ReleaseReason = source.Momentum.ReleaseReason
                 },
+                Fame = source.Fame.Copy(),
                 FanReaction = source.FanReaction.Copy(),
                 Roster = new WrestlerRosterState
                 {
@@ -341,7 +387,6 @@ namespace PWManager.Domain.Services
                     WrestlingStyleId = source.Presentation.WrestlingStyleId,
                     PortraitResourcePath = source.Presentation.PortraitResourcePath,
                     Appearance = source.Presentation.Appearance?.Clone(),
-                    TraitIds = new List<string>(source.Presentation.TraitIds),
                     SignatureMoveIds = new List<string>(source.Presentation.SignatureMoveIds),
                     FinisherMoveIds = new List<string>(source.Presentation.FinisherMoveIds)
                 }
